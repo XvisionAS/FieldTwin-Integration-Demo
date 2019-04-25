@@ -1,0 +1,24 @@
+{
+  "defaultSeverity": "error",
+  "extends": [
+    "tslint:recommended"
+  ],
+  "jsRules": {},
+  "linterOptions": {
+    "exclude": [
+      "node_modules/**"
+    ]
+  },
+  "rules": {
+    //"interface-name": false,
+    //"no-unused-variable": [true, {"ignore-pattern": "^_"}],
+    "quotemark": [true, "single"],
+    "semicolon": [true, "never"],
+    "indent": [true, "spaces", 2],
+    "variable-name": [true, "ban-keywords", "check-format", "allow-leading-underscore", "allow-pascal-case"],
+    "trailing-comma": false,
+    "object-literal-sort-keys": false,
+    "no-console":false
+  },
+  "rulesDirectory": []
+}

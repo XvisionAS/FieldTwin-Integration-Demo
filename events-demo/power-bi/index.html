@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Document</title>
+  <style>
+    *, html, body {
+      margin: 0;
+      padding: 0;
+    }
+  </style>
+</head>
+<body>
+  <iframe
+    src="https://app.powerbi.com/view?r=eyJrIjoiYjNhODUxMDctMWM1OC00ZjI4LWI4NGYtMjcxYTI1MzdjZTc2IiwidCI6ImNkZjRjZjNkLWRlMjMtNDljZi1hOWIwLWFiZDJiNjc1ZjI1MyIsImMiOjh9"
+    frameborder="0"
+    width="1000"
+    height="600"
+  ></iframe>
+  <script src="https://code.jquery.com/jquery-3.1.0.js"></script>
+  <script>
+    // Find all iframes
+    var $iframes = $( "iframe" );
+    // Find &#x26; save the aspect ratio for all iframes
+    $iframes.each(function () {
+      $( this ).data( "ratio", this.height / this.width )
+        // Remove the hardcoded width &#x26; height attributes
+        .removeAttr( "width" )
+        .removeAttr( "height" );
+    });
+    // Resize the iframes when the window is resized
+    $( window ).resize( function () {
+      $iframes.each( function() {
+        // Get the parent container&#x27;s width
+        var width = $( this ).parent().outerWidth();
+        $( this ).width( width )
+          .height( width * $( this ).data( "ratio" ) );
+      });
+      // Resize to fix all iframes on page load.
+    }).resize();
+  </script>
+</body>
+</html>

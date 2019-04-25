@@ -1,0 +1,25 @@
+{
+  "name": "field-log",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "nodemon index.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "deploy": "now --public && now alias -A now.json"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "nodemon": "^1.18.10"
+  },
+  "dependencies": {
+    "body-parse": "^0.1.0",
+    "express": "^4.16.4",
+    "express-handlebars": "^3.0.2",
+    "hbs": "^4.0.3",
+    "jsonwebtoken": "^8.5.1",
+    "morgan": "^1.9.1",
+    "path": "^0.12.7"
+  }
+}

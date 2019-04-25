@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Document</title>
+  <style>
+    body {
+      background-color: #FFFFFF;
+    }
+  </style>
+</head>
+<body>
+
+  Event log: <br />
+  <ol id="event_log" reversed>
+
+  </ol> <br />
+
+  Token: <br />
+  <pre>{{token}}</pre>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.19.1/moment.js" ></script>
+  <script>
+    console.log('listening for messages in Tab');
+
+    window.addEventListener('message', function(event) {
+
+        // IMPORTANT: Check the origin of the data!
+        /*
+        if (~event.origin.indexOf('http://localhost:4200')) {
+            console.log(event.data);
+            addTextNode( JSON.stringify(event.data) );
+        } else {
+            // Not coming from correct origin
+            return;
+        }
+        */
+        addTextNode( JSON.stringify(event.data) );
+    });
+
+    function addTextNode(text) {
+      var newDiv = document.createElement("li");
+      newDiv.innerHTML = `${text} [${moment().format('HH:MM:ss')}]`;
+
+      event_log = document.getElementById("event_log");
+      event_log.prepend(newDiv);
+    }
+
+  </script>
+</body>
+</html>
