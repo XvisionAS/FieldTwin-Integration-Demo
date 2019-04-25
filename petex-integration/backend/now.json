@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "alias": "futureon-petex.now.sh",
+  "env": {
+    "PETEX_DEMO": "true",
+    "PETEX_SQL_LOGIN":"user",
+    "PETEX_SQL_PASSWORD":"password",
+    "PETEX_SQL_SERVER":"IP"
+  }
+}

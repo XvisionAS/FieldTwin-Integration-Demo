@@ -1,0 +1,25 @@
+{
+  "name": "Heat-Loss-Demo-Fieldap",
+  "version": "1.1.1",
+  "description": "Demo / poc for a fieldap iintegration",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.4",
+    "express": "^4.16.3",
+    "yargs": "^11.1.0",
+    "body-parser": "^1.18.3",
+    "express-handlebars": "^3.0.0",
+    "hbs": "^4.0.1",
+    "request": "^2.87.0",
+    "request-promise": "^4.2.2"
+  },
+  "keywords": [
+    "node",
+    "glitch",
+    "express",
+    "api",
+    "fieldap"
+  ]
+}
