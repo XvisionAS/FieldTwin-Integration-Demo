@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Document</title>
+  <style>
+    body {
+      background-color: #FFFFFF;
+    }
+  </style>
+  {{!-- Material Design --}}
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+  <link rel="stylesheet" href="https://code.getmdl.io/1.3.0/material.indigo-pink.min.css">
+  <script defer src="https://code.getmdl.io/1.3.0/material.min.js"></script>
+</head>
+<body>
+  <div class="">
+    <div class="mdl-grid">
+      <div class="mdl-cell mdl-cell--2-col">token</div>
+      <div class="mdl-cell mdl-cell--4-col">Windows events</div>
+      <div class="mdl-cell mdl-cell--6-col">Event from other windows</div>
+    </div>
+    <div class="mdl-grid">
+      <div class="mdl-cell mdl-cell--2-col" id="payload">
+        project    : {{body.project}}<br>
+        subProject : {{body.subProject}}<br>
+        user       : {{body.userEmail}}<br>
+      </div>
+      <div class="mdl-cell mdl-cell--4-col">
+        <ol id="event_log" reversed>
+        
+        </ol> 
+      </div>
+      <div class="mdl-cell mdl-cell--6-col">
+        <ol id="sse_log" reversed>
+        
+        </ol>
+      </div>
+    </div>
+  </div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.19.1/moment.js" ></script>
+
+  <script>
+
+    window.fieldLog = {}
+    window.fieldLog.subProject = "{{body.subProject}}"
+    window.fieldLog.project = "{{body.project}}"
+    window.fieldLog.email = "{{body.userEmail}}"
+
+
+    function addTextNode(text, id) {
+      const newDiv = document.createElement("li");
+      newDiv.innerHTML = `${text} [${moment().format('HH:MM:ss')}]`;
+
+      event_log = document.getElementById(id);
+      event_log.prepend(newDiv);
+    }
+
+    console.log('listening for messages in Tab');
+    console.log(window.fieldLog)
+
+    const evtSource = new EventSource(`event/${window.fieldLog.project}`);
+
+    evtSource.addEventListener('new-event', function(event) {
+        addTextNode(event.data, "sse_log");
+    })
+    window.addEventListener('message', function(event) {
+
+        addTextNode( JSON.stringify(event.data), "event_log");
+        
+        const xhttp = new XMLHttpRequest();
+        xhttp.onreadystatechange = function() {
+          if (this.readyState == 4) {
+				    if (this.status == 200) {
+              return
+            }
+          }
+        }
+        xhttp.open("POST", `/event/${window.fieldLog.project}`, true)
+		    xhttp.responseType = 'json'
+        xhttp.setRequestHeader("Content-Type", "application/json")
+        console.log('POSTING:')
+        console.log('Tab payload:', window.fieldLog)
+        console.log('tab event data', event.data)
+		    xhttp.send(JSON.stringify({payload: window.fieldLog, data: event.data}))
+    })
+  </script>
+</body>
+</html>

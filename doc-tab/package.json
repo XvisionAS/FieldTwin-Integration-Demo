@@ -1,0 +1,20 @@
+{
+  "name": "integration-demo-server",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "FutureOn",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.18.3",
+    "cors": "^2.8.4",
+    "express": "^4.16.3",
+    "express-handlebars": "^3.0.0",
+    "hbs": "^4.0.1",
+    "request": "^2.86.0",
+    "request-promise": "^4.2.2"
+  },
+}
