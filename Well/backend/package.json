@@ -1,0 +1,39 @@
+{
+  "name": "FutureOn-Wells-Integration",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "tsc": "tsc",
+    "build:live": "nodemon --watch 'app/**/*.ts' --exec node --inspect -r ts-node/register  app/bin/www.ts ",
+    "start": "ts-node app/bin/www.ts --inspect"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^0.18.0",
+    "cors": "^2.8.5",
+    "express": "^4.16.3",
+    "express-handlebars": "^3.0.2",
+    "hbs": "^4.0.3",
+    "jsonwebtoken": "^8.5.0",
+    "morgan": "^1.9.1",
+    "path": "^0.12.7",
+    "query-string": "^6.8.2",
+    "tedious": "^5.0.3"
+  },
+  "devDependencies": {
+    "@types/express-handlebars": "0.0.30",
+    "@types/cors": "^2.8.4",
+    "@types/express": "^4.16.0",
+    "@types/jsonwebtoken": "^8.3.0",
+    "@types/morgan": "^1.7.35",
+    "@types/node": "^11.9.5",
+    "@types/tedious": "^2.6.1",
+    "ts-node": "^7.0.1",
+    "tslint": "^5.11.0",
+    "typescript": "^3.1.1"
+  }
+}
