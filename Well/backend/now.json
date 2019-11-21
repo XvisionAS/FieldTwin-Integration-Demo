@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "alias": "well.fieldap.com",
+  "env": {
+    "AUTH_CLIENT_ID":
+    "AUTH_CLIENT_SECRET":
+    "AUTH_RESOURCE":
+    "AZURE_TENANT_ID":
+    "BASE_AUTH_URL":
+    "BASE_URL":
+    "BACKEND_URL":
+  }
+}
