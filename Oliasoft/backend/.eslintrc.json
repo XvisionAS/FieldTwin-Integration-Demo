@@ -1,0 +1,41 @@
+{
+  "parserOptions": {
+    "ecmaVersion": 8,
+    "sourceType": "module",
+    "ecmaFeatures": {"modules": true, "experimentalObjectRestSpread": true}
+  },
+  "rules": {
+    "indent": ["error", 2],
+    "no-unreachable": "error",
+    "strict": ["error", "global"],
+    "no-shadow": ["error", {"allow": ["err", "res"]}],
+    "object-curly-spacing": ["error", "always"],
+    "semi": ["error", "never"],
+    "space-before-function-paren": ["error", {
+      "anonymous": "never",
+      "named": "never",
+      "asyncArrow": "always"
+      }
+    ],
+    "object-shorthand": ["error", "methods"],
+    "no-console": "off",
+    "function-paren-newline": ["error", "consistent"],
+    "curly": ["error", "all"],
+    "eqeqeq": ["error", "smart"],
+    "quotes": ["error", "single"],
+    "no-trailing-spaces": "error",
+    "prefer-const": "warn"
+  },
+  "env": {
+    "es6": true,
+    "browser": true,
+    "node": true
+  },
+  "globals": {
+    "$": true,
+    "document": true,
+    "Snap": true,
+    "_": true,
+    "moment": true
+  }
+}
