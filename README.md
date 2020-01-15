@@ -436,6 +436,42 @@ Sent when an item was deleted . Contains the same data as didUpdate. The data fi
 }
 ```
 
+### `didClone`
+
+#### description
+
+Sent when a project or a sub project is cloned.
+
+> For getting the `didClone` notification when a project is cloned, the integration needs to be a **global** integration, as these event are sent from the dashboard, without any project loaded.
+
+The even contains a map of all the id that where created and their corresponding source id as well as which project and sub project information.
+
+#### format
+
+##### `didClone` for a project 
+* attribute `event` is set to  `didClone`
+* attribute `fromProjectId`source project id.
+* attribute `fromProjectName` source project name.
+* attribute `fromAccountId` source account id.
+* attribute `projectId` new project id.
+* attribute `projectName`new project name.
+* attribute `acountId` new account id.
+* attribute `idsMap` contains a map of source id => target id. useful if you need to migrate data that relate to each asset.
+
+##### `didClone` for a sub-project
+
+* attribute `event` is set to `didClone`
+* attribute `fromSubProjectId` source sub project id.
+* attribute `fromSubProjectName` source sub project name.
+* attribute `fromProjectId` source project id.
+* attribute `fromProjectName` source project name.
+* attribute `fromAccountId` source account id.
+* attribute `toProjectName` target project name.
+* attribute `subProjectId` new sub project id.
+* attribute `subProjectName` new sub project name
+* attribute `idsMap`
+
+
 ## Communication from integration to FieldAP
 
 While this feature is limited for now, integrations are able to call functions in *FieldAP* using the `postMessage` mechanism.
