@@ -130,8 +130,9 @@ const main = async () => {
   // - If not create it
   // We also create a lookup map `source.id => target.id`, which we will use
   // to fix displayIfCondition and filterIf values.
-  const sourceIdToTargetId      = {}
-  const promises = []
+  const sourceIdToTargetId = {}
+  const promises           = []
+
   for (const sourceKey in source) {
     const sourceDefinition = source[sourceKey]
     if (sourceDefinition.vendorId && sourceDefinition.type) {
