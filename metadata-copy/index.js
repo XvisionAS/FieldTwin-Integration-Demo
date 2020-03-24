@@ -11,12 +11,17 @@ Source and Target can have different types ( connection => asset for example )
 const fetch = require('node-fetch')
 const yargs = require('yargs')
 
-const argv  = yargs.option('source-type', {
+const argv  = yargs.option('backend', {
+  description:'Source Backend address https://backend.qa.fieldap.com'
+}).option('token', {
+  description:'Source API token'
+}).option('target-backend', {
+  description:'Target Backend address https://backend.qa.fieldap.com, default to `target-backend` if not specified'
+}).option('target-token', {
+  description:'Target API token, default to `source-token` if not specified'
+}).option('source-type', {
   description:'Source type',
   choices:[`well`, `layer`, `connection`, `asset`, `connector`]
-}).option('backend', {
-  alias:'b',
-  description:'Backend address https://backend.qa.fieldap.com'
 }).option('source-id', {
   description:'Source Id'
 }).option('target-type', {
@@ -24,11 +29,10 @@ const argv  = yargs.option('source-type', {
   choices:[`well`, `layer`, `connection`, `asset`, `connector`]
 }).option('target-id', {
   description:'Target Id'  
-}).option('token', {
-  alias:'t',
-  description:'API token'
 }).demandOption(
   'backend'
+).demandOption(
+  'token'
 ).demandOption(
   'source-type'
 ).demandOption(
@@ -41,18 +45,35 @@ const argv  = yargs.option('source-type', {
 
 
 /*
+  Retrieve account information, we will use that to find out 
+  if we need to use vendorId or vendorAttribute 
+*/
+const getAccount = async (options) => {
+  const { backend, token } = options
+  const url = new URL('/API/v1.4/', backend)
+  const data = await fetch(url.href, {
+    headers:{
+      token:token
+    }
+  })
+
+  return await data.json()
+}
+
+/*
   Retrieve all meta data definition for a given type and id
   See : https://apidocs.fieldap.com/#api-MetadataDefinitions-GetMetaDataDefinitions
 */
-const getMetaDataDefinitions = async (relateToType, relateToId) => {
-  const url = new URL('/API/v1.4/metadatadefinitions', argv.backend)
+const getMetaDataDefinitions = async (options, relateToType, relateToId) => {
+  const { backend, token } = options
+  const url = new URL('/API/v1.4/metadatadefinitions', backend)
   
   url.searchParams.append('relateToType', relateToType)
-  url.searchParams.append('relateToId',   relateToId)
+  url.searchParams.append('relateToId',   `${relateToId}`)
   
   const data = await fetch(url.href, {
     headers:{
-      token:argv.token
+      token:token
     }
   })
   return await data.json()
@@ -63,13 +84,14 @@ const getMetaDataDefinitions = async (relateToType, relateToId) => {
   Create a new definition
   See : https://apidocs.fieldap.com/#api-MetadataDefinitions-AddMetaDataDefinitions
 */
-const postMetaDataDefinition = async (item) => {
-  const url  = new URL('/API/v1.4/metadatadefinitions', argv.backend)
+const postMetaDataDefinition = async (options, item) => {
+  const { backend, token } = options
+  const url  = new URL('/API/v1.4/metadatadefinitions', backend)
   const data = await fetch(url.href, {
     method: 'POST', 
     body:JSON.stringify(item),
     headers:{
-      token:argv.token,
+      token:token,
       'Accept': 'application/json',
       'Content-Type': 'application/json'
     }
@@ -81,13 +103,14 @@ const postMetaDataDefinition = async (item) => {
   Update an definition
   See : https://apidocs.fieldap.com/#api-MetadataDefinitions-PatchMetaDataDefinitions
 */
-const patchMetaDataDefinition = async (key, item) => {
-  const url  = new URL(`/API/v1.4/metadatadefinitions/${key}`, argv.backend)
+const patchMetaDataDefinition = async (options, key, item) => {
+  const { backend, token } = options
+  const url  = new URL(`/API/v1.4/metadatadefinitions/${key}`, backend)
   const data = await fetch(url.href, {
     method: 'PATCH', 
     body:JSON.stringify(item),
     headers:{
-      token:argv.token,
+      token:token,
       'Accept': 'application/json',
       'Content-Type': 'application/json'
     }
@@ -96,6 +119,18 @@ const patchMetaDataDefinition = async (key, item) => {
 }
 
 
+const getVendor = (vendorAttributePaths, metaDatum) => vendorAttributePaths.reduce( (prev, cur) => prev && prev[cur], metaDatum)
+const setVendor = (vendorAttributePaths, metaDatum, value) => {
+  const last = vendorAttributePaths.length - 1
+  for (let i = 0; i < last; ++i) {
+    const key = vendorAttributePaths[i]
+    if (!metaDatum[key]) {
+      metaDatum[key] = {}
+    }
+    metaDatum = metaDatum[key]
+  }
+  metaDatum[vendorAttributePaths[last]] = value
+}
 /*
   Main function
 */
@@ -104,9 +139,35 @@ const main = async () => {
   if (!argv.targetType) {
     argv.targetType = argv.sourceType
   }
+  if (!argv.targetToken) {
+    argv.targetToken = argv.token
+  }
+  if (!argv.targetBackend) {
+    argv.targetBackend = argv.backend
+  }
 
-  const source = await getMetaDataDefinitions(argv.sourceType, argv.sourceId)
-  const target = await getMetaDataDefinitions(argv.targetType, argv.targetId)
+  const sourceOptions = {
+    backend:argv.backend, 
+    token:argv.token
+  }
+  const targetOptions = {
+    backend:argv.targetBackend, 
+    token:argv.targetToken
+  }
+  console.log(JSON.stringify(sourceOptions, null, 2))
+  const sourceAccount = await getAccount(sourceOptions)
+  const targetAccount = await getAccount(targetOptions)
+
+  // Account can be configured to read vendorId from a path inside `vendorAttributes` instead of `vendorId`.
+  // we need to handle that.
+  const sourceVendorPaths = (sourceAccount.vendorAttributePath || 'vendorId').split('.')
+  const targetVendorPaths = (targetAccount.vendorAttributePath || 'vendorId').split('.')
+
+  console.log(sourceVendorPaths)
+  console.log(targetVendorPaths)
+
+  const source = await getMetaDataDefinitions(sourceOptions, argv.sourceType, argv.sourceId)
+  const target = await getMetaDataDefinitions(targetOptions, argv.targetType, argv.targetId)
 
   // first we build a lookup map ( vendorId -> definition id ) for target, this will allow faster traversal
   // for the next step 
@@ -114,11 +175,13 @@ const main = async () => {
 
   for (const targetKey in target) {
     const targetDefinition = target[targetKey]
-    if (targetDefinition.vendorId) {
-      if (targetVendorIdToTargetId[targetDefinition.vendorId]) {
+    const targetVendorId   = getVendor(targetVendorPaths, targetDefinition) 
+    
+    if (targetVendorId) {
+      if (targetVendorIdToTargetId[targetVendorId]) {
         console.error(`Multiple meta data definitions are present with the same vendorId ${targetDefinition.vendorId}`)
       }
-      targetVendorIdToTargetId[targetDefinition.vendorId] = targetKey
+      targetVendorIdToTargetId[targetVendorId] = targetKey
     }
   }
 
@@ -131,45 +194,40 @@ const main = async () => {
   // We also create a lookup map `source.id => target.id`, which we will use
   // to fix displayIfCondition and filterIf values.
   const sourceIdToTargetId = {}
-  const promises           = []
 
   for (const sourceKey in source) {
     const sourceDefinition = source[sourceKey]
-    if (sourceDefinition.vendorId && sourceDefinition.type) {
-      const targetKey = targetVendorIdToTargetId[sourceDefinition.vendorId] 
+    const sourceVendorId   = getVendor(sourceVendorPaths, sourceDefinition)
 
+    if (sourceVendorId && sourceDefinition.type) {
+      const targetKey = targetVendorIdToTargetId[sourceVendorId] 
       // definitions already exists on target, just store mapping in `map`
       if (targetKey) {
         sourceIdToTargetId[sourceKey] = targetKey
       } else {
-        const cloned = {
+        const clonedDefinition = {
           ...sourceDefinition
         }
         // Conditions will be created later, when we have all the ids in the map ( old an just created )
-        delete cloned.displayIfConditions
-        delete cloned.filterIf
+        delete clonedDefinition.displayIfConditions
+        delete clonedDefinition.filterIf
         // this is not needed, as it will be filled by the API call.
-        delete cloned.account
+        delete clonedDefinition.account
         // replace relateTo source by target
-        cloned.relateToType = argv.targetType
-        cloned.relateToId   = argv.targetId
-
-        promises.push(
-          postMetaDataDefinition(cloned)
-        )
+        clonedDefinition.relateToType = argv.targetType
+        clonedDefinition.relateToId   = `${argv.targetId}`
+        // set vendorId ( we do that in cast the target account have a different vendorId attribute )
+        setVendor(targetVendorPaths, clonedDefinition, sourceVendorId)
+        // post and fill lookup
+        const created = await postMetaDataDefinition(targetOptions, clonedDefinition)
+        if (created.id) {
+          sourceIdToTargetId[sourceKey] = created.id
+        }
       }
     }
   }
-  console.log(`=> Waiting for ${promises.length} query`)
-  // wait for all POST to be done
-  results = await Promise.all(promises)
-  // then add all results to our `source.id => target.id` map
-  results.forEach(
-    created => sourceIdToTargetId[sourceKey] = created.id
-  )
-
   // Clear promises array
-  promises.length = 0
+  const promises = []
   console.log(`=> Updating filterIf and displayIfConditions`)
   // Now that we created all the definitions on the target, and we have a map 
   // `source.id => target.id`, we go through all target definitions, and replace 
@@ -178,20 +236,24 @@ const main = async () => {
   // Note that we update the whole definition, so that we are sure that if
   // an existing definition was changed, the target get the update.
   for (const sourceKey in sourceIdToTargetId) {
-    const updated = {
+    const updatedDefinition = {
       ...source[sourceKey]
     }
-    // replace relateTo source by target
-    updated.relateToType = argv.targetType
-    updated.relateToId   = argv.targetId
-    // remove not needed information that GET gave us
-    delete updated.account
-    // update filterIf using mapping
-    updated.filterIf = updated.filterIf ? sourceIdToTargetId[updated.filterIf] : null
+    const sourceVendorId   = getVendor(sourceVendorPaths, updatedDefinition)
 
-    if (Array.isArray(updated.displayIfConditions)) {
+    setVendor(targetVendorPaths, updatedDefinition, sourceVendorId)
+
+    // replace relateTo source by target
+    updatedDefinition.relateToType = argv.targetType
+    updatedDefinition.relateToId   = `${argv.targetId}`
+    // remove not needed information that GET gave us
+    delete updatedDefinition.account
+    // update filterIf using mapping
+    updatedDefinition.filterIf = updatedDefinition.filterIf ? sourceIdToTargetId[updatedDefinition.filterIf] : null
+
+    if (Array.isArray(updatedDefinition.displayIfConditions)) {
       // update displayIfConditions using mapping 
-      updated.displayIfConditions = updated.displayIfConditions.map(
+      updatedDefinition.displayIfConditions = updatedDefinition.displayIfConditions.map(
         condition => {
           const clone = {
             ...condition
@@ -207,12 +269,12 @@ const main = async () => {
         }
       )
     } else {
-      updated.displayIfConditions = []
+      updatedDefinition.displayIfConditions = []
     }
     // finally patch the definition
     const targetKey = sourceIdToTargetId[sourceKey]
     promises.push(
-      patchMetaDataDefinition(targetKey, updated)
+      patchMetaDataDefinition(targetOptions, targetKey, updatedDefinition)
     )
   }
   console.log(`=> Waiting for ${promises.length} query`)
