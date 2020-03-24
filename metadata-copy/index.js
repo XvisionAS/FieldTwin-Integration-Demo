@@ -16,9 +16,9 @@ const argv  = yargs.option('backend', {
 }).option('token', {
   description:'Source API token'
 }).option('target-backend', {
-  description:'Target Backend address https://backend.qa.fieldap.com, default to `target-backend` if not specified'
+  description:'Target Backend address https://backend.qa.fieldap.com, default to `backend` if not specified'
 }).option('target-token', {
-  description:'Target API token, default to `source-token` if not specified'
+  description:'Target API token, default to `token` if not specified'
 }).option('source-type', {
   description:'Source type',
   choices:[`well`, `layer`, `connection`, `asset`, `connector`]
