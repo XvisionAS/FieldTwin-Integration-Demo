@@ -154,7 +154,7 @@ const main = async () => {
     backend:argv.targetBackend, 
     token:argv.targetToken
   }
-  console.log(JSON.stringify(sourceOptions, null, 2))
+
   const sourceAccount = await getAccount(sourceOptions)
   const targetAccount = await getAccount(targetOptions)
 
@@ -169,6 +169,8 @@ const main = async () => {
   const source = await getMetaDataDefinitions(sourceOptions, argv.sourceType, argv.sourceId)
   const target = await getMetaDataDefinitions(targetOptions, argv.targetType, argv.targetId)
 
+  console.log(JSON.stringify(source, null, 2))
+  console.log(JSON.stringify(target, null, 2))
   // first we build a lookup map ( vendorId -> definition id ) for target, this will allow faster traversal
   // for the next step 
   const targetVendorIdToTargetId = {}
@@ -198,7 +200,6 @@ const main = async () => {
   for (const sourceKey in source) {
     const sourceDefinition = source[sourceKey]
     const sourceVendorId   = getVendor(sourceVendorPaths, sourceDefinition)
-
     if (sourceVendorId && sourceDefinition.type) {
       const targetKey = targetVendorIdToTargetId[sourceVendorId] 
       // definitions already exists on target, just store mapping in `map`
@@ -220,6 +221,7 @@ const main = async () => {
         setVendor(targetVendorPaths, clonedDefinition, sourceVendorId)
         // post and fill lookup
         const created = await postMetaDataDefinition(targetOptions, clonedDefinition)
+        console.log(created)
         if (created.id) {
           sourceIdToTargetId[sourceKey] = created.id
         }
@@ -249,7 +251,7 @@ const main = async () => {
     // remove not needed information that GET gave us
     delete updatedDefinition.account
     // update filterIf using mapping
-    updatedDefinition.filterIf = updatedDefinition.filterIf ? sourceIdToTargetId[updatedDefinition.filterIf] : null
+    updatedDefinition.filterIf = updatedDefinition.filterIf ? sourceIdToTargetId[updatedDefinition.filterIf.id || updatedDefinition.filterIf] : null
 
     if (Array.isArray(updatedDefinition.displayIfConditions)) {
       // update displayIfConditions using mapping 
