@@ -163,14 +163,9 @@ const main = async () => {
   const sourceVendorPaths = (sourceAccount.vendorAttributePath || 'vendorId').split('.')
   const targetVendorPaths = (targetAccount.vendorAttributePath || 'vendorId').split('.')
 
-  console.log(sourceVendorPaths)
-  console.log(targetVendorPaths)
-
   const source = await getMetaDataDefinitions(sourceOptions, argv.sourceType, argv.sourceId)
   const target = await getMetaDataDefinitions(targetOptions, argv.targetType, argv.targetId)
 
-  console.log(JSON.stringify(source, null, 2))
-  console.log(JSON.stringify(target, null, 2))
   // first we build a lookup map ( vendorId -> definition id ) for target, this will allow faster traversal
   // for the next step 
   const targetVendorIdToTargetId = {}
