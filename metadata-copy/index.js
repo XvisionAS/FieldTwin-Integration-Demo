@@ -216,7 +216,6 @@ const main = async () => {
         setVendor(targetVendorPaths, clonedDefinition, sourceVendorId)
         // post and fill lookup
         const created = await postMetaDataDefinition(targetOptions, clonedDefinition)
-        console.log(created)
         if (created.id) {
           sourceIdToTargetId[sourceKey] = created.id
         }
