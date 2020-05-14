@@ -165,7 +165,7 @@ const main = async function () {
       if (Array.isArray(collada.textures)) {
         for (let i = 0; i < collada.textures.length; ++i) {
           const texture = collada.textures[i]
-          await writeFile(path.join(fileOutput.path, texture.directory, texture.name), texture.data, 'binary')
+          await writeFile(path.join(fileOutput.path, texture.directory, texture.name, '.', texture.ext), texture.data, 'binary')
         }  
       }
   
