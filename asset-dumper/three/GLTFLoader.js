@@ -1917,20 +1917,6 @@ THREE.GLTFLoader = ( function () {
   
 			})
     }
-		function base64ToBuffer( str ) {
-
-			var b = atob( str );
-			var buf = new Uint8Array( b.length );
-
-			for ( var i = 0, l = buf.length; i < l; i ++ ) {
-
-				buf[ i ] = b.charCodeAt( i );
-
-			}
-
-			return buf;
-
-		}
 
 		return Promise.resolve( sourceURI ).then( async function ( sourceURI ) {
 
