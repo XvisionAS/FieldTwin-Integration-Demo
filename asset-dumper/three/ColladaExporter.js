@@ -81,8 +81,7 @@ THREE.ColladaExporter.prototype = {
 
 		// Convert an image into a png format for saving
 		function base64ToBuffer( str ) {
-
-			var b = atob( str );
+      var b = Buffer.from(a, 'base64').toString('binary').toString();
 			var buf = new Uint8Array( b.length );
 
 			for ( var i = 0, l = buf.length; i < l; i ++ ) {
@@ -334,7 +333,7 @@ THREE.ColladaExporter.prototype = {
 					directory: options.textureDirectory,
 					name,
 					ext,
-					data: imageToData( tex.image, ext ),
+					data: tex.image,
 					original: tex
 				} );
 

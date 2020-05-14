@@ -1,13 +1,22 @@
 const THREE     = require('three')
 const fs        = require('fs');
+const path      = require('path');
 const util      = require('util');
 const mkdirp    = require('mkdirp')
 const fetch     = require('node-fetch')
 const yargs     = require('yargs')
-const path      = require('path')
 
 const writeFile = util.promisify(fs.writeFile);
 const readFile = util.promisify(fs.readFile);
+
+const getFileOutput = function (asset) {
+  const name         = asset.name.replace('/', '_')
+  const assetLibrary = asset.assetLibrary || "generic"
+  return {
+    path:`./export/${assetLibrary}`,
+    name
+  }
+}
 
 require('./three/ColladaExporter')
 require('./three/LegacyJSONLoader')
@@ -29,15 +38,11 @@ const argv  = yargs.option('backend', {
 // global draco decompressor
 ///////////////////////////////////////////////////////////////////////////////
 const DracoLoader = new THREE.DRACOLoader();
-DracoLoader.setDecoderPath( './draco/' );
 
 // bit of a hack, but DracoLoad is only able to load draco library 
 // using HTTP request, so we replace the loading function by ours
-DracoLoader._initDecoder = async function ( url, responseType ) {
-  this.workerSourceURL = './draco/draco_decoder.wasm'
-}
 
-DracoLoader.preload()
+
 ///////////////////////////////////////////////////////////////////////////////
 // retrieve all assets using LegacyAPI
 // https://apidocs.fieldap.com/#api-Assets-GetAssets
@@ -89,18 +94,21 @@ const loadLegacyJSONAsset = async (asset) => {
   return asset
 }
 
-
 ///////////////////////////////////////////////////////////////////////////////
 // Load asset in GLTF, binary blob, probably using Draco Compression
 const loadGLTFAsset = async (asset) => {
   const loader = new THREE.GLTFLoader()
+
   loader.setDRACOLoader( DracoLoader );
   
-  const data   = await fetch(asset.model3dUrl)
-  const buffer = await data.buffer()
+  const data       = await fetch(asset.model3dUrl)
+  const buffer     = await data.buffer()
+  const fileOutput = getFileOutput(asset)
+  const texturePath = path.join(fileOutput.path, fileOutput.name)
+
   const gltf   = await new Promise( 
     (accept, reject) => {
-      loader.parse(buffer, '', accept, reject)
+      loader.parse(buffer, texturePath, accept, reject)
     }
   )
   asset.scene = gltf.scene
@@ -116,6 +124,7 @@ const loadAsset = async (asset) => {
   return loadLegacyJSONAsset(asset)
 }
 
+
 const main = async function () {
 
   const options = {
@@ -130,8 +139,10 @@ const main = async function () {
   for (key in assets) {
     const asset = assets[key]
     if (asset.type !== 'virtual') {
-      promises.push(
-        loadAsset(asset).catch( e => console.log(`[eee] cannot load model for asset ${asset.name}`, e, asset) )
+      console.log (`loading ${asset.name} ${asset.model3dUrl}`)
+      const scene = await loadAsset(asset)
+
+      promises.push(scene
       )  
     }
   }
@@ -141,15 +152,15 @@ const main = async function () {
     if (asset && asset.scene) {
       const exporter     = new THREE.ColladaExporter();
       const collada      = exporter.parse(asset.scene)
-      const name         = asset.name.replace('/', '_')
-      const assetLibrary = asset.assetLibrary || "generic"
+      const fileOutput   = getFileOutput(asset)
 
       try {
-        await mkdirp(`./export/${assetLibrary}`)
+        await mkdirp(fileOutput.path)
       } catch (e) {
     
       }        
-      await writeFile(`./export/${assetLibrary}/${name}.dae`, collada.data)    
+      const fileName = path.join(fileOutput.path, `${fileOutput.name}.dae`)
+      await writeFile(fileName, collada.data)
   
     }
   }
