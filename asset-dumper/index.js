@@ -139,7 +139,7 @@ const main = async function () {
   for (key in assets) {
     const asset = assets[key]
     if (asset.type !== 'virtual') {
-      console.log (`loading ${asset.name} ${asset.model3dUrl}`)
+      console.log (`loading ${asset.name}`)
       const scene = await loadAsset(asset)
 
       promises.push(scene
@@ -159,8 +159,15 @@ const main = async function () {
       } catch (e) {
     
       }        
+      console.log (`exporting ${asset.name}`)
       const fileName = path.join(fileOutput.path, `${fileOutput.name}.dae`)
       await writeFile(fileName, collada.data)
+      if (Array.isArray(collada.textures)) {
+        for (let i = 0; i < collada.textures.length; ++i) {
+          const texture = collada.textures[i]
+          await writeFile(path.join(fileOutput.path, texture.directory, texture.name), texture.data, 'binary')
+        }  
+      }
   
     }
   }
