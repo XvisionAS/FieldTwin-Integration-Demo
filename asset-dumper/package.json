@@ -1,0 +1,17 @@
+{
+  "name": "asset-dumper",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "mkdirp": "~1.0.3",
+    "node-fetch": "~2.6.0",
+    "three": "~0.116.1",
+    "yargs": "~15.3.1"
+  }
+}
