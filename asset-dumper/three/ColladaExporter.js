@@ -316,12 +316,12 @@ THREE.ColladaExporter.prototype = {
 
 				if ( version === '1.5.0' ) {
 
-					imageNode += `<init_from><ref>${ options.textureDirectory }${ name }.${ ext }</ref></init_from>`;
+					imageNode += `<init_from><ref>${ options.textureDirectory }${ name }</ref></init_from>`;
 
 				} else {
 
 					// version image node 1.4.1
-					imageNode += `<init_from>${ options.textureDirectory }${ name }.${ ext }</init_from>`;
+					imageNode += `<init_from>${ options.textureDirectory }${ name }</init_from>`;
 
 				}
 
