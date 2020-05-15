@@ -39,9 +39,6 @@ const argv  = yargs.option('backend', {
 ///////////////////////////////////////////////////////////////////////////////
 const DracoLoader = new THREE.DRACOLoader();
 
-// bit of a hack, but DracoLoad is only able to load draco library 
-// using HTTP request, so we replace the loading function by ours
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // retrieve all assets using LegacyAPI
@@ -141,9 +138,7 @@ const main = async function () {
     if (asset.type !== 'virtual') {
       console.log (`loading ${asset.name}`)
       const scene = await loadAsset(asset)
-
-      promises.push(scene
-      )  
+      promises.push(scene)  
     }
   }
   await Promise.all(promises)
@@ -166,9 +161,8 @@ const main = async function () {
         for (let i = 0; i < collada.textures.length; ++i) {
           const texture = collada.textures[i]
           await writeFile(path.join(fileOutput.path, texture.directory, texture.name), texture.data, 'binary')
-        }  
+        }
       }
-  
     }
   }
 
