@@ -1,6 +1,6 @@
 # create-layout
 
-Two small javascript script:
+Two small javascript scripts:
 
 1. `get-layout.sh` to "read" a subProject.
 
@@ -27,6 +27,6 @@ Two small javascript script:
 
 `env.sh` to fill and source needed env variable
 
-`result-commented.js` contain some small comment on some entries obtained from  a generic subProject and  `./get-layout.sh > result.json`
+`result-commented.js` contains some small comments on some entries obtained from a generic subProject and  `./get-layout.sh > result.json`
 
 demo video at https://youtu.be/n9ULYkZ7fnE
