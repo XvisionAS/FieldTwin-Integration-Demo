@@ -26,6 +26,7 @@ Two small javascript script:
 ```
 
 `env.sh` to fill and source needed env variable
+
 `result-commented.js` contain some small comment on some entries obtained from  a generic subProject and  `./get-layout.sh > result.json`
 
 demo video at https://youtu.be/n9ULYkZ7fnE
