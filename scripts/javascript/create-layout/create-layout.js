@@ -33,6 +33,8 @@ const main = async () => {
     //without the well bores
     payload.kind = payload.kind && payload.kind.id
     const wellBores = payload.wellBores || []
+    delete payload.kind
+    delete payload.subProject
     delete payload.wellBores
     delete payload.activeWellBore
 
@@ -52,6 +54,7 @@ const main = async () => {
       const wellBorePayload = wellBores[i]
       console.log(wellBorePayload.name)
       wellBorePayload.targets = [{x:0, y:0, z:0}, {x:0, y:0, z:0}]
+      delete wellBorePayload.kind
       //  there is a bug her  in legacy fixed in 5.3
       delete wellBorePayload.metaData
       
@@ -83,6 +86,7 @@ const main = async () => {
     }
 
     payload.initialState.lastSelectedWell = payload.well?.id ? mapIds[payload.well?.id] : undefined
+    delete payload.subProject
     delete payload.lastSelectedWell
     delete payload.well
 
@@ -108,10 +112,12 @@ const main = async () => {
     
     const payload = JSON.parse(JSON.stringify(layout.connections[id]))
     console.log(`# creating ${payload.params.label}`) 
+    delete payload.subProject
+    delete payload.metaData
 
     payload.from = mapIds[payload.from.id]
     payload.to = mapIds[payload.to.id]
-    payload.designType = payload.designType != 'None' ? payload.designType : 'Standard'
+    payload.designType = payload.designType || 'None'
     const connection = await axios({
       method: 'post',
       data: payload,
