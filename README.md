@@ -11,6 +11,7 @@
 | 5      | olivier | Added information about project wide access |
 | 6      | olivier | Added information about all project access  |
 | 7      | olivier | Added didUpdate/didCreate/didDelete details |
+| 8      | olivier | Added `tokenRefresh` event description      |
 
 ## Introduction
 
@@ -105,6 +106,7 @@ This example webserver will reply to a *POST* request on `/`, and return HTML th
 By default JWT have an expiration time of one (1) hour after it was created. You can refresh the token by calling this endpoint : `https://backend.[name-of-instance].fieldap.com/token/refresh`.
 You pass the JWT the usual way (using header `Authentification`: `Bearer ${JWT}`) and you receive a JSON object with the new JWT inside the attribute `token`
 
+Since 5.5, a new message is posted by the application to the integration `tokenRefresh` that pass a new refreshed token ( so you do not need to refresh the token ).
 
 ## Generate a JWT using an API token
 
@@ -216,7 +218,7 @@ Definition of the different attributes for types can be found in [API docs](http
 ### loaded
 
 This event is sent when an integration iframe is fully loaded. It contains information about subProject, project and tokens used to communicate with API.
-The result will contain these attributes :
+The argument will contain these attributes :
 
 | Attribute         | Decription                                                    |
 | :---------------- | :------------------------------------------------------------ |
@@ -227,6 +229,21 @@ The result will contain these attributes :
 | token             | is set to the JWT that the integration can use to query data. |
 | trafficManagerJWT | is set to traffic manager JWT if present.                     |
 | backendUrl        | is set to the address of the backend the JWT is refering to.  |
+
+### tokenRefresh
+
+This message is sent whenever the JWT will become stall. It contains a new refreshed JWT that the integration can use to communicate with FielTwin backend.
+
+| Attribute         | Decription                                                    |
+| :---------------- | :------------------------------------------------------------ |
+| event             | is set to `tokenRefresh`                                            |
+| subProject        | is set to subProject id, if a sub project is loaded           |
+| project           | is set to project id, if a project is loaded                  |
+| account           | is set to account id, if a project is loaded                  |
+| token             | is set to the JWT that the integration can use to query data. |
+| trafficManagerJWT | is set to traffic manager JWT if present.                     |
+| backendUrl        | is set to the address of the backend the JWT is refering to.  |
+
 
 ### costQuery
 
