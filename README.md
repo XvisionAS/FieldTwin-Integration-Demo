@@ -2,16 +2,18 @@
 
 ## Revision
 
-| Number | Author  | Description                                 |
-| :----- | :------ | :------------------------------------------ |
-| 1      | olivier | Initial release                             |
-| 2      | olivier | Added `canEdit` and list of user rights     |
-| 3      | olivier | Added custom message                        |
-| 4      | olivier | Added `loaded` event description            |
-| 5      | olivier | Added information about project wide access |
-| 6      | olivier | Added information about all project access  |
-| 7      | olivier | Added didUpdate/didCreate/didDelete details |
-| 8      | olivier | Added `tokenRefresh` event description      |
+| Number | Author  | Description                                                  |
+| :----- | :------ | :----------------------------------------------------------- |
+| 1      | olivier | Initial release                                              |
+| 2      | olivier | Added `canEdit` and list of user rights                      |
+| 3      | olivier | Added custom message                                         |
+| 4      | olivier | Added `loaded` event description                             |
+| 5      | olivier | Added information about project wide access                  |
+| 6      | olivier | Added information about all project access                   |
+| 7      | olivier | Added didUpdate/didCreate/didDelete details                  |
+| 8      | olivier | Added `tokenRefresh` event description                       |
+| 9      | olivier | Added modification to didUpdate message for meta datum value |
+| 10     | olivier | Added `clearSelection` message                               |
 
 ## Introduction
 
@@ -40,15 +42,16 @@ Depending on how the integration was setup, *FieldAP* will create an iFrame that
 This request will contain the following, depending on the HTTP method used:
 
 1. query params `token`, `backendUrl`, `subProject`, `canEdit` and `project` for *GET*
-2. body with attributes `token`, `backendUrl`, `subProject`, `canEdit` and `project` for *POST*
+2. body with attributes `token`, `backendUrl`, `subProject`, `canEdit`, `project`, `frontendUrl` for *POST*
 
 | attribute    | description                                                                                                                                                 |
 | :----------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `token`      | Security token needed for making a FieldAP API call.                                                                                                        |
-| `backEndUrl` | Contains backend url of the project.                                                                                                                        |
+| `backendUrl` | Contains backend url of the project.                                                                                                                        |
 | `project`    | Contains the project ID for the integration it is instanciated from.                                                                                        |
 | `subProject` | Contains the subProject ID for the integration it is instanciated from.                                                                                     |
 | `canEdit`    | Indicated if the user has the rights to edit for the integration. This has to be handled by the integration, as FieldAP does not have a way to control that.|
+| frontendUrl  | href of the window that contains the iframe.                                                                                                                |
 
 `token` is a *JWT* and contain information about the user and user rights. You can parse it with any *JWT* library. The public key to validate this JWT can be found at `https://backend.[name-of-instance].fieldap.com/token/publicKey`.
 
@@ -59,11 +62,10 @@ For example, using `NodeJS + ExpressJS`:
 ```javascript
 
 const express    = require("express")
-const bodyParser = require("body-parser")
 
 const app = express()
 
-app.use(bodyParser.json())
+app.use(express.json())
 
 // POST verb
 app.post("/", function (request, response) {
@@ -236,7 +238,8 @@ This message is sent whenever the JWT will become stall. It contains a new refre
 
 | Attribute         | Decription                                                    |
 | :---------------- | :------------------------------------------------------------ |
-| event             | is set to `tokenRefresh`                                            |
+| event             | is set to `tokenRefresh`                                      |
+| isFrameActive     | true if the frame is currently selected and active in the UI  |
 | subProject        | is set to subProject id, if a sub project is loaded           |
 | project           | is set to project id, if a project is loaded                  |
 | account           | is set to account id, if a project is loaded                  |
@@ -253,6 +256,7 @@ The result will contain these attributes:
 | Attribute       | Decription                                                                                                                                |
 | :-------------- | :---------------------------------------------------------------------------------------------------------------------------------------- |
 | event           | is set to `costQuery`                                                                                                                     |
+| isFrameActive   | true if the frame is currently selected and active in the UI                                                                              |
 | data            | is an object that contains:                                                                                                               |
 | queryId         | is the value that you can pass when calling `getCostQuery`. It allows you to identify a query when posting `getCostQuery` multiple times. |
 | removeEmptyItem | do not include items that have no meta data defined.                                                                                      |
@@ -265,21 +269,24 @@ The result will contain these attributes:
 When one or more assets get selected, a `select` event is sent.
 The result will contain these attributes :
 
-| Attribute    | Description                                        |
-| :----------- | :------------------------------------------------- |
-| event        | is set to  `select`                                |
-| data         | contains an array of selected items                |
-| data.[].type | contains the type of the selected item.            |
-| data.[].id   | unique id of the selected item.                    |
-| data.[].name | display name of selected.                          |
-| id           | ( obsolete ) unique id of the first selected item. |
-| type         | ( obsolete ) type of the first selected item.    |
+| Attribute     | Description                                        |
+| :------------ | :------------------------------------------------- |
+| event         | is set to  `select`                                |
+| isFrameActive | true if the frame is currently selected            |
+| data          | contains an array of selected items                |
+| data.[].type  | contains the type of the selected item.            |
+| data.[].id    | unique id of the selected item.                    |
+| data.[].name  | display name of selected.                          |
+| id            | ( obsolete ) unique id of the first selected item. |
+| type          | ( obsolete ) type of the first selected item.    |
+| cursorPosition | {x,y,z} value of cursor when unselect click happens. values are in project space |
 
 #### For example, for a simple selection
 
 ```javascript
 {
   event: "select",
+  isFrameActive:true,
   data: [
     {
       type: "staged-asset",
@@ -288,7 +295,12 @@ The result will contain these attributes :
     }
   ],
   id: "-LvCAe-JPACMW-F74Ocs",
-  type: "staged-asset"
+  type: "staged-asset",
+  cursorPosition:{
+    x:665000
+    y:400000
+    z:90
+  }
 }
 ```
 
@@ -297,6 +309,7 @@ The result will contain these attributes :
 ```javascript
 {
   event: "select",
+  isFrameActive:true,
   data: [
     {
       type: "staged-asset",
@@ -310,7 +323,12 @@ The result will contain these attributes :
     }
   ],
   id: "-LvCAe-JPACMW-F74Ocs",
-  type: "staged-asset"
+  type: "staged-asset",
+  cursorPosition:{
+    x:665000
+    y:400000
+    z:90
+  }
 }
 ```
 
@@ -319,7 +337,11 @@ The result will contain these attributes :
 Sent when the selection is reset (no more items selected).
 The result will contain this attribute:
 
-* attribute `event` is set to  `unselect`
+| Attribute      | Description                                                                      |
+| :------------  | :------------------------------------------------------------------------------- |
+| event          | is set to  `unselect`                                                            |
+| isFrameActive  | true if the frame is currently selected                                          |
+| cursorPosition | {x,y,z} value of cursor when unselect click happens. values are in project space |
 
 ### projectData
 
@@ -330,6 +352,7 @@ The result will contain these attributes :
 | Attribute                    | Description                                |
 | :--------------------------- | :----------------------------------------- |
 | event                        | is set to `projectData`.                   |
+| isFrameActive                | true if the frame is currently selected    |
 | data                         | contains data about the event.             |
 | data.assets                  | arrays of information about staged asset.  |
 | data.assets.[].name          | name of staged asset.                      |
@@ -356,12 +379,13 @@ Sent when an item was created. Contains the same data as didUpdate, except it do
 
 The result will contain these attributes:
 
-| Attribute | Description                                      |
-| :-------- | :----------------------------------------------- |
-| event     | is set to  `didCreate` or `didCreateFromNetwork` |
-| id        | unique id of the updated item.                   |
-| type      | type of the updated item.                        |
-| data      | contain the raw data of the selected item.       |
+| Attribute     | Description                                      |
+| :------------ | :----------------------------------------------- |
+| event         | is set to  `didCreate` or `didCreateFromNetwork` |
+| isFrameActive | true if the frame is currently selected          |
+| id            | unique id of the updated item.                   |
+| type          | type of the updated item.                        |
+| data          | contain the raw data of the selected item.       |
 
 ### `didUpdate` and `didUpdateFromNetwork`
 
@@ -372,14 +396,15 @@ Sent when an item was modified.
 
 The result will contain these attributes:
 
-| Attribute    | Description                                          |
-| :----------- | :--------------------------------------------------- |
-| event        | is set to  `didUpdate` or `didUpdateFromNetwork`     |
-| id           | unique id of the updated item.                       |
-| type         | type of the updated item.                            |
-| data         | contains the raw data of the selected item.          |
-| previousData | contains the previous raw data of the selected item. |
-| diff         | contains only the attributes that where modified.    |
+| Attribute     | Description                                          |
+| :------------ | :--------------------------------------------------- |
+| event         | is set to  `didUpdate` or `didUpdateFromNetwork`     |
+| isFrameActive | true if the frame is currently selected              |
+| id            | unique id of the updated item.                       |
+| type          | type of the updated item.                            |
+| data          | contains the raw data of the selected item.          |
+| previousData  | contains the previous raw data of the selected item. |
+| diff          | contains only the attributes that where modified.    |
 
 #### Example for an overlay updated through the user's client
 
@@ -388,6 +413,7 @@ The result will contain these attributes:
   event: "didUpdate",
   id: "-LdIy8vwvUsX_A4DC4E3",
   type: "overlay",
+  isFrameActive:true,
   data: {
     tags: [],
     text: "BdN \nSouthern Template",
@@ -427,6 +453,7 @@ The result will contain these attributes:
   "event":"didUpdateFromNetwork",
   "id":"-LvAW4EZXEXALeigTUzZ",
   "type":"metaDatumValue",
+  "isFrameActive":true,
   "data": {
     "type":"string",
     "options": {
@@ -461,14 +488,15 @@ Sent when an item was deleted. Contains the same data as didUpdate. The data fie
 
 The result will contain these attributes:
 
-| Attribute    | Description                                          |
-| :----------- | :--------------------------------------------------- |
-| event        | is set to  `didDelete` or `didDeleteFromNetwork`     |
-| id           | unique id of the updated item.                       |
-| type         | type of the updated item.                            |
-| data         | contains the raw data of the selected item.          |
-| previousData | contains the previous raw data of the selected item. |
-| diff         | contains only the attributes that where modified.    |
+| Attribute     | Description                                          |
+| :------------ | :--------------------------------------------------- |
+| event         | is set to  `didDelete` or `didDeleteFromNetwork`     |
+| isFrameActive | true if the frame is currently selected              |
+| id            | unique id of the updated item.                       |
+| type          | type of the updated item.                            |
+| data          | contains the raw data of the selected item.          |
+| previousData  | contains the previous raw data of the selected item. |
+| diff          | contains only the attributes that where modified.    |
 
 #### Example for deletion of a custom-cost from Network
 
@@ -818,20 +846,32 @@ The result will contain these attributes:
 > A meta datum value is created or modified every time the user edits a meta data in the field. A value is link to a meta data using `metaDatumId`.
 > `event.type` is set to `metaDatumValue`.
 
-| Attribute    | Description                                                                                                                                                     |
-| :----------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| category     | If `type` is asset, and `value` is a valid asset, category of the asset                                                                                        |
-| metaDatumId  | Id of the meta data this value refers to                                                                                                                       |
-| name         | Name of the meta data the value refers to                                                                                                                      |
-| options      | Options of the meta data the value refers to. Depends on `type`. See [Legacy API](https://apidocs.fieldap.com/#api-MetadataDefinitions-AddMetaDataDefinitions) |
-| ownerId      | Id of the element (connection, staged asset, layer, etc.) that holds this value                                                                                 |
-| relateToId   | Which id the meta data refers to                                                                                                                               |
-| relateToType | Which type the meta data refers to                                                                                                                             |
-| subCategory  | If `type` is asset, and `value` is a valid asset, sub category of the asset                                                                                    |
-| subType      | If `type` is asset, and `value` is a valid asset, sub type of the asset                                                                                        |
-| type         | Type of the meta data                                                                                                                                          |
-| value        | Actual value                                                                                                                                                   |
-| valueBis     | Some meta data represents two values, this is the second one                                                                                                   |
+> Since 5.4 value are not directly attached to a definition directly, but to a definition id, so that mulitple definition can be use. 
+> 1. The existing attribute of the message ( subCategory, subType, ownerId, options ) will reflect the first definition
+> 2. All the definition are available inside `definitions` array.
+| Attribute                  | Description                                                                                                                                                    |
+| :------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| options                    | Options of the meta data the value refers to. Depends on `type`. See [Legacy API](https://apidocs.fieldap.com/#api-MetadataDefinitions-AddMetaDataDefinitions) |
+| ownerId                    | Id of the element (connection, staged asset, layer, etc.) that holds this value                                                                                |
+| metaDatumId                | Id of the meta data this value refers to                                                                                                                       |
+| relateToId                 | Which id the meta data refers to                                                                                                                               |
+| relateToType               | Which type the meta data refers to                                                                                                                             |
+| name                       | Name of the meta data the value refers to                                                                                                                      |
+| type                       | Type of the meta data                                                                                                                                          |
+| category                   | If `type` is asset, and `value` is a valid asset, category of the asset                                                                                        |
+| subCategory                | If `type` is asset, and `value` is a valid asset, sub category of the asset                                                                                    |
+| subType                    | If `type` is asset, and `value` is a valid asset, sub type of the asset                                                                                        |
+| value                      | Actual value                                                                                                                                                   |
+| valueBis                   | Some meta data represents two values, this is the second one                                                                                                   |
+| definitionId               | Generic definition id use accross all fieldap instance                                                                                                         |
+| definitions                | Array of one or more definition.                                                                                                                               |
+| definitions.name           | Name of the meta data the value refers to                                                                                                                      |
+| definitions.type           | Type of the meta data                                                                                                                                          |
+| definitions.options        | Options of the meta data the value refers to. Depends on `type`. See [Legacy API](https://apidocs.fieldap.com/#api-MetadataDefinitions-AddMetaDataDefinitions) |
+| definitions.category       | If `type` is asset, and `value` is a valid asset, category of the asset                                                                                        |
+| definitions.subCategory    | If `type` is asset, and `value` is a valid asset, sub category of the asset                                                                                    |
+| definitions.subType        | Type of the meta data                                                                                                                                          |
+| definitions.metaDatumId    |  of the meta data                                                                                                                                              |
 
 ### Overlay
 
@@ -1151,6 +1191,18 @@ Launch a cost computation on a cost server. A cost server needs to be defined fi
 }
 ```
 
+### zoomAt
+
+Focus the view on a given point. Z position will be height sampled, and z value of the point will be added. Which mean that if you set Z at 100, the camera will be position at 100 + height sampled Z.
+
+| Attribute          | Description                                                                              |
+| :----------------- | :--------------------------------------------------------------------------------------- |
+| event              | is set to `zoomAt`.                                                                      |
+| event.data.point.x | X position of the center of the camera lookat                                            |
+| event.data.point.y | Y position of the center of the camera lookat                                            |
+| event.data.point.z | indicate the height distance from the center where the eye of the camera will be         |
+
+
 ### zoomOn
 
 Focus the view on the given item. The function gets these attributes:
@@ -1179,7 +1231,7 @@ Select and focus on one or multiple items.
 
 | Attribute             | Description                                                                            |
 | :-------------------- | :------------------------------------------------------------------------------------ |
-| event                 | is set to `zoomOn`.                                                                   |
+| event                 | is set to `select`.                                                                   |
 | event.data.items      | array of item to select.                                                              |
 | event.data.items.id   | id of the item to select.                                                             |
 | event.data.items.type | type of the item to select (`stagedAsset`, `connection`, `well`, `layer`, `overlay`). |
@@ -1195,6 +1247,22 @@ Select and focus on one or multiple items.
       id:"id_of_the_well"
     }]
   }
+}
+```
+
+### clearSelection
+
+Clear selection
+
+| Attribute             | Description                                                                           |
+| :-------------------- | :------------------------------------------------------------------------------------ |
+| event                 | is set to `clearSelection`.                                                           |
+
+#### Example
+
+```javascript
+{
+  event:"clearSelection"
 }
 ```
 
@@ -1219,4 +1287,3 @@ Result is described in message `costQuery`
 
 For meta data of type "button", user can define a custom message to be sent when the user clicks on the button.
 The message contains the usual information, `event` will be set to the value defined in the meta data.
-
