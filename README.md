@@ -17,7 +17,7 @@
 
 ## Introduction
 
-This document explains how to develop an integration for *FieldAP*. An *integration* is a web page, which is loaded inside the main interface of *FieldAP* through an *iFrame*.
+This document explains how to develop an integration for **FieldTwin**. An *integration* is a web page, which is loaded inside the main interface of *FieldTwin* through an **iFrame**.
 
 There are two kinds of integrations:
 
@@ -28,16 +28,16 @@ There are two kinds of integrations:
 
 > You need to be the administrator of an account to be able to setup a new integration.
 
-Link: [FieldAP Online Documentation](https://docs.fieldap.com/account/#tabs)
+Link: [FieldAP Online Documentation](https://design.fieldtwin.com/account/#tabs)
 
 > By default, and for security reasons, an integration receive a JWT that only gives access to the sub project the user is currently editing. Through the administration panel, you can also:
 
 * Give access to the whole project of the sub project.
 * Give access to all the projects an user have access to across the account.
 
-## How to serve an integration for use in FieldAP
+## How to serve an integration for use in FieldTwin
 
-Depending on how the integration was setup, *FieldAP* will create an iFrame that either generates a *GET* or a *POST* request to the integration URL.
+Depending on how the integration was setup, *FieldTwin* will create an iFrame that either generates a *GET* or a *POST* request to the integration URL.
 
 This request will contain the following, depending on the HTTP method used:
 
@@ -55,7 +55,7 @@ This request will contain the following, depending on the HTTP method used:
 
 `token` is a *JWT* and contain information about the user and user rights. You can parse it with any *JWT* library. The public key to validate this JWT can be found at `https://backend.[name-of-instance].fieldap.com/token/publicKey`.
 
-FieldAP API can be accessed using `https://backend.[name-of-instance].fieldap.com` so for `https://app.fieldap.com` the API access is `https://backend.app.fieldap.com`. Link: [FieldAP API Online Documentation](https://apidocs.fieldap.com).
+FieldAP API can be accessed using `https://backend.[name-of-instance].fieldap.com` so for `https://app.fieldtwin.com` the API access is `https://backend.app.fieldtwin.com`. Link: [FieldTwin API Online Documentation](https://api.fieldtwin.com).
 
 For example, using `NodeJS + ExpressJS`:
 
@@ -101,7 +101,7 @@ app.listen()
 
 > If you do not have access to a nodejs backend, and just want to have a one page integration, you can also list the the message `loaded`.
 
-This example webserver will reply to a *POST* request on `/`, and return HTML that contains the token sent by *FieldAP*.
+This example webserver will reply to a *POST* request on `/`, and return HTML that contains the token sent by *FieldTwin*.
 
 ## Refreshing JWT
 
@@ -183,16 +183,16 @@ Within the JWT passed to the integration, there is an attribute `userRights` tha
 
 Follow this link : [GitHub Repository](https://github.com/XvisionAS/FieldTwin-Integration-Demo)
 
-## Communication from FieldAP to integration
+## Communication from FieldTwin to integration
 
-The main interface of *FieldAP* can send and receive messages from the integration using [postMessage](https://developer.mozilla.org/en-US/docs/Web/API/Window/postMessage).
+The main interface of *FieldTwin* can send and receive messages from the integration using [postMessage](https://developer.mozilla.org/en-US/docs/Web/API/Window/postMessage).
 
 Here's how an integration can receive these messages from *FieldAP* :
 
 ```javascript
     window.addEventListener('message', function(event) {
         // IMPORTANT: Check the origin of the data!
-        if (~event.origin.indexOf('https://backend.app.fieldap.com')) {
+        if (~event.origin.indexOf('https://backend.app.fieldtwin.com')) {
             console.log(JSON.stringify(event.data, null, 2) );
         } else {
             // Not coming from correct origin
@@ -215,7 +215,7 @@ Definition of the different element *type* that can be sent:
 * for the other events you can also in addition have:
   * `metaDatumValue`
 
-Definition of the different attributes for types can be found in [API docs](https://apidocs.fieldap.com)
+Definition of the different attributes for types can be found in [API docs](https://api.fieldtwin.com)
 
 ### loaded
 
@@ -1146,9 +1146,9 @@ The result will contain these attributes:
 | well             | Id of the parent well                                                                                           |
 
 
-## Communication from integration to FieldAP
+## Communication from integration to FieldTwin
 
-While this feature is limited for now, integrations are able to call functions in *FieldAP* using the `postMessage` mechanism.
+While this feature is limited for now, integrations are able to call functions in *FieldTwin* using the `postMessage` mechanism.
 
 To do that, just use `postMessage` from `window.parent` within the integration client.
 
