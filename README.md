@@ -1,4 +1,4 @@
-# Integration in FieldTwin
+# Integrations in FieldTwin
 
 ## Revision
 
@@ -14,21 +14,22 @@
 | 8      | olivier | Added `tokenRefresh` event description                       |
 | 9      | olivier | Added modification to didUpdate message for meta datum value |
 | 10     | olivier | Added `clearSelection` message                               |
+| 11     | olivier | removed trafficManagerJWT                                    |
 
 ## Introduction
 
-This document explains how to develop an integration for **FieldTwin**. An *integration* is a web page, which is loaded inside the main interface of *FieldTwin* through an **iFrame**.
+This document explains how to develop an integration for **FieldTwin**. An *integration* is a web page, which is loaded inside the main interface of **FieldTwin** through an *iFrame*.
 
 There are two kinds of integrations:
 
 1. **global**, these integrations are loaded when the application starts, and are kept alive through the whole life cycle of the application. These can receive a message when a project is created or deleted from the dashboard. 
-2. **local**, integrations are loaded only when a project is opened. They only receive messages that relate to the project that is currently open. These generally have a user interface (UI) which is visible in FieldAp's main interface, but integrations aren't required to have an UI. In this document, integrations without an UI are referred to as *headless*.
+2. **local**, integrations are loaded only when a project is opened. They only receive messages that relate to the project that is currently open. These generally have a user interface (UI) which is visible in FieldTwin Design's main interface, but integrations aren't required to have an UI. In this document, integrations without an UI are referred to as *headless*.
 
 ## Setting up an integration
 
 > You need to be the administrator of an account to be able to setup a new integration.
 
-Link: [FieldAP Online Documentation](https://design.fieldtwin.com/account/#tabs)
+Link: [FieldTwin Online Documentation](https://admin.fieldtwin.com/Integrations/#tabs)
 
 > By default, and for security reasons, an integration receive a JWT that only gives access to the sub project the user is currently editing. Through the administration panel, you can also:
 
@@ -37,25 +38,25 @@ Link: [FieldAP Online Documentation](https://design.fieldtwin.com/account/#tabs)
 
 ## How to serve an integration for use in FieldTwin
 
-Depending on how the integration was setup, *FieldTwin* will create an iFrame that either generates a *GET* or a *POST* request to the integration URL.
+Depending on how the integration was setup, **FieldTwin** will create an iFrame that either generates a *GET* or a *POST* request to the integration URL.
 
 This request will contain the following, depending on the HTTP method used:
 
 1. query params `token`, `backendUrl`, `subProject`, `canEdit` and `project` for *GET*
 2. body with attributes `token`, `backendUrl`, `subProject`, `canEdit`, `project`, `frontendUrl` for *POST*
 
-| attribute    | description                                                                                                                                                 |
-| :----------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `token`      | Security token needed for making a FieldAP API call.                                                                                                        |
-| `backendUrl` | Contains backend url of the project.                                                                                                                        |
-| `project`    | Contains the project ID for the integration it is instanciated from.                                                                                        |
-| `subProject` | Contains the subProject ID for the integration it is instanciated from.                                                                                     |
-| `canEdit`    | Indicated if the user has the rights to edit for the integration. This has to be handled by the integration, as FieldAP does not have a way to control that.|
-| frontendUrl  | href of the window that contains the iframe.                                                                                                                |
+| attribute     | description                                                                                                                                               |
+| :------------ | :-------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `token`       | Security token needed for making a FieldTwin API call.                                                                                                    |
+| `backendUrl`  | Contains backend url of the project.                                                                                                                      |
+| `project`     | Contains the project ID for the integration it is instanciated from.                                                                                      |
+| `subProject`  | Contains the subProject ID for the integration it is instanciated from.                                                                                   |
+| `canEdit`     | Indicates if the user has rights to edit for the integration. This has to be handled by the integration itself, as FieldTwin does not have control of it. |
+| `frontendUrl` | href of the window that contains the iframe.                                                                                                              |
 
-`token` is a *JWT* and contain information about the user and user rights. You can parse it with any *JWT* library. The public key to validate this JWT can be found at `https://backend.[name-of-instance].fieldap.com/token/publicKey`.
+`token` is a *JWT* and contain information about the user and user rights. You can parse it with any *JWT* library. The public key to validate this JWT can be found at `https://backend.[name-of-instance].fieldtwin.com/token/publicKey`.
 
-FieldAP API can be accessed using `https://backend.[name-of-instance].fieldap.com` so for `https://app.fieldtwin.com` the API access is `https://backend.app.fieldtwin.com`. Link: [FieldTwin API Online Documentation](https://api.fieldtwin.com).
+The FieldTwin API can be accessed using `https://backend.[name-of-instance].fieldtwin.com` so for `https://app.fieldtwin.com` the API access is `https://backend.app.fieldtwin.com`. Link: [FieldTwin API Online Documentation](https://api.fieldtwin.com).
 
 For example, using `NodeJS + ExpressJS`:
 
@@ -101,18 +102,18 @@ app.listen()
 
 > If you do not have access to a nodejs backend, and just want to have a one page integration, you can also list the the message `loaded`.
 
-This example webserver will reply to a *POST* request on `/`, and return HTML that contains the token sent by *FieldTwin*.
+This example webserver will reply to a *POST* request on `/`, and return HTML that contains the token sent by **FieldTwin**.
 
 ## Refreshing JWT
 
-By default JWT have an expiration time of one (1) hour after it was created. You can refresh the token by calling this endpoint : `https://backend.[name-of-instance].fieldap.com/token/refresh`.
+By default JWT have an expiration time of one (1) hour after it was created. You can refresh the token by calling this endpoint : `https://backend.[name-of-instance].fieldtwin.com/token/refresh`.
 You pass the JWT the usual way (using header `Authentification`: `Bearer ${JWT}`) and you receive a JSON object with the new JWT inside the attribute `token`
 
-Since 5.5, a new message is posted by the application to the integration `tokenRefresh` that pass a new refreshed token ( so you do not need to refresh the token ).
+Since 5.5, a new message is posted by the application to the integration `tokenRefresh` that passes a new refreshed token ( so if you handle this message you do not need to refresh the token ).
 
 ## Generate a JWT using an API token
 
-It is possible to generate a JWT using an API token. For that you need start a **POST** request use this endpoint : `https://backend.[name-of-instance].fieldap.com/token/generate`.
+It is possible to generate a JWT using an API token. For that you need to send a **POST** request to this endpoint : `https://backend.[name-of-instance].fieldtwin.com/token/generate`.
 You pass the API token the usual way (using header `token`:`[API Token]`).
 The body of the request must contain:
 
@@ -185,9 +186,9 @@ Follow this link : [GitHub Repository](https://github.com/XvisionAS/FieldTwin-In
 
 ## Communication from FieldTwin to integration
 
-The main interface of *FieldTwin* can send and receive messages from the integration using [postMessage](https://developer.mozilla.org/en-US/docs/Web/API/Window/postMessage).
+The main interface of **FieldTwin** can send and receive messages from the integration using [postMessage](https://developer.mozilla.org/en-US/docs/Web/API/Window/postMessage).
 
-Here's how an integration can receive these messages from *FieldAP* :
+Here's how an integration can receive these messages from **FieldTwin** :
 
 ```javascript
     window.addEventListener('message', function(event) {
@@ -229,7 +230,6 @@ The argument will contain these attributes :
 | project           | is set to project id, if a project is loaded                  |
 | account           | is set to account id, if a project is loaded                  |
 | token             | is set to the JWT that the integration can use to query data. |
-| trafficManagerJWT | is set to traffic manager JWT if present.                     |
 | backendUrl        | is set to the address of the backend the JWT is refering to.  |
 
 ### tokenRefresh
@@ -244,7 +244,6 @@ This message is sent whenever the JWT will become stall. It contains a new refre
 | project           | is set to project id, if a project is loaded                  |
 | account           | is set to account id, if a project is loaded                  |
 | token             | is set to the JWT that the integration can use to query data. |
-| trafficManagerJWT | is set to traffic manager JWT if present.                     |
 | backendUrl        | is set to the address of the backend the JWT is refering to.  |
 
 
@@ -849,29 +848,30 @@ The result will contain these attributes:
 > Since 5.4 value are not directly attached to a definition directly, but to a definition id, so that mulitple definition can be use. 
 > 1. The existing attribute of the message ( subCategory, subType, ownerId, options ) will reflect the first definition
 > 2. All the definition are available inside `definitions` array.
-| Attribute                  | Description                                                                                                                                                    |
-| :------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| options                    | Options of the meta data the value refers to. Depends on `type`. See [Legacy API](https://apidocs.fieldap.com/#api-MetadataDefinitions-AddMetaDataDefinitions) |
-| ownerId                    | Id of the element (connection, staged asset, layer, etc.) that holds this value                                                                                |
-| metaDatumId                | Id of the meta data this value refers to                                                                                                                       |
-| relateToId                 | Which id the meta data refers to                                                                                                                               |
-| relateToType               | Which type the meta data refers to                                                                                                                             |
-| name                       | Name of the meta data the value refers to                                                                                                                      |
-| type                       | Type of the meta data                                                                                                                                          |
-| category                   | If `type` is asset, and `value` is a valid asset, category of the asset                                                                                        |
-| subCategory                | If `type` is asset, and `value` is a valid asset, sub category of the asset                                                                                    |
-| subType                    | If `type` is asset, and `value` is a valid asset, sub type of the asset                                                                                        |
-| value                      | Actual value                                                                                                                                                   |
-| valueBis                   | Some meta data represents two values, this is the second one                                                                                                   |
-| definitionId               | Generic definition id use accross all fieldap instance                                                                                                         |
-| definitions                | Array of one or more definition.                                                                                                                               |
-| definitions.name           | Name of the meta data the value refers to                                                                                                                      |
-| definitions.type           | Type of the meta data                                                                                                                                          |
-| definitions.options        | Options of the meta data the value refers to. Depends on `type`. See [Legacy API](https://apidocs.fieldap.com/#api-MetadataDefinitions-AddMetaDataDefinitions) |
-| definitions.category       | If `type` is asset, and `value` is a valid asset, category of the asset                                                                                        |
-| definitions.subCategory    | If `type` is asset, and `value` is a valid asset, sub category of the asset                                                                                    |
-| definitions.subType        | Type of the meta data                                                                                                                                          |
-| definitions.metaDatumId    |  of the meta data                                                                                                                                              |
+
+| Attribute                  | Description                                                                                                                                                     |
+| :------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| options                    | Options of the meta data the value refers to. Depends on `type`. See [FieldTwin API](https://api.fieldtwin.com/#api-MetadataDefinitions-AddMetaDataDefinitions) |
+| ownerId                    | Id of the element (connection, staged asset, layer, etc.) that holds this value                                                                                 |
+| metaDatumId                | Id of the meta data this value refers to                                                                                                                        |
+| relateToId                 | Which id the meta data refers to                                                                                                                                |
+| relateToType               | Which type the meta data refers to                                                                                                                              |
+| name                       | Name of the meta data the value refers to                                                                                                                       |
+| type                       | Type of the meta data                                                                                                                                           |
+| category                   | If `type` is asset, and `value` is a valid asset, category of the asset                                                                                         |
+| subCategory                | If `type` is asset, and `value` is a valid asset, sub category of the asset                                                                                     |
+| subType                    | If `type` is asset, and `value` is a valid asset, sub type of the asset                                                                                         |
+| value                      | Actual value                                                                                                                                                    |
+| valueBis                   | Some meta data represents two values, this is the second one                                                                                                    |
+| definitionId               | Generic definition id to use across all FieldTwin instances                                                                                                     |
+| definitions                | Array of one or more definition.                                                                                                                                |
+| definitions.name           | Name of the meta data the value refers to                                                                                                                       |
+| definitions.type           | Type of the meta data                                                                                                                                           |
+| definitions.options        | Options of the meta data the value refers to. Depends on `type`. See [FieldTwin API](https://api.fieldtwin.com/#api-MetadataDefinitions-AddMetaDataDefinitions) |
+| definitions.category       | If `type` is asset, and `value` is a valid asset, category of the asset                                                                                         |
+| definitions.subCategory    | If `type` is asset, and `value` is a valid asset, sub category of the asset                                                                                     |
+| definitions.subType        | Type of the meta data                                                                                                                                           |
+| definitions.metaDatumId    |  of the meta data                                                                                                                                               |
 
 ### Overlay
 
@@ -1148,7 +1148,7 @@ The result will contain these attributes:
 
 ## Communication from integration to FieldTwin
 
-While this feature is limited for now, integrations are able to call functions in *FieldTwin* using the `postMessage` mechanism.
+While this feature is limited for now, integrations are able to call functions in **FieldTwin** using the `postMessage` mechanism.
 
 To do that, just use `postMessage` from `window.parent` within the integration client.
 
