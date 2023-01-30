@@ -84,7 +84,7 @@
         if (response.ok) {
           response.json().then(results => {
             // The result arrives some time later, so check the same object is still selected
-            if (selected && selected.objectId === objectId) {
+            if (selected && selected.id === objectId) {
               setResults(results)
             }
           })
