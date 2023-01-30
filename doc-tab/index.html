@@ -14,53 +14,113 @@
   </style>
 
   <script>
+    const $ = document.getElementById
+
+    // !! Change this if your FieldTwin domain is not fieldtwin.com !!
+    const domain = '.fieldtwin.com'
+
     let token
-    let backendURL
+    let backendUrl
+    let projectId
+    let subProjectId
     let selected
 
+    // Subscribe to window messages
     window.addEventListener('message', function(event) {
-      if (event.origin.includes('.fieldtwin.com')) {
-        console.log(JSON.stringify(event.data))
+      if (event.origin.endsWith(domain)) {
+
+        // Check whether this tab is the active (visible) tab
+        const activeTab = event.data.isFrameActive
+
+        // Respond to the message
+        switch(event.data.event) {
+          case 'loaded':
+          case 'tokenRefresh':
+            backendUrl = event.data.backendUrl
+            token = event.data.token
+            projectId = event.data.project
+            subProjectId = event.data.subProject
+            break
+          case 'select':
+            selected = {
+              id:   event.data[0].id,
+              name: event.data[0].name,
+              type: event.data[0].type
+            }
+            if (token && activeTab) {
+              searchForDocuments(backendUrl, projectId, subProjectId, selected.type, selected.id, token)
+            }
+            break
+          case 'unselect':
+            selected = null
+            setIdle()
+            break
+        }
       }
     })
 
-      //     const metaData = this.response.metaData
-      //     const docData = metaData.find(data => data.vendorId === "_doc")
-      //     document.getElementById("doc-tab-header").innerHTML = `${data.type} with id ${data.id}`
-      //     if (docData && docData.value) {
-
-      //       document.getElementById("doc-tab-url").innerHTML = `: <a target="_blank" href=${JSON.stringify(docData.value)}>${JSON.stringify(docData.value).replace(/"/g, '')}</a>`
-      //         document.getElementById("doc-tab-content").innerHTML =`<iframe style="width:100%; height:100vh" src=${JSON.stringify(docData.value)}></iframe>`
-      //     } else {
-      //         document.getElementById("doc-tab-url").innerHTML = `: No documentation for this ${data.type}`
-      //         document.getElementById("doc-tab-content").innerHTML =`<p> Make sure that the selected ${data.type} have a string metadata with the vendor id set to <code>_doc</code>`
-      //     }
-      // } else {
-      //     document.getElementById("doc-tab-url").innerHTML = "error message"
-      //     document.getElementById("doc-tab-content").innerHTML =""
-      // }
-
     // This could live on the server side if you prefer,
     // or if you want to call the API with a different programming language
-    function searchForDocuments() {
+    function searchForDocuments(backendUrl, projectId, subProjectId, objectType, objectId, token) {
 
+      setSearching(selected.type, selected.id)
+
+      const requestParams = {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+          Authorization: `Bearer ${token}`
+        }
+      }
+      const url = (
+        `${backendUrl}/API/v1.9/${projectId}/subProject/${subProjectId}/documents` +
+        `?relateToType=${objectType + 's'}&relateToId=${objectId}`
+      )
+
+      // Call the FieldTwin API
+      fetch(url, requestParams).then(response => {
+        if (response.ok) {
+          res.json().then(results => {
+            // The result arrives some time later, so check the same object is still selected
+            if (selected && selected.objectId === objectId) {
+              setResults(results)
+            }
+          })
+        } else {
+          res.text().then(text => {
+            throw new Error(`API responded with status ${response.status}: ${text}`)
+          })
+        }
+      }).catch(e => setError(e))
     }
 
-    function changeData(data) {
-      if (data.event === "select") {
-          loadDoc(data)
+    function setIdle() {
+      $('info').innerHTML= 'Select an object...'
+      $('results').innerHTML = ''
+    }
 
-      } else if (data.event === "unselect") {
-            document.getElementById("doc-tab-header").innerHTML= ""
-            document.getElementById("doc-tab-url").innerHTML = ""
-            document.getElementById("doc-tab-content").innerHTML =""
+    function setSearching(objectType, objectId) {
+      $('info').innerHTML = `Selected: ${objectType} ${objectId}`
+      $('results').innerHTML = 'Searching, please wait...'
+    }
+
+    function setResults(results) {
+      let html = ''
+      for (const doc of results) {
+        const latestRevision = doc.revisions[0]
+        html += `<a href="${latestRevision.url}" target="doc-view">${doc.fileName}</a><br>\n`
       }
+      $('results').innerHTML = html
+    }
+
+    function setError(error) {
+      $('results').innerHTML = `Error searching: ${e}`
     }
 </script>
 </head>
 <body>
   <h2>Doc tab sample integration</h2>
-  <h4><span id="doc-tab-header"></span><span id="doc-tab-url"></span></h4>
-  <div id="doc-tab-content"></div>
+  <p id="info"></p>
+  <p id="results"></p>
 </body>
 </html>
