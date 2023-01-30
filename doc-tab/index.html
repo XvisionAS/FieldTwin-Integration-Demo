@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Integration</title>
+  <style>
+    body {
+      background-color: #FFFFFF;
+      font-family: Arial, Helvetica, sans-serif;
+      color: #333333;
+    }
+  </style>
+
+  <script>
+    let token
+    let backendURL
+    let selected
+
+    window.addEventListener('message', function(event) {
+      if (event.origin.includes('.fieldtwin.com')) {
+        console.log(JSON.stringify(event.data))
+      }
+    })
+
+      //     const metaData = this.response.metaData
+      //     const docData = metaData.find(data => data.vendorId === "_doc")
+      //     document.getElementById("doc-tab-header").innerHTML = `${data.type} with id ${data.id}`
+      //     if (docData && docData.value) {
+
+      //       document.getElementById("doc-tab-url").innerHTML = `: <a target="_blank" href=${JSON.stringify(docData.value)}>${JSON.stringify(docData.value).replace(/"/g, '')}</a>`
+      //         document.getElementById("doc-tab-content").innerHTML =`<iframe style="width:100%; height:100vh" src=${JSON.stringify(docData.value)}></iframe>`
+      //     } else {
+      //         document.getElementById("doc-tab-url").innerHTML = `: No documentation for this ${data.type}`
+      //         document.getElementById("doc-tab-content").innerHTML =`<p> Make sure that the selected ${data.type} have a string metadata with the vendor id set to <code>_doc</code>`
+      //     }
+      // } else {
+      //     document.getElementById("doc-tab-url").innerHTML = "error message"
+      //     document.getElementById("doc-tab-content").innerHTML =""
+      // }
+
+    // This could live on the server side if you prefer,
+    // or if you want to call the API with a different programming language
+    function searchForDocuments() {
+
+    }
+
+    function changeData(data) {
+      if (data.event === "select") {
+          loadDoc(data)
+
+      } else if (data.event === "unselect") {
+            document.getElementById("doc-tab-header").innerHTML= ""
+            document.getElementById("doc-tab-url").innerHTML = ""
+            document.getElementById("doc-tab-content").innerHTML =""
+      }
+    }
+</script>
+</head>
+<body>
+  <h2>Doc tab sample integration</h2>
+  <h4><span id="doc-tab-header"></span><span id="doc-tab-url"></span></h4>
+  <div id="doc-tab-content"></div>
+</body>
+</html>
