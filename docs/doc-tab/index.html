@@ -82,14 +82,14 @@
       // Call the FieldTwin API
       fetch(url, requestParams).then(response => {
         if (response.ok) {
-          res.json().then(results => {
+          response.json().then(results => {
             // The result arrives some time later, so check the same object is still selected
             if (selected && selected.objectId === objectId) {
               setResults(results)
             }
           })
         } else {
-          res.text().then(text => {
+          response.text().then(text => {
             throw new Error(`API responded with status ${response.status}: ${text}`)
           })
         }
@@ -111,6 +111,9 @@
       for (const doc of results) {
         const latestRevision = doc.revisions[0]
         html += `<a href="${latestRevision.url}" target="doc-view">${doc.fileName}</a><br>\n`
+      }
+      if (!results.length) {
+        html = 'No documents found'
       }
       $('results').innerHTML = html
     }
