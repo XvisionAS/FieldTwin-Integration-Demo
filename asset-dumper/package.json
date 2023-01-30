@@ -1,13 +1,16 @@
 {
   "name": "asset-dumper",
   "version": "1.0.0",
-  "description": "",
+  "description": "FieldTwin asset-dumper code sample",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
   "dependencies": {
     "draco3d": "^1.3.6",
     "mkdirp": "~1.0.3",
