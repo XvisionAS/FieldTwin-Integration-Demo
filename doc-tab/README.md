@@ -36,3 +36,7 @@ of uploaded documents.
 
 To upload a document for an object, select it, go to the _Properties_ tab, then the
 _Documents_ child tab.
+
+![Object with no documents uploaded](./screenshot-0.png)
+
+![Object with one document uploaded](./screenshot-1.png)
