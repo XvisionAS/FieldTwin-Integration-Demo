@@ -14,7 +14,7 @@
   </style>
 
   <script>
-    const $ = document.getElementById
+    const $ = document.getElementById.bind(document)
 
     // !! Change this if your FieldTwin domain is not fieldtwin.com !!
     const domain = '.fieldtwin.com'
@@ -32,7 +32,7 @@
         // Check whether this tab is the active (visible) tab
         const activeTab = event.data.isFrameActive
 
-        // Respond to the message
+        // Handle the message
         switch(event.data.event) {
           case 'loaded':
           case 'tokenRefresh':
@@ -42,13 +42,15 @@
             subProjectId = event.data.subProject
             break
           case 'select':
-            selected = {
-              id:   event.data[0].id,
-              name: event.data[0].name,
-              type: event.data[0].type
-            }
-            if (token && activeTab) {
-              searchForDocuments(backendUrl, projectId, subProjectId, selected.type, selected.id, token)
+            if (event.data.data.length) {
+              selected = {
+                id:   event.data.data[0].id,
+                name: event.data.data[0].name,
+                type: event.data.data[0].type
+              }
+              if (token && activeTab) {
+                searchForDocuments(backendUrl, projectId, subProjectId, selected.type, selected.id, token)
+              }
             }
             break
           case 'unselect':
@@ -59,7 +61,7 @@
       }
     })
 
-    // This could live on the server side if you prefer,
+    // This search could live on the server side if you prefer,
     // or if you want to call the API with a different programming language
     function searchForDocuments(backendUrl, projectId, subProjectId, objectType, objectId, token) {
 
