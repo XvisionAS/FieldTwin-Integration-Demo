@@ -7,7 +7,6 @@ const fetch     = require('node-fetch')
 const yargs     = require('yargs')
 
 const writeFile = util.promisify(fs.writeFile);
-const readFile = util.promisify(fs.readFile);
 
 const getFileOutput = function (asset) {
   const name         = asset.name.replace('/', '_')
@@ -23,9 +22,8 @@ require('./three/LegacyJSONLoader')
 require('./three/DRACOLoader')
 require('./three/GLTFLoader')
 
-
 const argv  = yargs.option('backend', {
-  description:'Source Backend address https://backend.qa.fieldap.com'
+  description:'Source backend address, e.g. https://backend.qa.fieldtwin.com'
 }).option('token', {
   description:'Source API token'
 }).demandOption(
@@ -34,19 +32,20 @@ const argv  = yargs.option('backend', {
   'token'
 ).argv
 
+
 ///////////////////////////////////////////////////////////////////////////////
 // global draco decompressor
 ///////////////////////////////////////////////////////////////////////////////
-const DracoLoader = new THREE.DRACOLoader();
+const DracoLoader = new THREE.DRACOLoader()
 
 
 ///////////////////////////////////////////////////////////////////////////////
-// retrieve all assets using LegacyAPI
-// https://apidocs.fieldap.com/#api-Assets-GetAssets
+// retrieve all asset definitions using LegacyAPI
+// https://api.fieldtwin.com/#api-Assets-GetAssets
 const getAssets = async (options) => {
   const { backend, token } = options
-  const url = new URL('/API/v1.4/assets', backend)
-    
+  const url = new URL('/API/v1.9/assets', backend)
+
   const data = await fetch(url.href, {
     headers:{
       token:token
@@ -95,15 +94,14 @@ const loadLegacyJSONAsset = async (asset) => {
 // Load asset in GLTF, binary blob, probably using Draco Compression
 const loadGLTFAsset = async (asset) => {
   const loader = new THREE.GLTFLoader()
+  loader.setDRACOLoader(DracoLoader)
 
-  loader.setDRACOLoader( DracoLoader );
-  
-  const data       = await fetch(asset.model3dUrl)
-  const buffer     = await data.buffer()
-  const fileOutput = getFileOutput(asset)
+  const data        = await fetch(asset.model3dUrl)
+  const buffer      = await data.buffer()
+  const fileOutput  = getFileOutput(asset)
   const texturePath = path.join(fileOutput.path, fileOutput.name)
 
-  const gltf   = await new Promise( 
+  const gltf = await new Promise( 
     (accept, reject) => {
       loader.parse(buffer, texturePath, accept, reject)
     }
@@ -128,17 +126,16 @@ const main = async function () {
     backend:argv.backend, 
     token:argv.token
   }
-  
+
   const assets    = await getAssets(options) 
   const promises  = []
-
 
   for (key in assets) {
     const asset = assets[key]
     if (asset.type !== 'virtual') {
       console.log (`loading ${asset.name}`)
       const scene = await loadAsset(asset)
-      promises.push(scene)  
+      promises.push(scene)
     }
   }
   await Promise.all(promises)
@@ -152,8 +149,9 @@ const main = async function () {
       try {
         await mkdirp(fileOutput.path)
       } catch (e) {
-    
-      }        
+        console.error(`failed to create export directory: ${e}`)
+        continue
+      }
       console.log (`exporting ${asset.name}`)
       const fileName = path.join(fileOutput.path, `${fileOutput.name}.dae`)
       await writeFile(fileName, collada.data)
