@@ -33,7 +33,7 @@ node index.js --backend https://backend.example.fieldtwin.com --token abc123
 - `--backend [value]` URL of which backend the definitions will be pulled from,
   for example `https://backend.qa.fieldtwin.com`
 - `--token [value]` API token used to authenticate with the API.
-  Can be created by an administrator in FT Admin from the Account Settings / API tab.
+  This can be created by an administrator in FieldTwin Admin from the Account Settings / API section.
 
 ### Output
 
