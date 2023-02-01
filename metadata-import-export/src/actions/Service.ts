@@ -62,11 +62,13 @@ class Service {
   }
   
   uploadMetaData(selectedObject: any, sheet: any) {
-    console.log(selectedObject, sheet)
+    console.log(selectedObject)
+    console.log(sheet)
   }
 
   downloadMetaData(selectedObject: any, sheet: any) {
-    console.log(selectedObject, sheet)
+    console.log(selectedObject)
+    console.log(sheet)
   }
 
   getMetaData(selectedObject: any) {
