@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
 	import { page } from '$app/stores'
 
-	import { Alert, Card, CardBody, Container, Progress, Collapse, Button } from 'sveltestrap';
+	import { Alert, Card, CardBody, Container, Progress, Input, Button } from 'sveltestrap';
   import 'bootstrap/dist/css/bootstrap.min.css';
 
   import Service from '../actions/Service';
@@ -88,6 +88,11 @@
       {:else}
       <Card>
         <CardBody>
+          <Input
+          type="file"
+          name="sheet"
+          bind:sheet
+          />
           <Button color="primary" class="select-button" on:click={uploadMetaData}>uploadMetaData(object, sheet)</Button>
         </CardBody>
       </Card>
