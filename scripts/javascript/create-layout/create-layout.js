@@ -124,12 +124,20 @@ const main = async () => {
     delete payload.clonedFroms
     delete payload.importParams
     delete payload.length
+    delete payload.connectionType // taken from params.id
+    delete payload.definition     // taken from params.id
+    delete payload.designName     // taken from designType
     payload.designType ||= 'None'
+
     payload.from = mapIds[payload.from.id]
     payload.to = mapIds[payload.to.id]
+
     if (!RESTORE_METADATA) {
       delete payload.metaData
     }
+
+    // TODO FIXME API v1.9 validation needs updating for connection creation
+    connectionFilter(payload)
 
     const connection = await axios({
       method: 'post',
@@ -138,6 +146,24 @@ const main = async () => {
       headers: {token: TOKEN}
     })
     mapIds[id] = connection.data.id
+  }
+}
+
+// TODO FIXME API v1.9 this can be deleted after connection validation has been updated
+const connectionFilter = (conn) => {
+  const remove = [
+    'bendable', 'bendParams', 'shapes', 'visible', 'isValidForCost', 'tags',
+    'noHeightSampling', 'isInactive', 'opacity', 'renderAs', 'fromSocketLabel',
+    'toSocketLabel'
+  ]
+  remove.forEach(attr => delete conn[attr])
+  if (conn.costObject) { delete conn.costObject.costPerDay }
+  if (conn.params) {
+    const typeId = conn.params.id
+    for (const attr in conn.params) {
+      delete conn.params[attr]
+    }
+    conn.params.id = typeId
   }
 }
 
