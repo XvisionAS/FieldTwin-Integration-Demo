@@ -5,8 +5,7 @@
 */tmp
 
 # dependencies
-*/node_modules
-*/bower_components
+**/node_modules
 
 # misc
 /.sass-cache
@@ -26,5 +25,4 @@ env.*.bat
 !/public/**
 /.project
 
-/public/**/.DS_Store
-package-lock.json
+**/.DS_Store
