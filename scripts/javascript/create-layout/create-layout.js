@@ -1,46 +1,49 @@
-const axios  = require('axios')
-const parseArgs =require('minimist')
+const axios     = require('axios')
+const parseArgs = require('minimist')
 
+const TOKEN           = process.env.TOKEN
+const PORT            = process.env.PORT || ''
+const LEGACY_API_HOST = process.env.LEGACY_API_HOST
+const HOST_URL        = LEGACY_API_HOST ? `https://${LEGACY_API_HOST}${PORT}` : "http://legacyapi.lvh.me:3002"
+const API_VERSION     = 'v1.9'
 
-const PORT = process.env.PORT
-const LEGACY_API_HOST =  process.env.LEGACY_API_HOST 
-const HOST_URL  = LEGACY_API_HOST ? `https://${LEGACY_API_HOST}${PORT ? `:${PORT}` : ''}` : "http://legacyapi.lvh.me:3002"
-const API_VERSION = 'v1.7'
+const argv            = parseArgs(process.argv.slice(2))
+const PROJECT_ID      = argv['project']
+const SUB_PROJECT_ID  = argv['sub-project']
 
-const TOKEN = process.env.TOKEN
-const argv = parseArgs(process.argv.slice(2))
-const PROJECT_ID = argv.project
-const SUB_PROJECT_ID= argv['sub-project']
+// This requires the create-layout project to be in the same account as the get-layout project
+// (otherwise the metadata definition IDs may not match)
+const RESTORE_METADATA = false
 
 const main = async () => {
+  const fs = require("fs")
+
   console.log('#### Creating Layout')
   console.log(`## Project ${PROJECT_ID}`)
-  console.log(`## sub Project ${SUB_PROJECT_ID}`)
-  const fs = require("fs");
+  console.log(`## Sub Project ${SUB_PROJECT_ID}`)
   console.log('## Reading Data')
-  const stdinBuffer = fs.readFileSync(0); // STDIN_FILENO = 0
+  const stdinBuffer = fs.readFileSync(0) // STDIN_FILENO = 0
   const layout = JSON.parse(stdinBuffer.toString())
 
   const mapIds = {}
 
   const wellsIds = Object.keys(layout.wells || {})
 
-  //we create the wells.
   console.log('## creating wells')
   for (let id of wellsIds) {
     const payload = JSON.parse(JSON.stringify(layout.wells[id]))
     console.log(`# well head: ${payload.name}`)
-    //without the well bores
+    // create well without the well bores
     payload.kind = payload.kind && payload.kind.id
     const wellBores = payload.wellBores || []
     delete payload.kind
     delete payload.subProject
     delete payload.wellBores
     delete payload.activeWellBore
+    if (!RESTORE_METADATA) {
+      delete payload.metaData
+    }
 
-    // that's due to a bug in legacyapi fixed in 5.3
-    delete payload.metaData
-    
     const well = await axios({
       method: 'post',
       data: payload,
@@ -49,15 +52,16 @@ const main = async () => {
     })
     const newWelId = well.data.id
     mapIds[id] = newWelId
-    console.log(`# well Bore for ${payload.name}`)
+    console.log(`# well bore for ${payload.name}`)
     for (let i = 0; i < wellBores.length; i++) {
       const wellBorePayload = wellBores[i]
       console.log(wellBorePayload.name)
       wellBorePayload.targets = [{x:0, y:0, z:0}, {x:0, y:0, z:0}]
       delete wellBorePayload.kind
-      //  there is a bug her  in legacy fixed in 5.3
-      delete wellBorePayload.metaData
-      
+      if (!RESTORE_METADATA) {
+        delete payload.metaData
+      }
+
       const wellBore = await axios({
         method: 'post',
         data: wellBorePayload,
@@ -65,14 +69,11 @@ const main = async () => {
         headers: {token: TOKEN}
       })
     }
-
   }
 
   const stagedAssetsIds = Object.keys(layout.stagedAssets || {})
 
-  //we create first the staged Assets.
   console.log('## creating staged assets')
-
   for (let id of stagedAssetsIds) {
 
     const payload = JSON.parse(JSON.stringify(layout.stagedAssets[id]))
@@ -81,7 +82,6 @@ const main = async () => {
     payload.asset = payload.asset.id
 
     if (payload.asset.type !== 'submerged') {
-
       payload.initialState.z = undefined
     }
 
@@ -90,10 +90,13 @@ const main = async () => {
     delete payload.lastSelectedWell
     delete payload.well
 
-    
-    //connection do not exist yet
+    // connections do not exist yet
     delete payload.connectionsAsFrom
     delete payload.connectionsAsTo
+
+    if (!RESTORE_METADATA) {
+      delete payload.metaData
+    }
 
     const stagedAsset = await axios({
       method: 'post',
@@ -107,17 +110,19 @@ const main = async () => {
   const connectionsIds = Object.keys(layout.connections || {})
 
   console.log('## creating connections')
-
   for (let id of connectionsIds) {
-    
+
     const payload = JSON.parse(JSON.stringify(layout.connections[id]))
     console.log(`# creating ${payload.params.label}`) 
     delete payload.subProject
-    delete payload.metaData
-
+    delete payload.length
+    payload.designType ||= 'None'
     payload.from = mapIds[payload.from.id]
     payload.to = mapIds[payload.to.id]
-    payload.designType = payload.designType || 'None'
+    if (!RESTORE_METADATA) {
+      delete payload.metaData
+    }
+
     const connection = await axios({
       method: 'post',
       data: payload,
@@ -128,12 +133,14 @@ const main = async () => {
   }
 }
 
-
-main().then(
-  () => process.exit(0)
-).catch(
-  (e) => {
-    console.log(e)
-    return process.exit(1)
+main().catch((e) => {
+  if (e.response) {
+    console.error(
+      `\nError:\n${e.request.method} ${e.request.path}\n` +
+      `${e.response.status} ${e.response.statusText}\n${JSON.stringify(e.response.data)}`
+    )
+  } else {
+    console.error(e)
   }
-)
+  process.exit(1)
+})
