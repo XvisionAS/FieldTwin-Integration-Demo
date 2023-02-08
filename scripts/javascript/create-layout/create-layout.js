@@ -124,8 +124,8 @@ const main = async () => {
     delete payload.clonedFroms
     delete payload.importParams
     delete payload.length
-    delete payload.connectionType // taken from params.id
-    delete payload.definition     // taken from params.id
+    delete payload.connectionType // taken from params.type
+    delete payload.definition     // taken from params.type
     delete payload.designName     // taken from designType
     payload.designType ||= 'None'
 
@@ -159,11 +159,11 @@ const connectionFilter = (conn) => {
   remove.forEach(attr => delete conn[attr])
   if (conn.costObject) { delete conn.costObject.costPerDay }
   if (conn.params) {
-    const typeId = conn.params.id
+    const typeId = conn.params.type
     for (const attr in conn.params) {
       delete conn.params[attr]
     }
-    conn.params.id = typeId
+    conn.params.type = typeId
   }
 }
 
