@@ -3,13 +3,25 @@
 This fieldtwin-api-demo.ipynb provides example python code
 demonstrating how to access the FieldTwin REST API.
 
+## API Token
+
+In order to execute the FieldTwin API calls, it is necessary to obtain an API token from FutureOn. 
+When the first cell in the notebook is run, it will provide a text box where the API token can be pasted and entered. This token is then used for the subsequent API calls in the following cells.
+
+## The API Examples
+
+There are two example python notebooks:
+* `fieldtwin-api-connection-profile.ipynb` - an example loading a FieldTwin subproject and providing the option to
+  select a connection and display the connection profile.
+* `fieldtwin-api-demo.ipynb` - an example loading a FieldTwin subproject and demonstrating API GET and PATCH operations.
+
 ## How to run the example code
 
 The examples in the notebook can be run using the python jupyter notebook environment. This provides a python runtime environment, where the code can be edited and run.   
 
-There are a number of ways to do this.
-
 ## Run in Google Colab
+
+The simplest way to run the demo notebooks is to use Google Colab.
 
 Google Colab provides a free environment for storing and running python jupyter notebooks.
 This can be accessed at https://colab.research.google.com/.
@@ -19,25 +31,15 @@ In the Colab web page:
 2. Select the Github tab.
 3. Paste in the github Url for this page.
 
-This will create a link to the notebook which can be opened in the browser.
+![](./docs/open-colab.png)
 
-The python code in each cell can be run by clicking the 'run' button to the left of each cell. 
+This will create a link to the notebook which can then be opened in Colab.
 
-## Running in VS Code
+![](./docs/run-notebook.png)
 
-VS code can be comfigured to run jupyter notebooks by installing the standard python and jupyter extensions provided by Microsoft.
+![](./docs/generate-profile.png)
 
-To run the examples, it may be necessary to install the `requests` and `pandas` library modules.
-```
-pip install requests
-pip install pandas
-```
-The `fieldtwin-api-demo.ipynb` file can then be downloaded from this repository and opened in VS Code.
+![](./docs/re-run-code.png)
 
-The python code in each cell can be run by clicking the 'run' button to the left of each cell.
 
-## API Token
-
-In order to execute the FieldTwin API calls, it is necessary to obtain an API token from FutureOn. 
-When the first cell in the notebook is run, it will provide a text box where the API token can be pasted and entered. This token is then used for the subsequent API calls in the following cells.
 
