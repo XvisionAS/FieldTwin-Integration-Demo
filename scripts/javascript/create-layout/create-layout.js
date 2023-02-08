@@ -38,6 +38,8 @@ const main = async () => {
     const wellBores = payload.wellBores || []
     delete payload.kind
     delete payload.subProject
+    delete payload.clonedFroms
+    delete payload.importParams
     delete payload.wellBores
     delete payload.activeWellBore
     if (!RESTORE_METADATA) {
@@ -58,8 +60,10 @@ const main = async () => {
       console.log(wellBorePayload.name)
       wellBorePayload.targets = [{x:0, y:0, z:0}, {x:0, y:0, z:0}]
       delete wellBorePayload.kind
+      delete wellBorePayload.clonedFroms
+      delete wellBorePayload.importParams
       if (!RESTORE_METADATA) {
-        delete payload.metaData
+        delete wellBorePayload.metaData
       }
 
       const wellBore = await axios({
@@ -87,6 +91,8 @@ const main = async () => {
 
     payload.initialState.lastSelectedWell = payload.well?.id ? mapIds[payload.well?.id] : undefined
     delete payload.subProject
+    delete payload.clonedFroms
+    delete payload.importParams
     delete payload.lastSelectedWell
     delete payload.well
 
@@ -115,6 +121,8 @@ const main = async () => {
     const payload = JSON.parse(JSON.stringify(layout.connections[id]))
     console.log(`# creating ${payload.params.label}`) 
     delete payload.subProject
+    delete payload.clonedFroms
+    delete payload.importParams
     delete payload.length
     payload.designType ||= 'None'
     payload.from = mapIds[payload.from.id]
