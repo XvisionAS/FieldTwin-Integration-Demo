@@ -7,11 +7,14 @@ import {
 
 class Service {
 
-  ftBackendurl!: String;
+  backendUrl!: String;
+  projectId!: String;
+  subProjectId!: String;
   tokenRenews!: Boolean;
   store!: IStore
 
-  constructor() {
+  constructor(backendUrl: String) {
+    this.backendUrl = backendUrl
     this.store = {} as IStore
     this.tokenRenews = false
   }
@@ -53,7 +56,7 @@ class Service {
 
   // TODO use tokenRefresh
   renewToken() {
-    axios.get(`${this.ftBackendurl}/token/refresh`)
+    axios.get(`${this.backendUrl}/token/refresh`)
       .then(resp => {
         if (resp.data && resp.data.token) {
           this.token = resp.data.token;
@@ -71,8 +74,22 @@ class Service {
     console.log(sheet)
   }
 
-  getMetaData(selectedObject: any) {
-    console.log(selectedObject)
+  async getMetaData(projectId: string, subProjectId: string, selectedObject: any) {
+    let response: any = {}
+    if (selectedObject.type) {
+      switch (selectedObject.type) {
+        case 'connection': 
+          response = await axios.get(`${this.backendUrl}/API/v1.9/${projectId}/subProject/${subProjectId}/connection/${selectedObject.id}`)
+        break;
+        case 'stagedAsset':
+          response = await axios.get(`${this.backendUrl}/API/v1.9/${projectId}/subProject/${subProjectId}/stagedAsset/${selectedObject.id}`) 
+        break;
+        case 'well': break;
+        case 'wellBore': break;
+        default: console.log('Unknown type: ' + selectedObject.type)
+      }
+    }
+    return response.data.metaData
   }
 }
 
