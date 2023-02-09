@@ -116,14 +116,7 @@
     }
 
     function setResults(results) {
-      let html = ''
-      for (const doc of results) {
-        const latestRevision = doc.revisions[0]
-        html += `<a href="${latestRevision.url}" target="doc-view">${doc.fileName}</a><br>\n`
-      }
-      if (!results.length) {
-        html = 'No documents found'
-      }
+      let html = results
       $('results').innerHTML = html
     }
 
