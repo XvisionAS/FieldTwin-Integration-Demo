@@ -38,7 +38,7 @@
           case 'loaded':
           case 'tokenRefresh':
             // Retrieve the FieldTwin API Url, token and project info
-            backendUrl = event.data.backendUrl
+            ftApiUrl = event.data.backendUrl
             token = event.data.token
             projectId = event.data.project
             subProjectId = event.data.subProject
@@ -51,8 +51,8 @@
                 name: event.data.data[0].name,
                 type: event.data.data[0].type
               }
-              if (token && activeTab) {
-                searchForDocuments(backendUrl, projectId, subProjectId, selected.type, selected.id, token)
+              if (token && activeTab && selected.type == 'connection') {
+                requestConnectionProfile(ftApiUrl, projectId, subProjectId, selected.type, selected.id, token)
               }
             }
             break
@@ -66,7 +66,7 @@
 
     // This search could live on the server side if you prefer,
     // or if you want to call the API with a different programming language
-    function searchForDocuments(backendUrl, projectId, subProjectId, objectType, objectId, token) {
+    function requestConnectionProfile(ftApiUrl, projectId, subProjectId, objectType, objectId, token) {
 
       setSearching(selected.type, selected.id)
 
@@ -79,22 +79,21 @@
       }
 
       // The URL for the backend Python Cloud Function
-      // This should be 
       const cloudFunctionUrl = 'https://python-demo-gt72w42gxa-uc.a.run.app'
 
       // Set the FieldTwin project and selected object parameters
       const url = (
-        `${cloudFunctionUrl}?projectId=${projectId}&subProject=${subProjectId}` +
-        `&relateToType=${objectType}&relateToId=${objectId}&token=${token}`
+        `${cloudFunctionUrl}?projectId=${projectId}&subProjectId=${subProjectId}` +
+        `&connectionId=${objectId}&ftApiUrl=${ftApiUrl}&token=${token}`
       )
 
       // Call the backend Python Cloud Function
       fetch(url, requestParams).then(response => {
         if (response.ok) {
-          response.json().then(results => {
+          response.json().then(result => {
             // The result arrives some time later, so check the same object is still selected
             if (selected && selected.id === objectId) {
-              setResults(results)
+              setResult(result)
             }
           })
         } else {
@@ -115,9 +114,8 @@
       $('results').innerHTML = 'Searching, please wait...'
     }
 
-    function setResults(results) {
-      let html = results
-      $('results').innerHTML = html
+    function setResult(result) {
+      $('results').innerHTML = `<img src="data:image/jpeg;base64, ${result}" />`
     }
 
     function setError(error) {
