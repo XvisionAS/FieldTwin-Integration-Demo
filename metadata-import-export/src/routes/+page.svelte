@@ -2,7 +2,7 @@
   import { onMount } from 'svelte';
 	import { page } from '$app/stores'
 
-  import { read, utils, writeFile } from 'xlsx';
+  import { read, utils, writeFile, writeFileXLSX } from 'xlsx';
 
 	import { Alert, Card, CardBody, Container, Progress, Input, Button } from 'sveltestrap';
   import 'bootstrap/dist/css/bootstrap.min.css';
@@ -29,6 +29,13 @@
       }
     }
   });
+
+  function exportFile(pres: any) {
+    const ws = utils.json_to_sheet(pres);
+    const wb = utils.book_new();
+    utils.book_append_sheet(wb, ws, "Data");
+    writeFileXLSX(wb, "SheetJSSvelteAoO.xlsx");
+}
 
   let files:any = [];
   /**
@@ -60,15 +67,20 @@
     }
   }
 
-	const uploadMetaData = () => {
-    service.uploadMetaData(service.event, files)
-	}
-	const downloadMetaData = () => {		
-    service.downloadMetaData(service.event, files)
-  }
   let metaData = {}
+	const uploadMetaData = async () => {
+    const f = await (files[0]).arrayBuffer();
+    const wb = read(f); // parse the array buffer
+    const ws = wb.Sheets[wb.SheetNames[0]]; // get the first worksheet
+    let sheet = utils.sheet_to_json(ws); // generate objects and update state
+    await service.uploadMetaData(projectId, subProjectId, service.event, sheet)
+  }
+	const downloadMetaData = async () => {
+    metaData = await service.getMetaData(projectId, subProjectId, service.event)
+    exportFile(metaData)
+  }
+
 	const getMetaData = async () => {
-    console.log(service)
     metaData = await service.getMetaData(projectId, subProjectId, service.event)
 	}
 </script>
@@ -96,20 +108,8 @@
       {:else}
       <Card>
         <CardBody>
-          <Input
-          type="file"
-          name="sheet"
-          bind:files
-          />
+          <Input type="file" name="sheet" bind:files />
           <Button color="primary" class="select-button" on:click={uploadMetaData}>uploadMetaData(object, files)</Button>
-
-          {#each Array.from(files) as file, i}
-          <p>{ file.name } { file.size } bytes</p>
-            {#await file.text() then text}
-              <p>e: {text} i: {i}</p>
-            {/await}
-          {/each}
-
         </CardBody>
       </Card>
       <Card class="mt-3">
