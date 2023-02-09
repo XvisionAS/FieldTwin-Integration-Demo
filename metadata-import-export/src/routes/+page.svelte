@@ -1,13 +1,17 @@
-<script src="ts">
+<script lang="ts">
   import { onMount } from 'svelte';
 	import { page } from '$app/stores'
+
+  import { read, utils, writeFile } from 'xlsx';
 
 	import { Alert, Card, CardBody, Container, Progress, Input, Button } from 'sveltestrap';
   import 'bootstrap/dist/css/bootstrap.min.css';
 
   import Service from '../actions/Service';
 
-  let service = new Service()
+  let service = new Service('https://backend.qa.fieldtwin.com')
+  let projectId = ''
+  let subProjectId = ''
   let loaded = false
   let error = ''
 
@@ -15,27 +19,29 @@
     if (!loaded) {
       try {
         service.token = String($page.url.searchParams.get('token'))
-        const project = String($page.url.searchParams.get('project'))
-        const subProject = String($page.url.searchParams.get('subProject'))
-        if (service.token && project && subProject) {
+        projectId = String($page.url.searchParams.get('project'))
+        subProjectId = String($page.url.searchParams.get('subProject'))
+        if (service.token && projectId && subProjectId) {
           loaded = true
         }
       } catch (e) {
         error = `Failed to start: ${e}`
       }
     }
-  });	
+  });
 
-	let sheet = {}
-
+  let files:any = [];
   /**
 	 * @param {{ data: import("../actions/Store").IEvent; }} msg
 	 */
-  async function onWindowMessage(msg) {
+  async function onWindowMessage(msg: any) {
     service.event = msg.data
-    if (!loaded && msg.data?.event === 'loaded') {
-      service.token = msg.data.token
+    if (!loaded && (msg.data?.event === 'loaded' || msg.data?.event === 'tokenRefresh')) {
       try {
+        service.token = msg.data.token
+        service.backendUrl = msg.data.backendUrl
+        service.projectId = msg.data.project
+        service.subProjectId = msg.data.subProject
         loaded = true
       } catch (e) {
         error = `Failed to start: ${e}`
@@ -55,13 +61,15 @@
   }
 
 	const uploadMetaData = () => {
-    service.uploadMetaData(service.event, sheet)
+    service.uploadMetaData(service.event, files)
 	}
 	const downloadMetaData = () => {		
-    service.downloadMetaData(service.event, sheet)
+    service.downloadMetaData(service.event, files)
   }
-	const getMetaData = () => {
-    service.getMetaData(service.event)
+  let metaData = {}
+	const getMetaData = async () => {
+    console.log(service)
+    metaData = await service.getMetaData(projectId, subProjectId, service.event)
 	}
 </script>
 
@@ -91,19 +99,30 @@
           <Input
           type="file"
           name="sheet"
-          bind:sheet
+          bind:files
           />
-          <Button color="primary" class="select-button" on:click={uploadMetaData}>uploadMetaData(object, sheet)</Button>
+          <Button color="primary" class="select-button" on:click={uploadMetaData}>uploadMetaData(object, files)</Button>
+
+          {#each Array.from(files) as file, i}
+          <p>{ file.name } { file.size } bytes</p>
+            {#await file.text() then text}
+              <p>e: {text} i: {i}</p>
+            {/await}
+          {/each}
+
         </CardBody>
       </Card>
       <Card class="mt-3">
         <CardBody>
-          <Button color="primary" class="select-button" on:click={downloadMetaData}>downloadMetaData(object, sheet)</Button>
+          <Button color="primary" class="select-button" on:click={downloadMetaData}>downloadMetaData(object, files)</Button>
         </CardBody>
       </Card>
       <Card class="mt-3">
         <CardBody>
           <Button color="primary" class="select-button" on:click={getMetaData}>getMetaData(object)</Button>
+          {#if metaData }
+            <pre>{ JSON.stringify(metaData) }</pre>
+          {/if}
         </CardBody>
       </Card>
       {/if}
