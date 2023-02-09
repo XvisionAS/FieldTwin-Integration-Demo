@@ -64,14 +64,25 @@ class Service {
       });
   }
   
-  uploadMetaData(selectedObject: any, sheet: any) {
-    console.log(selectedObject)
-    console.log(sheet)
-  }
-
-  downloadMetaData(selectedObject: any, sheet: any) {
-    console.log(selectedObject)
-    console.log(sheet)
+  async uploadMetaData(projectId: string, subProjectId: string, selectedObject: any, sheet: any) {
+    let response: any;
+    if (selectedObject.type) {
+      switch (selectedObject.type) {
+        case 'connection': 
+          response = await axios.patch(`${this.backendUrl}/API/v1.9/${projectId}/subProject/${subProjectId}/connection/${selectedObject.id}`, {
+            metaData: sheet
+          })
+        break;
+        case 'stagedAsset':
+          response = await axios.patch(`${this.backendUrl}/API/v1.9/${projectId}/subProject/${subProjectId}/stagedAsset/${selectedObject.id}`, {
+            metaData: sheet
+          }) 
+        break;
+        case 'well': break;
+        case 'wellBore': break;
+        default: console.log('Unknown type: ' + selectedObject.type)
+      }
+    }
   }
 
   async getMetaData(projectId: string, subProjectId: string, selectedObject: any) {
