@@ -15,6 +15,7 @@
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
   <title>FieldTwin Python Integration Demo</title>
   <script>
+    // Shortcut for accessing html elements
     const $ = document.getElementById.bind(document)
 
     // !! Change this if your FieldTwin domain is not fieldtwin.com !!
@@ -52,7 +53,9 @@
                 type: event.data.data[0].type
               }
               if (token && activeTab && selected.type == 'connection') {
-                requestConnectionProfile(ftApiUrl, projectId, subProjectId, selected.type, selected.id, token)
+                requestConnectionProfile(ftApiUrl, projectId, subProjectId, selected, token)
+              } else {
+                setIdle()
               }
             }
             break
@@ -66,24 +69,29 @@
 
 
     // Loads the connection profile image by calling the backend python cloud function
-    function requestConnectionProfile(ftApiUrl, projectId, subProjectId, objectType, objectId, token) {
+    function requestConnectionProfile(ftApiUrl, projectId, subProjectId, selected, token) {
+
+      // Display the selected connection
+      $('info').innerHTML = `Selected connection: ${selected.name}`
+      $('results').innerHTML = 'Calculating profile, please wait...'
 
       // The URL for the backend Python Cloud Function
+      // !! Change this to be your cloud function URL
       const cloudFunctionUrl = 'https://python-demo-gt72w42gxa-uc.a.run.app'
 
-      // Create the image source URL
+      // Create the URL to request the connection profile image 
       const profileImageUrl = (
         `${cloudFunctionUrl}?projectId=${projectId}&subProjectId=${subProjectId}` +
-        `&connectionId=${objectId}&ftApiUrl=${ftApiUrl}&token=${token}`
+        `&connectionId=${selected.id}&ftApiUrl=${ftApiUrl}&token=${token}`
       )
 
       // The backend python cloud function returns a calculated connection profile
-      // image for the selected connection
+      // image for the selected connection. Display the returned image.
       $('results').innerHTML = `<img src="${profileImageUrl}" />`
     }
 
     function setIdle() {
-      $('info').innerHTML= 'Select an object...'
+      $('info').innerHTML= 'Select a connection...'
       $('results').innerHTML = ''
     }
   </script>
@@ -91,7 +99,7 @@
     body {
       background-color: #FFFFFF;
       font-family: Arial, Helvetica, sans-serif;
-      color: #333333;
+      color: #888888;
     }
   </style>
 </head>
