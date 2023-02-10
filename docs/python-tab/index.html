@@ -67,13 +67,10 @@
       }
     })
 
-
     // Loads the connection profile image by calling the backend python cloud function
     function requestConnectionProfile(ftApiUrl, projectId, subProjectId, selected, token) {
-
-      // Display the selected connection
-      $('info').innerHTML = `Selected connection: ${selected.name}`
-      $('results').innerHTML = 'Calculating profile, please wait...'
+      // Display the selected connection 
+      $('info').innerHTML = `Selected connection: ${selected.name}</br>Calculating profile, please wait...`
 
       // The URL for the backend Python Cloud Function
       // !! Change this to be your cloud function URL
@@ -87,12 +84,18 @@
 
       // The backend python cloud function returns a calculated connection profile
       // image for the selected connection. Display the returned image.
-      $('results').innerHTML = `<img src="${profileImageUrl}" />`
+      $('results').innerHTML = `<img src="${profileImageUrl}" onload="onProfileLoaded()" />`
     }
 
     function setIdle() {
+      // Initialise message display
       $('info').innerHTML= 'Select a connection...'
       $('results').innerHTML = ''
+    }
+
+    function onProfileLoaded() {
+      // Update the display when the image has been loaded
+      $('info').innerHTML = `Selected connection: ${selected.name}`
     }
   </script>
   <style>
