@@ -24,6 +24,6 @@ jobs:
         git pull
         git add docs/test
         git commit -m "Commit changes from /test to /docs/test"
-        git push origin HEAD:${{ github.head_ref }}
+        git push -f origin HEAD:${{ github.head_ref }}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
