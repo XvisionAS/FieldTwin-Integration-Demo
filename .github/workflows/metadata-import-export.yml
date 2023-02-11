@@ -8,7 +8,7 @@ on:
 jobs:
   overwrite_directory:
     runs-on: ubuntu-latest
-    if: github.event.pull_request.changes.files.includes('test/') || github.event.pull_request.changes.files.includes('docs/test/')
+    if: github.event.pull_request.changes.files.includes('test/')
 
     steps:
     - name: Checkout code
@@ -17,6 +17,6 @@ jobs:
     - name: Overwrite /docs/test with /test
       run: |
         rm -rf docs/test
-        cp -R zzz docs/test
+        cp -R test docs/test
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
