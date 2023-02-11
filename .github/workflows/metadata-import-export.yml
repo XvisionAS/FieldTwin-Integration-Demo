@@ -4,11 +4,12 @@ on:
   pull_request:
     types: [closed]
     branches: [ master ]
+    paths: 
+    - 'test/**'
 
 jobs:
   overwrite_directory:
     runs-on: ubuntu-latest
-    if: github.event.pull_request.changes.files.includes('test/')
 
     steps:
     - name: Checkout code
