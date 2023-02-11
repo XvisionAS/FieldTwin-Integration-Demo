@@ -53,8 +53,6 @@
       el: "#app",
       data: {
         message: "Initialising...",
-        headers: ["id", "title", "body"],
-        rows: [],
         token: '',
         backendUrl: '',
         projectId: '',
@@ -105,8 +103,6 @@
         uploadMetaData() {
           const reader = new FileReader();
           reader.onload = e => {
-
-            // Read uploaded file
             const data = new Uint8Array(e.target.result);
             const workbook = XLSX.read(data, { type: "array" });
             const worksheet = workbook.Sheets[workbook.SheetNames[0]];
