@@ -1,0 +1,21 @@
+name: Overwrite /docs/metadata-import-export with /metadata-import-export
+
+on:
+  pull_request_review:
+    types: [submitted]
+
+jobs:
+  overwrite_directory:
+    runs-on: ubuntu-latest
+    if: github.event.review.state == 'approved' && (github.event.pull_request.changes.files.includes('test/') || github.event.pull_request.changes.files.includes('docs/test/'))
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Overwrite /docs/test with /test
+      run: |
+        rm -rf docs/test
+        cp -R zzz docs/test
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
