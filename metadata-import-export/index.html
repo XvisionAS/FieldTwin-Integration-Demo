@@ -118,8 +118,7 @@
             })
               .then(response => response.json())
               .then(data => {
-                app.metaData = data.metaData
-                app.message = "Selected Object " + app.selected.id
+                app.message = `Uploaded ${app.selected.type} metadata to ${app.selected.id}`
               })
               .catch(error => {
                 console.error('Error:', error);
@@ -152,7 +151,7 @@
               .then(response => response.json())
               .then(data => {
                 app.metaData = data.metaData
-                app.message = "Selected Object " + app.selected.id
+                app.message = `Selected ${app.selected.type} ${app.selected.id}`
               })
               .catch(error => {
                 console.error('Error:', error);
