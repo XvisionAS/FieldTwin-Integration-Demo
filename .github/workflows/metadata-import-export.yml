@@ -21,6 +21,7 @@ jobs:
         cp -R test docs/test
         git config --global user.email "kris.z@futureon.com"
         git config --global user.name "kr1s-z"
+        git pull
         git add docs/test
         git commit -m "Commit changes from /test to /docs/test"
         git push origin HEAD:${{ github.head_ref }}
