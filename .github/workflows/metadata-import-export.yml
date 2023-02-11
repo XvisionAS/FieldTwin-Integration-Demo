@@ -2,12 +2,12 @@ name: Overwrite /docs/metadata-import-export with /metadata-import-export
 
 on:
   pull_request_review:
-    types: [submitted]
+    types: [closed]
 
 jobs:
   overwrite_directory:
     runs-on: ubuntu-latest
-    if: github.event.review.state == 'approved' && (github.event.pull_request.changes.files.includes('test/') || github.event.pull_request.changes.files.includes('docs/test/'))
+    if: (github.event.pull_request.changes.files.includes('test/') || github.event.pull_request.changes.files.includes('docs/test/'))
 
     steps:
     - name: Checkout code
