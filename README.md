@@ -15,15 +15,16 @@
 | 9      | olivier | Added modification to didUpdate message for meta datum value |
 | 10     | olivier | Added `clearSelection` message                               |
 | 11     | olivier | removed trafficManagerJWT                                    |
+| 12     | olivier | Added `requestInfo` and `replyInfo`                          |
 
 ## Introduction
 
-This document explains how to develop an integration for **FieldTwin**. An *integration* is a web page, which is loaded inside the main interface of **FieldTwin** through an *iFrame*.
+This document explains how to develop an integration for **FieldTwin**. An _integration_ is a web page, which is loaded inside the main interface of **FieldTwin** through an _iFrame_.
 
 There are two kinds of integrations:
 
-1. **global**, these integrations are loaded when the application starts, and are kept alive through the whole life cycle of the application. These can receive a message when a project is created or deleted from the dashboard. 
-2. **local**, integrations are loaded only when a project is opened. They only receive messages that relate to the project that is currently open. These generally have a user interface (UI) which is visible in FieldTwin Design's main interface, but integrations aren't required to have an UI. In this document, integrations without an UI are referred to as *headless*.
+1. **global**, these integrations are loaded when the application starts, and are kept alive through the whole life cycle of the application. These can receive a message when a project is created or deleted from the dashboard.
+2. **local**, integrations are loaded only when a project is opened. They only receive messages that relate to the project that is currently open. These generally have a user interface (UI) which is visible in FieldTwin Design's main interface, but integrations aren't required to have an UI. In this document, integrations without an UI are referred to as _headless_.
 
 ## Setting up an integration
 
@@ -33,17 +34,17 @@ Link: [FieldTwin Online Documentation](https://admin.fieldtwin.com/Integrations/
 
 > By default, and for security reasons, an integration receive a JWT that only gives access to the sub project the user is currently editing. Through the administration panel, you can also:
 
-* Give access to the whole project of the sub project.
-* Give access to all the projects an user have access to across the account.
+- Give access to the whole project of the sub project.
+- Give access to all the projects an user have access to across the account.
 
 ## How to serve an integration for use in FieldTwin
 
-Depending on how the integration was setup, **FieldTwin** will create an iFrame that either generates a *GET* or a *POST* request to the integration URL.
+Depending on how the integration was setup, **FieldTwin** will create an iFrame that either generates a _GET_ or a _POST_ request to the integration URL.
 
 This request will contain the following, depending on the HTTP method used:
 
-1. query params `token`, `backendUrl`, `subProject`, `canEdit` and `project` for *GET*
-2. body with attributes `token`, `backendUrl`, `subProject`, `canEdit`, `project`, `frontendUrl` for *POST*
+1. query params `token`, `backendUrl`, `subProject`, `canEdit` and `project` for _GET_
+2. body with attributes `token`, `backendUrl`, `subProject`, `canEdit`, `project`, `frontendUrl` for _POST_
 
 | attribute     | description                                                                                                                                               |
 | :------------ | :-------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -54,22 +55,21 @@ This request will contain the following, depending on the HTTP method used:
 | `canEdit`     | Indicates if the user has rights to edit for the integration. This has to be handled by the integration itself, as FieldTwin does not have control of it. |
 | `frontendUrl` | href of the window that contains the iframe.                                                                                                              |
 
-`token` is a *JWT* and contain information about the user and user rights. You can parse it with any *JWT* library. The public key to validate this JWT can be found at `https://backend.[name-of-instance].fieldtwin.com/token/publicKey`.
+`token` is a _JWT_ and contain information about the user and user rights. You can parse it with any _JWT_ library. The public key to validate this JWT can be found at `https://backend.[name-of-instance].fieldtwin.com/token/publicKey`.
 
 The FieldTwin API can be accessed using `https://backend.[name-of-instance].fieldtwin.com` so for `https://app.fieldtwin.com` the API access is `https://backend.app.fieldtwin.com`. Link: [FieldTwin API Online Documentation](https://api.fieldtwin.com).
 
 For example, using `NodeJS + ExpressJS`:
 
 ```javascript
-
-const express    = require("express")
+const express = require('express')
 
 const app = express()
 
 app.use(express.json())
 
 // POST verb
-app.post("/", function (request, response) {
+app.post('/', function (request, response) {
   response.send(`
   <html>
     <body>
@@ -82,7 +82,7 @@ app.post("/", function (request, response) {
 })
 
 // GET verb
-app.get("/", function (request, response) {
+app.get('/', function (request, response) {
   response.send(`
   <html>
     <body>
@@ -95,14 +95,13 @@ app.get("/", function (request, response) {
 })
 
 app.listen()
-
 ```
 
 > note that this reference implementation depends on `npm install express body-parser`
 
 > If you do not have access to a nodejs backend, and just want to have a one page integration, you can also list the the message `loaded`.
 
-This example webserver will reply to a *POST* request on `/`, and return HTML that contains the token sent by **FieldTwin**.
+This example webserver will reply to a _POST_ request on `/`, and return HTML that contains the token sent by **FieldTwin**.
 
 ## Refreshing JWT
 
@@ -117,68 +116,67 @@ It is possible to generate a JWT using an API token. For that you need to send a
 You pass the API token the usual way (using header `token`:`[API Token]`).
 The body of the request must contain:
 
-* `userId` : Id of the user the JWT will be generated for.
-* `subProjectId` : Id of the sub project the JWT will be generated for.
-* optional `customTabId` : integration id to generate the token for. Integration id can be looked up by an API call or in the account settings.
+- `userId` : Id of the user the JWT will be generated for.
+- `subProjectId` : Id of the sub project the JWT will be generated for.
+- optional `customTabId` : integration id to generate the token for. Integration id can be looked up by an API call or in the account settings.
 
 On success, the query return a JSON object that contains an attribute `token`.
-
 
 ## User rights management
 
 Within the JWT passed to the integration, there is an attribute `userRights` that contains what the user has access to. These rights will be followed by the API you are using, but in case you need to check them, this is the list of possible values:
 
-* Account
-  * `canAdminAccount`: User is an administrator of the account
-* Project
-  * `canCreateProject`: User can create project  
-  * `canCloneProject`: User can clone an existing project
-* Generic rights
-  * `canAdmin`: User is an administrator of the project, if this is true, user can also edit everything
-  * `canEdit`: User can edit the project, if this is true, user can edit everything
-* Connections
-  * `canViewConnections`: User can view connections
-  * `canViewConnectionsMetaData`: User can view connections meta data
-  * `canViewConnectionsCosts`: User can view connections costs
-  * `canEditConnections`: User can edit connections
-  * `canEditConnectionsMetaData`: User can edit connections meta data
-  * `canEditConnectionsCosts`: User can edit connections costs
-* Staged assets
-  * `canViewStagedAssets`
-  * `canViewStagedAssetsMetaData`
-  * `canViewStagedAssetsCosts`
-  * `canEditStagedAssets`
-  * `canEditStagedAssetsMetaData`
-  * `canEditStagedAssetsCosts`
-* Layers
-  * `canViewLayers`
-  * `canViewLayersMetaData`
-  * `canViewLayersCosts`
-  * `canEditLayers`
-  * `canEditLayersMetaData`
-  * `canEditLayersCosts`
-* Overlays
-  * `canViewOverlays`
-  * `canEditOverlays`
-  * `canViewPorts`
-  * `canEditPorts`
-* Wells
-  * `canViewWells`
-  * `canViewWellsMetaData`
-  * `canViewWellsCosts`
-  * `canEditWells`
-  * `canEditWellsMetaData`
-  * `canEditWellsCosts`
-* Activities
-  * `canViewActivities`
-  * `canViewActivitiesCosts`
-  * `canEditActivities`
-  * `canEditActivitiesCosts`
-* Custom Costs
-  * `canEditCustomCosts`
-  * `canViewCustomCosts`
-  * `canEditBookmarks`
-  * `canViewBookmarks`
+- Account
+  - `canAdminAccount`: User is an administrator of the account
+- Project
+  - `canCreateProject`: User can create project
+  - `canCloneProject`: User can clone an existing project
+- Generic rights
+  - `canAdmin`: User is an administrator of the project, if this is true, user can also edit everything
+  - `canEdit`: User can edit the project, if this is true, user can edit everything
+- Connections
+  - `canViewConnections`: User can view connections
+  - `canViewConnectionsMetaData`: User can view connections meta data
+  - `canViewConnectionsCosts`: User can view connections costs
+  - `canEditConnections`: User can edit connections
+  - `canEditConnectionsMetaData`: User can edit connections meta data
+  - `canEditConnectionsCosts`: User can edit connections costs
+- Staged assets
+  - `canViewStagedAssets`
+  - `canViewStagedAssetsMetaData`
+  - `canViewStagedAssetsCosts`
+  - `canEditStagedAssets`
+  - `canEditStagedAssetsMetaData`
+  - `canEditStagedAssetsCosts`
+- Layers
+  - `canViewLayers`
+  - `canViewLayersMetaData`
+  - `canViewLayersCosts`
+  - `canEditLayers`
+  - `canEditLayersMetaData`
+  - `canEditLayersCosts`
+- Overlays
+  - `canViewOverlays`
+  - `canEditOverlays`
+  - `canViewPorts`
+  - `canEditPorts`
+- Wells
+  - `canViewWells`
+  - `canViewWellsMetaData`
+  - `canViewWellsCosts`
+  - `canEditWells`
+  - `canEditWellsMetaData`
+  - `canEditWellsCosts`
+- Activities
+  - `canViewActivities`
+  - `canViewActivitiesCosts`
+  - `canEditActivities`
+  - `canEditActivitiesCosts`
+- Custom Costs
+  - `canEditCustomCosts`
+  - `canViewCustomCosts`
+  - `canEditBookmarks`
+  - `canViewBookmarks`
 
 ## Samples
 
@@ -191,30 +189,30 @@ The main interface of **FieldTwin** can send and receive messages from the integ
 Here's how an integration can receive these messages from **FieldTwin** :
 
 ```javascript
-    window.addEventListener('message', function(event) {
-        // IMPORTANT: Check the origin of the data!
-        if (~event.origin.indexOf('https://backend.app.fieldtwin.com')) {
-            console.log(JSON.stringify(event.data, null, 2) );
-        } else {
-            // Not coming from correct origin
-            return;
-        }
-    });
+window.addEventListener('message', function (event) {
+  // IMPORTANT: Check the origin of the data!
+  if (~event.origin.indexOf('https://backend.app.fieldtwin.com')) {
+    console.log(JSON.stringify(event.data, null, 2))
+  } else {
+    // Not coming from correct origin
+    return
+  }
+})
 ```
 
 Follow this link: [Sample](https://github.com/XvisionAS/FieldTwin-Integration-Demo/tree/master/events-demo/views)
 
-Definition of the different element *type* that can be sent:
+Definition of the different element _type_ that can be sent:
 
-* for the `select` event:
-  * `staged-asset`
-  * `connection`
-  * `well`
-  * `overlay`
-  * `layer`
-  * `customCost`
-* for the other events you can also in addition have:
-  * `metaDatumValue`
+- for the `select` event:
+  - `staged-asset`
+  - `connection`
+  - `well`
+  - `overlay`
+  - `layer`
+  - `customCost`
+- for the other events you can also in addition have:
+  - `metaDatumValue`
 
 Definition of the different attributes for types can be found in [API docs](https://api.fieldtwin.com)
 
@@ -223,29 +221,28 @@ Definition of the different attributes for types can be found in [API docs](http
 This event is sent when an integration iframe is fully loaded. It contains information about subProject, project and tokens used to communicate with API.
 The argument will contain these attributes :
 
-| Attribute         | Decription                                                    |
-| :---------------- | :------------------------------------------------------------ |
-| event             | is set to `loaded`                                            |
-| subProject        | is set to subProject id, if a sub project is loaded           |
-| project           | is set to project id, if a project is loaded                  |
-| account           | is set to account id, if a project is loaded                  |
-| token             | is set to the JWT that the integration can use to query data. |
-| backendUrl        | is set to the address of the backend the JWT is refering to.  |
+| Attribute  | Decription                                                    |
+| :--------- | :------------------------------------------------------------ |
+| event      | is set to `loaded`                                            |
+| subProject | is set to subProject id, if a sub project is loaded           |
+| project    | is set to project id, if a project is loaded                  |
+| account    | is set to account id, if a project is loaded                  |
+| token      | is set to the JWT that the integration can use to query data. |
+| backendUrl | is set to the address of the backend the JWT is refering to.  |
 
 ### tokenRefresh
 
 This message is sent whenever the JWT will become stall. It contains a new refreshed JWT that the integration can use to communicate with FielTwin backend.
 
-| Attribute         | Decription                                                    |
-| :---------------- | :------------------------------------------------------------ |
-| event             | is set to `tokenRefresh`                                      |
-| isFrameActive     | true if the frame is currently selected and active in the UI  |
-| subProject        | is set to subProject id, if a sub project is loaded           |
-| project           | is set to project id, if a project is loaded                  |
-| account           | is set to account id, if a project is loaded                  |
-| token             | is set to the JWT that the integration can use to query data. |
-| backendUrl        | is set to the address of the backend the JWT is refering to.  |
-
+| Attribute     | Decription                                                    |
+| :------------ | :------------------------------------------------------------ |
+| event         | is set to `tokenRefresh`                                      |
+| isFrameActive | true if the frame is currently selected and active in the UI  |
+| subProject    | is set to subProject id, if a sub project is loaded           |
+| project       | is set to project id, if a project is loaded                  |
+| account       | is set to account id, if a project is loaded                  |
+| token         | is set to the JWT that the integration can use to query data. |
+| backendUrl    | is set to the address of the backend the JWT is refering to.  |
 
 ### costQuery
 
@@ -268,16 +265,16 @@ The result will contain these attributes:
 When one or more assets get selected, a `select` event is sent.
 The result will contain these attributes :
 
-| Attribute     | Description                                        |
-| :------------ | :------------------------------------------------- |
-| event         | is set to  `select`                                |
-| isFrameActive | true if the frame is currently selected            |
-| data          | contains an array of selected items                |
-| data.[].type  | contains the type of the selected item.            |
-| data.[].id    | unique id of the selected item.                    |
-| data.[].name  | display name of selected.                          |
-| id            | ( obsolete ) unique id of the first selected item. |
-| type          | ( obsolete ) type of the first selected item.    |
+| Attribute      | Description                                                                      |
+| :------------- | :------------------------------------------------------------------------------- |
+| event          | is set to `select`                                                               |
+| isFrameActive  | true if the frame is currently selected                                          |
+| data           | contains an array of selected items                                              |
+| data.[].type   | contains the type of the selected item.                                          |
+| data.[].id     | unique id of the selected item.                                                  |
+| data.[].name   | display name of selected.                                                        |
+| id             | ( obsolete ) unique id of the first selected item.                               |
+| type           | ( obsolete ) type of the first selected item.                                    |
 | cursorPosition | {x,y,z} value of cursor when unselect click happens. values are in project space |
 
 #### For example, for a simple selection
@@ -337,8 +334,8 @@ Sent when the selection is reset (no more items selected).
 The result will contain this attribute:
 
 | Attribute      | Description                                                                      |
-| :------------  | :------------------------------------------------------------------------------- |
-| event          | is set to  `unselect`                                                            |
+| :------------- | :------------------------------------------------------------------------------- |
+| event          | is set to `unselect`                                                             |
 | isFrameActive  | true if the frame is currently selected                                          |
 | cursorPosition | {x,y,z} value of cursor when unselect click happens. values are in project space |
 
@@ -347,57 +344,90 @@ The result will contain this attribute:
 This message is sent after the integration posted a message `getProjectData`.
 The result will contain these attributes :
 
+| Attribute                    | Description                               |
+| :--------------------------- | :---------------------------------------- |
+| event                        | is set to `projectData`.                  |
+| isFrameActive                | true if the frame is currently selected   |
+| data                         | contains data about the event.            |
+| data.assets                  | arrays of information about staged asset. |
+| data.assets.[].name          | name of staged asset.                     |
+| data.assets.[].tags          | tags of staged asset.                     |
+| data.assets.[].metaData      | meta data of staged asset.                |
+| data.connections             | arrays of information about staged asset. |
+| data.connections.[].name     | name of connection.                       |
+| data.connections.[].tags     | tags of connection.                       |
+| data.connections.[].metaData | meta data of connection.                  |
+| data.wells                   | arrays of information about staged asset. |
+| data.wells.[].name           | name of well.                             |
+| data.wells.[].tags           | tags of well.                             |
+| data.wells.[].metaData       | meta data of well.                        |
+| data.project                 | information about the current project.    |
+| data.project.subProjectName  | current sub-project name.                 |
+| data.project.subProjectTags  | aggregation of all sub-project tags.      |
 
-| Attribute                    | Description                                |
-| :--------------------------- | :----------------------------------------- |
-| event                        | is set to `projectData`.                   |
-| isFrameActive                | true if the frame is currently selected    |
-| data                         | contains data about the event.             |
-| data.assets                  | arrays of information about staged asset.  |
-| data.assets.[].name          | name of staged asset.                      |
-| data.assets.[].tags          | tags of staged asset.                      |
-| data.assets.[].metaData      | meta data of staged asset.                 |
-| data.connections             | arrays of information about staged asset.  |
-| data.connections.[].name     | name of connection.                        |
-| data.connections.[].tags     | tags of connection.                        |
-| data.connections.[].metaData | meta data of connection.                   |
-| data.wells                   | arrays of information about staged asset.  |
-| data.wells.[].name           | name of well.                              |
-| data.wells.[].tags           | tags of well.                              |
-| data.wells.[].metaData       | meta data of well.                         |
-| data.project                 | information about the current project.     |
-| data.project.subProjectName  | current sub-project name.                  |
-| data.project.subProjectTags  | aggregation of all sub-project tags.       |
+## requestInfo
+
+Request informations on a given set of records. Number of records is limited to 100. Multiple requestInfo can be sent. These request are sent at initial loading and on selection. It allows for integration to return some informations used in the UI ( for now only `documentCount` ). The reply is expected to be sent using `replyInfo` and not as a return of this call.
+
+| Attribute          | Description                             |
+| :----------------- | :-------------------------------------- |
+| event              | is set to `requestInfo`.                |
+| isFrameActive      | true if the frame is currently selected |
+| data               | contains data about the event.          |
+| data.items         | array of id/type the request is for     |
+| data.items.[].id   | id of the record the request is for     |
+| data.items.[].type | type of the record the request is for   |
+
+### Example of requestInfo
+
+```javascript
+{
+  event: "requestInfo",
+  isFrameActive: true,
+  data: {
+    items:[{
+      type:"wells",
+      id:"id_of_the_well"
+    }, {
+      type: "stagedAssets",
+      id:"id_of_the_staged_asset"
+    }, {
+      type: "assets",
+      id:"id_of_the_asset"
+    }]
+  }
+}
+```
 
 ### `didCreate` and `didCreateFromNetwork`
 
 Sent when an item was created. Contains the same data as didUpdate, except it does not have `previousData` or `diff`.
 
-* `didCreate` event corresponds to an event triggered in the user browser. 
-* `didCreateFromNetwork` corresponds to a modification to the sub project done through another client or through an API call
+- `didCreate` event corresponds to an event triggered in the user browser.
+- `didCreateFromNetwork` corresponds to a modification to the sub project done through another client or through an API call
 
 The result will contain these attributes:
 
-| Attribute     | Description                                      |
-| :------------ | :----------------------------------------------- |
-| event         | is set to  `didCreate` or `didCreateFromNetwork` |
-| isFrameActive | true if the frame is currently selected          |
-| id            | unique id of the updated item.                   |
-| type          | type of the updated item.                        |
-| data          | contain the raw data of the selected item.       |
+| Attribute     | Description                                     |
+| :------------ | :---------------------------------------------- |
+| event         | is set to `didCreate` or `didCreateFromNetwork` |
+| isFrameActive | true if the frame is currently selected         |
+| id            | unique id of the updated item.                  |
+| type          | type of the updated item.                       |
+| data          | contain the raw data of the selected item.      |
 
 ### `didUpdate` and `didUpdateFromNetwork`
 
 Sent when an item was modified.
 
-* `didUpdate` event corresponds to an event triggered in the user browser.
-* `didUpdateFromNetwork` corresponds to a modification to the sub project done through another client or through an API call.
+- `didUpdate` event corresponds to an event triggered in the user browser.
+- `didUpdateFromNetwork` corresponds to a modification to the sub project done through another client or through an API call.
 
 The result will contain these attributes:
 
 | Attribute     | Description                                          |
 | :------------ | :--------------------------------------------------- |
-| event         | is set to  `didUpdate` or `didUpdateFromNetwork`     |
+| event         | is set to `didUpdate` or `didUpdateFromNetwork`      |
 | isFrameActive | true if the frame is currently selected              |
 | id            | unique id of the updated item.                       |
 | type          | type of the updated item.                            |
@@ -449,31 +479,30 @@ The result will contain these attributes:
 
 ```json
 {
-  "event":"didUpdateFromNetwork",
-  "id":"-LvAW4EZXEXALeigTUzZ",
-  "type":"metaDatumValue",
-  "isFrameActive":true,
+  "event": "didUpdateFromNetwork",
+  "id": "-LvAW4EZXEXALeigTUzZ",
+  "type": "metaDatumValue",
+  "isFrameActive": true,
   "data": {
-    "type":"string",
+    "type": "string",
     "options": {
-      "default":"blue"
+      "default": "blue"
     },
-    "relateToId":"-K5uq-UAY4FhTHllT1xs",
-    "relateToType":"asset",
-    "ownerId":"-LvAOzgcvH3CzYP7IYCP",
-    "value":"227"
+    "relateToId": "-K5uq-UAY4FhTHllT1xs",
+    "relateToType": "asset",
+    "ownerId": "-LvAOzgcvH3CzYP7IYCP",
+    "value": "227"
   },
   "previousData": {
-    "type":"string",
-    "options":{ "default":"blue"
-    },
-    "relateToId":"-K5uq-UAY4FhTHllT1xs",
-    "relateToType":"asset",
-    "ownerId":"-LvAOzgcvH3CzYP7IYCP",
-    "value":"226"
+    "type": "string",
+    "options": { "default": "blue" },
+    "relateToId": "-K5uq-UAY4FhTHllT1xs",
+    "relateToType": "asset",
+    "ownerId": "-LvAOzgcvH3CzYP7IYCP",
+    "value": "226"
   },
-  "diff":{
-    "value":"226"
+  "diff": {
+    "value": "226"
   }
 }
 ```
@@ -482,14 +511,14 @@ The result will contain these attributes:
 
 Sent when an item was deleted. Contains the same data as didUpdate. The data field corresponds at the time of the deletion, so some of the relationships might be set to `null`. In this case, you will find this information inside the `previousData` (if it was set previously, so for example if you create and then delete an element, `previousData` will not be set).
 
-* `didDelete` event corresponds to an event triggered in the user browser.
-* `didDeleteFromNetwork` corresponds to a modification to the sub project done through another client or through an API call.
+- `didDelete` event corresponds to an event triggered in the user browser.
+- `didDeleteFromNetwork` corresponds to a modification to the sub project done through another client or through an API call.
 
 The result will contain these attributes:
 
 | Attribute     | Description                                          |
 | :------------ | :--------------------------------------------------- |
-| event         | is set to  `didDelete` or `didDeleteFromNetwork`     |
+| event         | is set to `didDelete` or `didDeleteFromNetwork`      |
 | isFrameActive | true if the frame is currently selected              |
 | id            | unique id of the updated item.                       |
 | type          | type of the updated item.                            |
@@ -501,31 +530,33 @@ The result will contain these attributes:
 
 ```json
 {
-  "event":"didDeleteFromNetwork",
-  "id":"-LvKED-ci3fW07aNMgqh",
-  "type":"customCost",
+  "event": "didDeleteFromNetwork",
+  "id": "-LvKED-ci3fW07aNMgqh",
+  "type": "customCost",
   "data": {
-    "tags":[],
-    "isValidForCost":true,
-    "costObject":{"value":2356,
-    "entries":[],
-    "costPerDay":0,
-    "currency":"USD",
-    "stateText":"User input",
-    "stateType":"danger",
-    "startDate":"2019-12-09T23:00:00.000Z",
-    "endDate":"2019-12-19T23:00:00.000Z",
-    "supplier":"subsurface 42"},
-    "assetName":"custom entry",
-    "kind":"SPS",
-    "userRight":{
-      "cost":true,
-      "metaData":true,
-      "layer":true,
-      "well":true,
-      "costGen":"-LvFdcBUG9Ign29XgVw2"
+    "tags": [],
+    "isValidForCost": true,
+    "costObject": {
+      "value": 2356,
+      "entries": [],
+      "costPerDay": 0,
+      "currency": "USD",
+      "stateText": "User input",
+      "stateType": "danger",
+      "startDate": "2019-12-09T23:00:00.000Z",
+      "endDate": "2019-12-19T23:00:00.000Z",
+      "supplier": "subsurface 42"
     },
-    "subProject":"-LvA9E5njA5MwR38ClmA"
+    "assetName": "custom entry",
+    "kind": "SPS",
+    "userRight": {
+      "cost": true,
+      "metaData": true,
+      "layer": true,
+      "well": true,
+      "costGen": "-LvFdcBUG9Ign29XgVw2"
+    },
+    "subProject": "-LvA9E5njA5MwR38ClmA"
   }
 }
 ```
@@ -534,141 +565,129 @@ The result will contain these attributes:
 
 ```json
 {
-  "event":"didDelete",
-  "id":"-LvAl_FGFuSPZJHdo_Cj",
-  "type":"connection",
+  "event": "didDelete",
+  "id": "-LvAl_FGFuSPZJHdo_Cj",
+  "type": "connection",
   "data": {
-    "tags":[],
-    "isValidForCost":true,
-    "costObject":{"value":0,
-    "entries":[],
-    "costPerDay":0,
-    "costPerLengthUnit":300,
-    "costByLength":true,
-    "currency":"USD"},
-    "showCustomResults":false,
-    "customResults":{},
-    "designType":null,
-    "visible":true,
-    "userRight":{"cost":true,
-    "metaData":true,
-    "layer":true,
-    "well":true,
-    "costGen":"-LvFdcBUG9Ign29XgVw2"},
-    "bendable":false,
-    "fromSocket":"b",
-    "toSocket":null,
-    "fromCoordinate":{"x":-207.13230953079614,
-    "y":30.84226897392744,
-    "z":2.191579},
-    "toCoordinate":{"x":-228.97472122228268,
-    "y":4.667924202314097,
-    "z":-1200},
-    "intermediaryPoints":[],
-    "params":{"type":2,
-    "label":"Oil Production #2"},
-    "renderOrder":0,
-    "showLabel":false,
-    "showLength":false,
-    "status":null,
-    "importParams":{},
-    "straight":false,
-    "isLocked":false,
-    "subProject":null,
-    "metaDataValue":[],
-    "from":null,
-    "to":null
+    "tags": [],
+    "isValidForCost": true,
+    "costObject": {
+      "value": 0,
+      "entries": [],
+      "costPerDay": 0,
+      "costPerLengthUnit": 300,
+      "costByLength": true,
+      "currency": "USD"
+    },
+    "showCustomResults": false,
+    "customResults": {},
+    "designType": null,
+    "visible": true,
+    "userRight": { "cost": true, "metaData": true, "layer": true, "well": true, "costGen": "-LvFdcBUG9Ign29XgVw2" },
+    "bendable": false,
+    "fromSocket": "b",
+    "toSocket": null,
+    "fromCoordinate": { "x": -207.13230953079614, "y": 30.84226897392744, "z": 2.191579 },
+    "toCoordinate": { "x": -228.97472122228268, "y": 4.667924202314097, "z": -1200 },
+    "intermediaryPoints": [],
+    "params": { "type": 2, "label": "Oil Production #2" },
+    "renderOrder": 0,
+    "showLabel": false,
+    "showLength": false,
+    "status": null,
+    "importParams": {},
+    "straight": false,
+    "isLocked": false,
+    "subProject": null,
+    "metaDataValue": [],
+    "from": null,
+    "to": null
   },
-  "previousData":{
-    "tags":[],
-    "isValidForCost":true,
-    "costObject":{"value":0,
-    "entries":[],
-    "costPerDay":0,
-    "costPerLengthUnit":300,
-    "costByLength":true,
-    "currency":"USD"},
-    "showCustomResults":false,
-    "customResults":{},
-    "designType":null,
-    "visible":true,
-    "userRight":{"cost":true,
-    "metaData":true,
-    "layer":true,
-    "well":true,
-    "costGen":"-LvFdcBUG9Ign29XgVw2"},
-    "bendable":false,
-    "fromSocket":"b",
-    "toSocket":null,
+  "previousData": {
+    "tags": [],
+    "isValidForCost": true,
+    "costObject": {
+      "value": 0,
+      "entries": [],
+      "costPerDay": 0,
+      "costPerLengthUnit": 300,
+      "costByLength": true,
+      "currency": "USD"
+    },
+    "showCustomResults": false,
+    "customResults": {},
+    "designType": null,
+    "visible": true,
+    "userRight": { "cost": true, "metaData": true, "layer": true, "well": true, "costGen": "-LvFdcBUG9Ign29XgVw2" },
+    "bendable": false,
+    "fromSocket": "b",
+    "toSocket": null,
     "fromCoordinate": {
-      "x":-207.13230953079614,
-      "y":30.84226897392744,
-      "z":2.191579
+      "x": -207.13230953079614,
+      "y": 30.84226897392744,
+      "z": 2.191579
     },
-    "toCoordinate":{
-      "x":-228.97472122228268,
-      "y":4.667924202314097,
-      "z":-1200
+    "toCoordinate": {
+      "x": -228.97472122228268,
+      "y": 4.667924202314097,
+      "z": -1200
     },
-    "intermediaryPoints":[],
-    "params":{"type":2,
-    "label":"Oil Production #2"},
-    "renderOrder":0,
-    "showLabel":false,
-    "showLength":false,
-    "status":null,
-    "importParams":{},
-    "straight":false,
-    "isLocked":false,
-    "subProject":"-LvA9E5njA5MwR38ClmA",
-    "metaDataValue":[
-      "-LvAl_ca3FLw3YLrIewI",
-      "-LvAlb8fiOTeGCRB4PkT"
-    ],
-    "from":"-LvAOzgcvH3CzYP7IYCP",
-    "to":null
-    },
-  "diff":{
-    "subProject":"-LvA9E5njA5MwR38ClmA",
-    "metaDataValue": {
-      "0":"-LvAl_ca3FLw3YLrIewI",
-      "1":"-LvAlb8fiOTeGCRB4PkT"
+    "intermediaryPoints": [],
+    "params": { "type": 2, "label": "Oil Production #2" },
+    "renderOrder": 0,
+    "showLabel": false,
+    "showLength": false,
+    "status": null,
+    "importParams": {},
+    "straight": false,
+    "isLocked": false,
+    "subProject": "-LvA9E5njA5MwR38ClmA",
+    "metaDataValue": ["-LvAl_ca3FLw3YLrIewI", "-LvAlb8fiOTeGCRB4PkT"],
+    "from": "-LvAOzgcvH3CzYP7IYCP",
+    "to": null
   },
-  "from":"-LvAOzgcvH3CzYP7IYCP"
+  "diff": {
+    "subProject": "-LvA9E5njA5MwR38ClmA",
+    "metaDataValue": {
+      "0": "-LvAl_ca3FLw3YLrIewI",
+      "1": "-LvAlb8fiOTeGCRB4PkT"
+    },
+    "from": "-LvAOzgcvH3CzYP7IYCP"
   }
 }
 ```
 
 ## didUpdate / didCreate / didDelete attributes
+
 ### Activity
 
 > `event.type` is set to `activity`.
 
-| Attribute                        | Description                                                                                                                                                                                     |
+| Attribute                        | Description                                                                                                                                                                                    |
 | :------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| actionKind                       | Type of action to be performed. Can be `move`, `show`, `hide`, `fadeIn`, `fadeOut`, `idle`.                                                                                                     |
-| activityType                     | Can be  `task`, `milestone` or `project`.                                                                                                                                                       |
-| actor                            | id of the staged asset that the activity is executed on. Can be null.                                                                                                                           |
-| actorAsConnection                | id of the connection that the activity is executed on. Can be null.                                                                                                                             |
-| category                         | Can be `Installation`, `Fabrication` or `Engineering`                                                                                                                                           |
+| actionKind                       | Type of action to be performed. Can be `move`, `show`, `hide`, `fadeIn`, `fadeOut`, `idle`.                                                                                                    |
+| activityType                     | Can be `task`, `milestone` or `project`.                                                                                                                                                       |
+| actor                            | id of the staged asset that the activity is executed on. Can be null.                                                                                                                          |
+| actorAsConnection                | id of the connection that the activity is executed on. Can be null.                                                                                                                            |
+| category                         | Can be `Installation`, `Fabrication` or `Engineering`                                                                                                                                          |
 | clonedFroms                      | Array of ids that describe the parents this activity was cloned from                                                                                                                           |
-| costObject                       | Describe cost                                                                                                                                                                                   |
+| costObject                       | Describe cost                                                                                                                                                                                  |
 | costObject.value                 | Cost value                                                                                                                                                                                     |
 | costObject.entries               | Array of cost entry for cost breakdown                                                                                                                                                         |
-| costObject.entries[].cost        | Cost of the entry                                                                                                                                                                               |
-| costObject.entries[].description | Entry description                                                                                                                                                                               |
+| costObject.entries[].cost        | Cost of the entry                                                                                                                                                                              |
+| costObject.entries[].description | Entry description                                                                                                                                                                              |
 | costObject.entries[].item        | Item vendor id                                                                                                                                                                                 |
 | costObject.entries[].notes       | User notes                                                                                                                                                                                     |
-| costObject.entries[].number      | Part number                                                                                                                                                                                     |
-| costObject.entries[].quantity    | Numbers of item (Cost is multiplied by)                                                                                                                                                         |
-| costObject.costPerDay            | Define cost per day (for activity only)                                                                                                                                                         |
-| costObject.currency              | Define currency, taken from the list described in account/project                                                                                                                               |
+| costObject.entries[].number      | Part number                                                                                                                                                                                    |
+| costObject.entries[].quantity    | Numbers of item (Cost is multiplied by)                                                                                                                                                        |
+| costObject.costPerDay            | Define cost per day (for activity only)                                                                                                                                                        |
+| costObject.currency              | Define currency, taken from the list described in account/project                                                                                                                              |
 | created                          | Creation date "2020-09-11T07:52:47.355Z"                                                                                                                                                       |
 | creator                          | Creator email "name@company.com"                                                                                                                                                               |
 | destinationLocation              | target position if any for `move` type activity.                                                                                                                                               |
-| destinationLocation.x            | x target position                                                                                                                                                                               |
-| destinationLocation.y            | y target position                                                                                                                                                                               |
-| destinationPort                  | id of the destination port if any for `move` type activity.                                                                                                                                     |
+| destinationLocation.x            | x target position                                                                                                                                                                              |
+| destinationLocation.y            | y target position                                                                                                                                                                              |
+| destinationPort                  | id of the destination port if any for `move` type activity.                                                                                                                                    |
 | destinationStagedAsset           | id of the destination asset if any for `move` type activity.                                                                                                                                   |
 | destinationType                  | Define which destination attribute will be for `move` type activity. Can be `location` for `destinationLocation`, `port` for `destinationPort` or `staged-asset` for `destinationStagedAsset`. |
 | startDate                        | Start date of the activity                                                                                                                                                                     |
@@ -680,8 +699,7 @@ The result will contain these attributes:
 | parent                           | id of the parent activity if any                                                                                                                                                               |
 | sortorder                        | UI: order in which task with the same parent will appear                                                                                                                                       |
 | subProject                       | id of the sub project that contain this activity                                                                                                                                               |
-| vendorAttributes                 | Vendor attributes                                                                                                                                                                               |
-
+| vendorAttributes                 | Vendor attributes                                                                                                                                                                              |
 
 ### Bookmark
 
@@ -716,61 +734,61 @@ The result will contain these attributes:
 
 > `event.type` is set to `connection`.
 
-| Attribute                             | Description                                                                                                                                                   |
-| :------------------------------------ | :------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| bendable                              | `true` if the connection is using bendable radius                                                                                                             |
-| clonedFroms                           | Array of ids that describe the parents this element was cloned from                                                                                           |
-| costObject                            | Describe cost                                                                                                                                                 |
-| costObject.value                      | Cost value                                                                                                                                                     |
-| costObject.entries                    | Array of cost entry for cost breakdown                                                                                                                         |
-| costObject.entries[].cost             | Cost of the entry                                                                                                                                             |
-| costObject.entries[].description      | Entry description                                                                                                                                             |
-| costObject.entries[].item             | Item vendor id                                                                                                                                                 |
-| costObject.entries[].notes            | User notes                                                                                                                                                     |
-| costObject.entries[].number           | Part number                                                                                                                                                   |
-| costObject.entries[].quantity         | Numbers of item (Cost is multiplied by)                                                                                                                       |
-| costObject.costPerDay                 | Define cost per day (for activity only)                                                                                                                       |
-| costObject.currency                   | Define currency, taken from the list described in account/project                                                                                             |
-| created                               | Creation date                                                                                                                                                 |
-| creator                               | Creator email                                                                                                                                                 |
-| customResults                         | Custom results are set by integrations using the `Legacy API` and allow an integration to display some data relative to the element                           |
-| designType                            | One of the design from the account assigned to the connection                                                                                                 |
-| from                                  | Staged asset the connection start from, if any                                                                                                                 |
-| fromCoordinate                        | 3D coordinate of the start point of the connection                                                                                                             |
-| fromCoordinate.x                      |                                                                                                                                                               |
-| fromCoordinate.y                      |                                                                                                                                                               |
-| fromCoordinate.z                      |                                                                                                                                                               |
-| fromSocket                            | Which socket on the `from` staged asset the connection is connected to                                                                                         |
-| importParams                          | If connection was imported ( WFS, shapefile, etc. ) this JSON object contains all the meta data that were imported with it. This is a key->value store        |
-| intermediaryPoints                    | Array of 3d point that define                                                                                                                                 |
-| isInactive                            | `true` if the connection is not in use anymore (for old connections that are obsolete)                                                                         |
-| isLocked                              | If locked, the element cannot be edited anymore                                                                                                               |
-| isValidForCost                        | `true` if this element should be used for computing cost                                                                                                       |
-| metaDataValue                         | Contains an array of id of meta data value                                                                                                                     |
-| noHeightSampling                      | If true the connection will not be height sampled                                                                                                             |
-| params                                | Parameters                                                                                                                                                     |
-| params.type                           | Id of the connection type. Lists of valid types are defined in account and project                                                                             |
-| params.label                          | Label of the connection, if not set, type name will be used                                                                                                   |
-| params.textFollowConnection           | `true` if label should follow connection path instead of being a separate entity                                                                               |
-| params.textFollowConnectionFlip       | If `textFollowConnection`, `true` if the position on the spline (top/bottom) should be flipped                                                                 |
-| params.textFollowConnectionOffset     | If `textFollowConnection`, add an offset to the text position along the connection                                                                             |
-| params.textFollowConnectionRepetition | If `textFollowConnection`, number of repetitions of the text along the connection                                                                             |
-| params.textFollowConnectionFlip       | If `textFollowConnection`, indicate if the position on the spline (top/bottom) should be flipped                                                               |
-| renderOrder                           | Rendering sort order to indicate which connection is on top of the other                                                                                       |
-| showCustomResults                     | `true` if custom results (integration driven) should be displayed                                                                                             |
-| showLabel                             | `true` if connection label should be displayed                                                                                                                 |
-| showLength                            | `true` if connection length should be displayed                                                                                                               |
+| Attribute                             | Description                                                                                                                                                        |
+| :------------------------------------ | :----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| bendable                              | `true` if the connection is using bendable radius                                                                                                                  |
+| clonedFroms                           | Array of ids that describe the parents this element was cloned from                                                                                                |
+| costObject                            | Describe cost                                                                                                                                                      |
+| costObject.value                      | Cost value                                                                                                                                                         |
+| costObject.entries                    | Array of cost entry for cost breakdown                                                                                                                             |
+| costObject.entries[].cost             | Cost of the entry                                                                                                                                                  |
+| costObject.entries[].description      | Entry description                                                                                                                                                  |
+| costObject.entries[].item             | Item vendor id                                                                                                                                                     |
+| costObject.entries[].notes            | User notes                                                                                                                                                         |
+| costObject.entries[].number           | Part number                                                                                                                                                        |
+| costObject.entries[].quantity         | Numbers of item (Cost is multiplied by)                                                                                                                            |
+| costObject.costPerDay                 | Define cost per day (for activity only)                                                                                                                            |
+| costObject.currency                   | Define currency, taken from the list described in account/project                                                                                                  |
+| created                               | Creation date                                                                                                                                                      |
+| creator                               | Creator email                                                                                                                                                      |
+| customResults                         | Custom results are set by integrations using the `Legacy API` and allow an integration to display some data relative to the element                                |
+| designType                            | One of the design from the account assigned to the connection                                                                                                      |
+| from                                  | Staged asset the connection start from, if any                                                                                                                     |
+| fromCoordinate                        | 3D coordinate of the start point of the connection                                                                                                                 |
+| fromCoordinate.x                      |                                                                                                                                                                    |
+| fromCoordinate.y                      |                                                                                                                                                                    |
+| fromCoordinate.z                      |                                                                                                                                                                    |
+| fromSocket                            | Which socket on the `from` staged asset the connection is connected to                                                                                             |
+| importParams                          | If connection was imported ( WFS, shapefile, etc. ) this JSON object contains all the meta data that were imported with it. This is a key->value store             |
+| intermediaryPoints                    | Array of 3d point that define                                                                                                                                      |
+| isInactive                            | `true` if the connection is not in use anymore (for old connections that are obsolete)                                                                             |
+| isLocked                              | If locked, the element cannot be edited anymore                                                                                                                    |
+| isValidForCost                        | `true` if this element should be used for computing cost                                                                                                           |
+| metaDataValue                         | Contains an array of id of meta data value                                                                                                                         |
+| noHeightSampling                      | If true the connection will not be height sampled                                                                                                                  |
+| params                                | Parameters                                                                                                                                                         |
+| params.type                           | Id of the connection type. Lists of valid types are defined in account and project                                                                                 |
+| params.label                          | Label of the connection, if not set, type name will be used                                                                                                        |
+| params.textFollowConnection           | `true` if label should follow connection path instead of being a separate entity                                                                                   |
+| params.textFollowConnectionFlip       | If `textFollowConnection`, `true` if the position on the spline (top/bottom) should be flipped                                                                     |
+| params.textFollowConnectionOffset     | If `textFollowConnection`, add an offset to the text position along the connection                                                                                 |
+| params.textFollowConnectionRepetition | If `textFollowConnection`, number of repetitions of the text along the connection                                                                                  |
+| params.textFollowConnectionFlip       | If `textFollowConnection`, indicate if the position on the spline (top/bottom) should be flipped                                                                   |
+| renderOrder                           | Rendering sort order to indicate which connection is on top of the other                                                                                           |
+| showCustomResults                     | `true` if custom results (integration driven) should be displayed                                                                                                  |
+| showLabel                             | `true` if connection label should be displayed                                                                                                                     |
+| showLength                            | `true` if connection length should be displayed                                                                                                                    |
 | status                                | Status of the connection. This is used by the integration to display visual information about a connection. Value can be `warning`, `danger`, `primary`, `success` |
-| straight                              | `true` if the connection is straight                                                                                                                           |
-| subProject                            | Id of the sub project that contains this activity                                                                                                             |
-| tags                                  | Array of tags                                                                                                                                                 |
-| to                                    | Staged asset where the connections ends at, if any                                                                                                             |
-| toCoordinate                          | 3D coordinate of the end point of the connection                                                                                                               |
-| toCoordinate.x                        |                                                                                                                                                               |
-| toCoordinate.y                        |                                                                                                                                                               |
-| toCoordinate.z                        |                                                                                                                                                               |
-| fromSocket                            | Which socket on the `to` staged asset the connection is connected to                                                                                           |
-| visible                               | If true, connection is visible                                                                                                                                |
+| straight                              | `true` if the connection is straight                                                                                                                               |
+| subProject                            | Id of the sub project that contains this activity                                                                                                                  |
+| tags                                  | Array of tags                                                                                                                                                      |
+| to                                    | Staged asset where the connections ends at, if any                                                                                                                 |
+| toCoordinate                          | 3D coordinate of the end point of the connection                                                                                                                   |
+| toCoordinate.x                        |                                                                                                                                                                    |
+| toCoordinate.y                        |                                                                                                                                                                    |
+| toCoordinate.z                        |                                                                                                                                                                    |
+| fromSocket                            | Which socket on the `to` staged asset the connection is connected to                                                                                               |
+| visible                               | If true, connection is visible                                                                                                                                     |
 
 ### Custom Cost
 
@@ -790,7 +808,6 @@ The result will contain these attributes:
 ### Layer
 
 > `event.type` is set to `layer`.
-
 
 | Attribute               | Description                                                                          |
 | :---------------------- | :----------------------------------------------------------------------------------- |
@@ -845,33 +862,34 @@ The result will contain these attributes:
 > A meta datum value is created or modified every time the user edits a meta data in the field. A value is link to a meta data using `metaDatumId`.
 > `event.type` is set to `metaDatumValue`.
 
-> Since 5.4 value are not directly attached to a definition directly, but to a definition id, so that mulitple definition can be use. 
+> Since 5.4 value are not directly attached to a definition directly, but to a definition id, so that mulitple definition can be use.
+>
 > 1. The existing attribute of the message ( subCategory, subType, ownerId, options ) will reflect the first definition
 > 2. All the definition are available inside `definitions` array.
 
-| Attribute                  | Description                                                                                                                                                     |
-| :------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| options                    | Options of the meta data the value refers to. Depends on `type`. See [FieldTwin API](https://api.fieldtwin.com/#api-MetadataDefinitions-AddMetaDataDefinitions) |
-| ownerId                    | Id of the element (connection, staged asset, layer, etc.) that holds this value                                                                                 |
-| metaDatumId                | Id of the meta data this value refers to                                                                                                                        |
-| relateToId                 | Which id the meta data refers to                                                                                                                                |
-| relateToType               | Which type the meta data refers to                                                                                                                              |
-| name                       | Name of the meta data the value refers to                                                                                                                       |
-| type                       | Type of the meta data                                                                                                                                           |
-| category                   | If `type` is asset, and `value` is a valid asset, category of the asset                                                                                         |
-| subCategory                | If `type` is asset, and `value` is a valid asset, sub category of the asset                                                                                     |
-| subType                    | If `type` is asset, and `value` is a valid asset, sub type of the asset                                                                                         |
-| value                      | Actual value                                                                                                                                                    |
-| valueBis                   | Some meta data represents two values, this is the second one                                                                                                    |
-| definitionId               | Generic definition id to use across all FieldTwin instances                                                                                                     |
-| definitions                | Array of one or more definition.                                                                                                                                |
-| definitions.name           | Name of the meta data the value refers to                                                                                                                       |
-| definitions.type           | Type of the meta data                                                                                                                                           |
-| definitions.options        | Options of the meta data the value refers to. Depends on `type`. See [FieldTwin API](https://api.fieldtwin.com/#api-MetadataDefinitions-AddMetaDataDefinitions) |
-| definitions.category       | If `type` is asset, and `value` is a valid asset, category of the asset                                                                                         |
-| definitions.subCategory    | If `type` is asset, and `value` is a valid asset, sub category of the asset                                                                                     |
-| definitions.subType        | Type of the meta data                                                                                                                                           |
-| definitions.metaDatumId    |  of the meta data                                                                                                                                               |
+| Attribute               | Description                                                                                                                                                     |
+| :---------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| options                 | Options of the meta data the value refers to. Depends on `type`. See [FieldTwin API](https://api.fieldtwin.com/#api-MetadataDefinitions-AddMetaDataDefinitions) |
+| ownerId                 | Id of the element (connection, staged asset, layer, etc.) that holds this value                                                                                 |
+| metaDatumId             | Id of the meta data this value refers to                                                                                                                        |
+| relateToId              | Which id the meta data refers to                                                                                                                                |
+| relateToType            | Which type the meta data refers to                                                                                                                              |
+| name                    | Name of the meta data the value refers to                                                                                                                       |
+| type                    | Type of the meta data                                                                                                                                           |
+| category                | If `type` is asset, and `value` is a valid asset, category of the asset                                                                                         |
+| subCategory             | If `type` is asset, and `value` is a valid asset, sub category of the asset                                                                                     |
+| subType                 | If `type` is asset, and `value` is a valid asset, sub type of the asset                                                                                         |
+| value                   | Actual value                                                                                                                                                    |
+| valueBis                | Some meta data represents two values, this is the second one                                                                                                    |
+| definitionId            | Generic definition id to use across all FieldTwin instances                                                                                                     |
+| definitions             | Array of one or more definition.                                                                                                                                |
+| definitions.name        | Name of the meta data the value refers to                                                                                                                       |
+| definitions.type        | Type of the meta data                                                                                                                                           |
+| definitions.options     | Options of the meta data the value refers to. Depends on `type`. See [FieldTwin API](https://api.fieldtwin.com/#api-MetadataDefinitions-AddMetaDataDefinitions) |
+| definitions.category    | If `type` is asset, and `value` is a valid asset, category of the asset                                                                                         |
+| definitions.subCategory | If `type` is asset, and `value` is a valid asset, sub category of the asset                                                                                     |
+| definitions.subType     | Type of the meta data                                                                                                                                           |
+| definitions.metaDatumId | of the meta data                                                                                                                                                |
 
 ### Overlay
 
@@ -896,16 +914,16 @@ The result will contain these attributes:
 
 > `event.type` is set to `port`.
 
-| Attribute   | Description                                                            |
-| :---------- | :--------------------------------------------------------------------- |
-| angle       | Heading, from the center of the screen. Gives the direction to the port|
-| clonedFroms | Array of ids that describe the parents this element was cloned from    |
-| created     | Creation date                                                          |
-| creator     | Creator email                                                          |
-| name        | Name of the port                                                       |
-| subProject  | Id of the sub project that contains this activity                      |
-| x           | X position                                                             |
-| y           | Y position                                                             |
+| Attribute   | Description                                                             |
+| :---------- | :---------------------------------------------------------------------- |
+| angle       | Heading, from the center of the screen. Gives the direction to the port |
+| clonedFroms | Array of ids that describe the parents this element was cloned from     |
+| created     | Creation date                                                           |
+| creator     | Creator email                                                           |
+| name        | Name of the port                                                        |
+| subProject  | Id of the sub project that contains this activity                       |
+| x           | X position                                                              |
+| y           | Y position                                                              |
 
 ### Project
 
@@ -987,73 +1005,72 @@ The result will contain these attributes:
 | wfsConfigurationId                                  | Deprecated                                                          |
 | wmsConfigurationId                                  | Deprecated                                                          |
 
-
 ### Staged Asset
 
 > `event.type` is set to `stagedAsset`.
 
-| Attribute                        | Description                                                                                                                                                      |
-| :------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| asset                            | Id of the asset (representation) of the staged asset                                                                                                            |
-| assetData                        | Information about the asset                                                                                                                                      |
-| assetData.name                   | Name of the asset                                                                                                                                                |
-| assetData.description            | Description of the asset                                                                                                                                        |
-| assetData.category               | Asset category                                                                                                                                                  |
-| assetData.subCategory            | Asset sub category                                                                                                                                              |
-| assetData.subType                | Asset sub type                                                                                                                                                  |
-| assetData.kind                   | Asset sub type                                                                                                                                                  |
-| clonedFroms                      | Array of ids that describe the parents this element was cloned from                                                                                              |
-| costObject                       | Cost definition                                                                                                                                                  |
-| costObject.value                 | Cost value                                                                                                                                                      |
-| costObject.currency              | Currency of the cost                                                                                                                                            |
-| costObject.entries               | Array of cost entry for cost breakdown                                                                                                                          |
-| costObject.entries[].cost        | Cost of the entry                                                                                                                                                |
-| costObject.entries[].description | Entry description                                                                                                                                                |
-| costObject.entries[].item        | Item vendor id                                                                                                                                                  |
-| costObject.entries[].notes       | User note                                                                                                                                                        |
-| costObject.entries[].number      | Part number                                                                                                                                                      |
-| costObject.entries[].quantity    | Number of items (Cost is multiplied by)                                                                                                                          |
-| costObject.costPerDay            | Define cost per day (for activity only)                                                                                                                          |
-| costObject.currency              | Define currency, taken from the list described in account/project                                                                                                |
-| created                          | Creation date                                                                                                                                                    |
-| creator                          | Creator email                                                                                                                                                    |
-| custom                           | (deprecated)                                                                                                                                                    |
-| customResults                    | Custom results are set by integrations using the `Legacy API` and allows an integration to display some data relative to the element                            |
-| havePerAssetSockets              | If `true` the staged asset contains it own set of sockets                                                                                                        |
-| hiddenLabel                      | If `true` the label is hidden                                                                                                                                    |
-| initialState                     | Set of states (position, etc.) for the staged asset                                                                                                              |
-| initialState.height              | Height of the staged asset                                                                                                                                      |
-| initialState.opacity             | Opacity of the staged asset                                                                                                                                      |
-| initialState.rotation            | Heading of the staged asset                                                                                                                                      |
-| initialState.scale               | Scale of the staged asset                                                                                                                                        |
-| initialState.well                | Id of the well the staged asset is connected to, if any                                                                                                          |
-| initialState.width               | Width of the staged asset                                                                                                                                        |
-| initialState.x                   | X real world coordinate of the staged asset                                                                                                                      |
-| initialState.y                   | Y real world coordinate of the staged asset                                                                                                                      |
-| isInactive                       | `true` if the staged asset is not in use anymore                                                                                                                |
-| isLocked                         | If locked, the element cannot be edited anymore                                                                                                                  |
-| isValidForCost                   | `true` if this element should be used for computing cost                                                                                                        |
-| metaDataValue                    | Contains an array of id of meta data value                                                                                                                      |
-| name                             | Name of the staged asset                                                                                                                                        |
-| perAssetParams                   | Parameters for the staged asset                                                                                                                                  |
-| perAssetParams.fontSize          | Font size for displaying label                                                                                                                                  |
-| perAssetSockets2d                | If `havePerAssetSockets` is `true`, array of definition of socket                                                                                                |
-| perAssetSockets2d[].name         | Name of the socket, used in `fromSocket` and `toSocket` when connecting a connection to the staged asset                                                        |
-| perAssetSockets2d[].x            | X offset of the socket, relative to the center of the asset                                                                                                      |
-| perAssetSockets2d[].y            | Y offset of the socket, relative to the center of the asset                                                                                                      |
-| perAssetSockets2d[].z            | z offset of the socket, relative to the center of the asset                                                                                                      |
-| perAssetSockets2d[].types        | array of type for the socket. Only the first item is used                                                                                                        |
-| port                             | Id of the port the staged asset is docked to, if any                                                                                                            |
-| renderOrder                      | Render order for the rendering                                                                                                                                  |
-| showCustomResults                | `true`  custom results are visible                                                                                                                              |
-| showMetaInfo                     | `true` if meta data info box is visible                                                                                                                          |
-| socketMetaDataValue              | Array of meta data values for sockets                                                                                                                            |
+| Attribute                        | Description                                                                                                                                                          |
+| :------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| asset                            | Id of the asset (representation) of the staged asset                                                                                                                 |
+| assetData                        | Information about the asset                                                                                                                                          |
+| assetData.name                   | Name of the asset                                                                                                                                                    |
+| assetData.description            | Description of the asset                                                                                                                                             |
+| assetData.category               | Asset category                                                                                                                                                       |
+| assetData.subCategory            | Asset sub category                                                                                                                                                   |
+| assetData.subType                | Asset sub type                                                                                                                                                       |
+| assetData.kind                   | Asset sub type                                                                                                                                                       |
+| clonedFroms                      | Array of ids that describe the parents this element was cloned from                                                                                                  |
+| costObject                       | Cost definition                                                                                                                                                      |
+| costObject.value                 | Cost value                                                                                                                                                           |
+| costObject.currency              | Currency of the cost                                                                                                                                                 |
+| costObject.entries               | Array of cost entry for cost breakdown                                                                                                                               |
+| costObject.entries[].cost        | Cost of the entry                                                                                                                                                    |
+| costObject.entries[].description | Entry description                                                                                                                                                    |
+| costObject.entries[].item        | Item vendor id                                                                                                                                                       |
+| costObject.entries[].notes       | User note                                                                                                                                                            |
+| costObject.entries[].number      | Part number                                                                                                                                                          |
+| costObject.entries[].quantity    | Number of items (Cost is multiplied by)                                                                                                                              |
+| costObject.costPerDay            | Define cost per day (for activity only)                                                                                                                              |
+| costObject.currency              | Define currency, taken from the list described in account/project                                                                                                    |
+| created                          | Creation date                                                                                                                                                        |
+| creator                          | Creator email                                                                                                                                                        |
+| custom                           | (deprecated)                                                                                                                                                         |
+| customResults                    | Custom results are set by integrations using the `Legacy API` and allows an integration to display some data relative to the element                                 |
+| havePerAssetSockets              | If `true` the staged asset contains it own set of sockets                                                                                                            |
+| hiddenLabel                      | If `true` the label is hidden                                                                                                                                        |
+| initialState                     | Set of states (position, etc.) for the staged asset                                                                                                                  |
+| initialState.height              | Height of the staged asset                                                                                                                                           |
+| initialState.opacity             | Opacity of the staged asset                                                                                                                                          |
+| initialState.rotation            | Heading of the staged asset                                                                                                                                          |
+| initialState.scale               | Scale of the staged asset                                                                                                                                            |
+| initialState.well                | Id of the well the staged asset is connected to, if any                                                                                                              |
+| initialState.width               | Width of the staged asset                                                                                                                                            |
+| initialState.x                   | X real world coordinate of the staged asset                                                                                                                          |
+| initialState.y                   | Y real world coordinate of the staged asset                                                                                                                          |
+| isInactive                       | `true` if the staged asset is not in use anymore                                                                                                                     |
+| isLocked                         | If locked, the element cannot be edited anymore                                                                                                                      |
+| isValidForCost                   | `true` if this element should be used for computing cost                                                                                                             |
+| metaDataValue                    | Contains an array of id of meta data value                                                                                                                           |
+| name                             | Name of the staged asset                                                                                                                                             |
+| perAssetParams                   | Parameters for the staged asset                                                                                                                                      |
+| perAssetParams.fontSize          | Font size for displaying label                                                                                                                                       |
+| perAssetSockets2d                | If `havePerAssetSockets` is `true`, array of definition of socket                                                                                                    |
+| perAssetSockets2d[].name         | Name of the socket, used in `fromSocket` and `toSocket` when connecting a connection to the staged asset                                                             |
+| perAssetSockets2d[].x            | X offset of the socket, relative to the center of the asset                                                                                                          |
+| perAssetSockets2d[].y            | Y offset of the socket, relative to the center of the asset                                                                                                          |
+| perAssetSockets2d[].z            | z offset of the socket, relative to the center of the asset                                                                                                          |
+| perAssetSockets2d[].types        | array of type for the socket. Only the first item is used                                                                                                            |
+| port                             | Id of the port the staged asset is docked to, if any                                                                                                                 |
+| renderOrder                      | Render order for the rendering                                                                                                                                       |
+| showCustomResults                | `true` custom results are visible                                                                                                                                    |
+| showMetaInfo                     | `true` if meta data info box is visible                                                                                                                              |
+| socketMetaDataValue              | Array of meta data values for sockets                                                                                                                                |
 | status                           | Status of the staged asset. This is used by the integration to display visual information about a connection. Value can be `warning`, `danger`, `primary`, `success` |
-| subProject                       | "-MAR0MZqqqk-Tel75u4V"                                                                                                                                          |
-| tags                             | Array of tags                                                                                                                                                    |
-| textColor                        | Color to use for render label                                                                                                                                    |
-| visible                          | Define staged asset visibility                                                                                                                                  |
-| wellmasterConfiguration          | deprecated                                                                                                                                                      |
+| subProject                       | "-MAR0MZqqqk-Tel75u4V"                                                                                                                                               |
+| tags                             | Array of tags                                                                                                                                                        |
+| textColor                        | Color to use for render label                                                                                                                                        |
+| visible                          | Define staged asset visibility                                                                                                                                       |
+| wellmasterConfiguration          | deprecated                                                                                                                                                           |
 
 ### Sub Project
 
@@ -1094,27 +1111,27 @@ The result will contain these attributes:
 | Attribute           | Description                                                                                                                                                                                                        |
 | :------------------ | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | activeWellBore      | Id of the active bore                                                                                                                                                                                              |
-| canBeDrag           | If `true`, user can move the well by dragging it                                                                                                                                                                    |
+| canBeDrag           | If `true`, user can move the well by dragging it                                                                                                                                                                   |
 | clonedFroms         | Array of ids that describe the parents this element was cloned from                                                                                                                                                |
 | color               | Rendering color of the well                                                                                                                                                                                        |
 | created             | Creation date                                                                                                                                                                                                      |
 | creator             | Creator email                                                                                                                                                                                                      |
 | fontSize            | Label font size                                                                                                                                                                                                    |
 | isInactive          | `true` if the well is in not in use anymore                                                                                                                                                                        |
-| kind                | Id of the well type. These are defined in the account settings                                                                                                                                                      |
-| labelOffsetX        | X offset of the label, relative to the well position                                                                                                                                                                |
-| labelOffsetY        | Y offset of the label, relative to the well position                                                                                                                                                                |
-| labelRotation       | Label rotation                                                                                                                                                                                                      |
-| labelVisible        | If `true` label is visible                                                                                                                                                                                          |
-| metaDataValue       | Contains an array of id of meta data value                                                                                                                                                                          |
-| name                | Label / name of the well                                                                                                                                                                                            |
-| radius              | Display radius                                                                                                                                                                                                      |
+| kind                | Id of the well type. These are defined in the account settings                                                                                                                                                     |
+| labelOffsetX        | X offset of the label, relative to the well position                                                                                                                                                               |
+| labelOffsetY        | Y offset of the label, relative to the well position                                                                                                                                                               |
+| labelRotation       | Label rotation                                                                                                                                                                                                     |
+| labelVisible        | If `true` label is visible                                                                                                                                                                                         |
+| metaDataValue       | Contains an array of id of meta data value                                                                                                                                                                         |
+| name                | Label / name of the well                                                                                                                                                                                           |
+| radius              | Display radius                                                                                                                                                                                                     |
 | radiusViewDependant | Dynamic scale of the radius according to the zoom                                                                                                                                                                  |
-| referenceLevel      | reference level of the well. Can be set to `sea`, `rkb` or `seabed`. `sea` set initial depth to `0`, `rkb` set inital depth to `rkb` attribute, `seabed` set inital depth to touch down ( height sampling ) value.  |
-| rkb                 | if `referenceLevel` is set to `rkb` initial depth will be using this value                                                                                                                                          |
+| referenceLevel      | reference level of the well. Can be set to `sea`, `rkb` or `seabed`. `sea` set initial depth to `0`, `rkb` set inital depth to `rkb` attribute, `seabed` set inital depth to touch down ( height sampling ) value. |
+| rkb                 | if `referenceLevel` is set to `rkb` initial depth will be using this value                                                                                                                                         |
 | subProject          | Id of the sub project that contains this activity                                                                                                                                                                  |
 | tags                | Array of tags                                                                                                                                                                                                      |
-| visible             | Define well visibility                                                                                                                                                                                              |
+| visible             | Define well visibility                                                                                                                                                                                             |
 | x                   | Top hole X Position                                                                                                                                                                                                |
 | y                   | Top hole Y position                                                                                                                                                                                                |
 
@@ -1122,29 +1139,28 @@ The result will contain these attributes:
 
 > `event.type` is set to `wellBore`.
 
-| Attribute        | Description                                                                                                     |
-| :--------------- | :-------------------------------------------------------------------------------------------------------------- |
-| casingShoes      | Array of casing shoes                                                                                           |
-| clonedFroms      | Array of ids that describe the parents this element was cloned from                                             |
-| name             | Name of the bore                                                                                                |
-| path             | Array of 3D point. Z value depends on `referenceLevel` set on the parent well                                   |
-| path[].x         | x value of the point                                                                                            |
-| path[].y         | x value of the point                                                                                            |
-| path[].z         | x value of the point                                                                                            |
-| tags             | Array of tags                                                                                                   |
-| targets          | Array of 2 target points. First point is reservoir penetration point. Second point is entry inside the reservoir|
-| targets[].active |                                                                                                                 |
-| targets[].x      |                                                                                                                 |
-| targets[].y      |                                                                                                                 |
-| targets[].z      |                                                                                                                 |
-| targets[].depth  |                                                                                                                 |
-| targets[].az     |                                                                                                                 |
-| targets[].incl   |                                                                                                                 |
-| metaDataValue    | Contains an array of id of meta data value                                                                      |
-| kind             | Id of the well bore type. These are defined in the account settings                                             |
-| subProject       | Id of the sub project that contains this activity                                                               |
-| well             | Id of the parent well                                                                                           |
-
+| Attribute        | Description                                                                                                      |
+| :--------------- | :--------------------------------------------------------------------------------------------------------------- |
+| casingShoes      | Array of casing shoes                                                                                            |
+| clonedFroms      | Array of ids that describe the parents this element was cloned from                                              |
+| name             | Name of the bore                                                                                                 |
+| path             | Array of 3D point. Z value depends on `referenceLevel` set on the parent well                                    |
+| path[].x         | x value of the point                                                                                             |
+| path[].y         | x value of the point                                                                                             |
+| path[].z         | x value of the point                                                                                             |
+| tags             | Array of tags                                                                                                    |
+| targets          | Array of 2 target points. First point is reservoir penetration point. Second point is entry inside the reservoir |
+| targets[].active |                                                                                                                  |
+| targets[].x      |                                                                                                                  |
+| targets[].y      |                                                                                                                  |
+| targets[].z      |                                                                                                                  |
+| targets[].depth  |                                                                                                                  |
+| targets[].az     |                                                                                                                  |
+| targets[].incl   |                                                                                                                  |
+| metaDataValue    | Contains an array of id of meta data value                                                                       |
+| kind             | Id of the well bore type. These are defined in the account settings                                              |
+| subProject       | Id of the sub project that contains this activity                                                                |
+| well             | Id of the parent well                                                                                            |
 
 ## Communication from integration to FieldTwin
 
@@ -1155,10 +1171,10 @@ To do that, just use `postMessage` from `window.parent` within the integration c
 ```javascript
 window.parent.postMessage(
   {
-    event: 'getProjectData'
+    event: 'getProjectData',
   },
   '*'
-);
+)
 ```
 
 The results, if any will then be sent via another `postMessage`.
@@ -1167,7 +1183,7 @@ The results, if any will then be sent via another `postMessage`.
 
 Allows you to get some information about a project. The function will set these attributes:
 
-* attribute `event` is set to `getProjectData`.
+- attribute `event` is set to `getProjectData`.
 
 Result format is defined in `projectData`.
 
@@ -1175,19 +1191,19 @@ Result format is defined in `projectData`.
 
 ```javascript
 {
-  event:"getProjectData"  
+  event: 'getProjectData'
 }
 ```
 
 ### computeCostUsingServer
 
-Launch a cost computation on a cost server. A cost server needs to be defined first. 
+Launch a cost computation on a cost server. A cost server needs to be defined first.
 
 #### Calling computeCostUsingServer
 
 ```javascript
 {
-  event:"computeCostUsingServer"  
+  event: 'computeCostUsingServer'
 }
 ```
 
@@ -1195,13 +1211,12 @@ Launch a cost computation on a cost server. A cost server needs to be defined fi
 
 Focus the view on a given point. Z position will be height sampled, and z value of the point will be added. Which mean that if you set Z at 100, the camera will be position at 100 + height sampled Z.
 
-| Attribute          | Description                                                                              |
-| :----------------- | :--------------------------------------------------------------------------------------- |
-| event              | is set to `zoomAt`.                                                                      |
-| event.data.point.x | X position of the center of the camera lookat                                            |
-| event.data.point.y | Y position of the center of the camera lookat                                            |
-| event.data.point.z | indicate the height distance from the center where the eye of the camera will be         |
-
+| Attribute          | Description                                                                      |
+| :----------------- | :------------------------------------------------------------------------------- |
+| event              | is set to `zoomAt`.                                                              |
+| event.data.point.x | X position of the center of the camera lookat                                    |
+| event.data.point.y | Y position of the center of the camera lookat                                    |
+| event.data.point.z | indicate the height distance from the center where the eye of the camera will be |
 
 ### zoomOn
 
@@ -1229,7 +1244,7 @@ Focus the view on the given item. The function gets these attributes:
 
 Select and focus on one or multiple items.
 
-| Attribute             | Description                                                                            |
+| Attribute             | Description                                                                           |
 | :-------------------- | :------------------------------------------------------------------------------------ |
 | event                 | is set to `select`.                                                                   |
 | event.data.items      | array of item to select.                                                              |
@@ -1254,15 +1269,15 @@ Select and focus on one or multiple items.
 
 Clear selection
 
-| Attribute             | Description                                                                           |
-| :-------------------- | :------------------------------------------------------------------------------------ |
-| event                 | is set to `clearSelection`.                                                           |
+| Attribute | Description                 |
+| :-------- | :-------------------------- |
+| event     | is set to `clearSelection`. |
 
 #### Example
 
 ```javascript
 {
-  event:"clearSelection"
+  event: 'clearSelection'
 }
 ```
 
@@ -1287,3 +1302,23 @@ Result is described in message `costQuery`
 
 For meta data of type "button", user can define a custom message to be sent when the user clicks on the button.
 The message contains the usual information, `event` will be set to the value defined in the meta data.
+
+### replyInfo
+
+This message is sent from the integration to give informations about a particular record(s). This can be send when ever the integration feels like it, but the application can request it using `requestInfo`.
+For now it only returns:
+
+* documentCount number of document for a given resource
+
+```javascript
+{
+  event:"replyInfo",
+  data:{
+    items: [{
+      id:"id_of_the_resource",
+      type:"type_of_the_resource",
+      documentCount:[number_documents_for_the_resource]
+    }]
+  }
+}
+```
