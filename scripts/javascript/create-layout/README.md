@@ -28,7 +28,7 @@ Run the tools from the Command Prompt:
 
 ```
 export TOKEN=api-token
-export LEGACY_API_HOST=legacyapi.[instance].fieldtwin.com
+export BACKEND_HOST=legacyapi.[instance].fieldtwin.com
 
 node get-layout.js --project=projectId1 --sub-project=subProjectId1 > layout.json
 ```
@@ -42,7 +42,7 @@ value) so that you do not duplicate the field in the same subproject it came fro
 
 ```
 export TOKEN=api-token
-export LEGACY_API_HOST=legacyapi.[instance].fieldtwin.com
+export BACKEND_HOST=legacyapi.[instance].fieldtwin.com
 
 node create-layout.js --project=projectId2 --sub-project=subProject2 < layout.json
 ```
