@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python3
 
 import sys
 import os
@@ -8,24 +8,26 @@ if not len(sys.argv) == 4:
     print('Usage: %s <PROJECT_ID> <SUBPROJECT_ID> <CATEGORY>' % os.path.basename(sys.argv[0]))
     sys.exit(1)
 
-shouldExit = False
-for var in ["API_TOKEN", "BACKEND_URL"]:
+for var in ["TOKEN", "BACKEND_HOST"]:
     if not var in os.environ:
-        print('%s: Environment variable needed not set' % var)
-        shouldExit = True
-
-if shouldExit:
-    sys.exit(1)
+        print('Required environment variable not set: %s' % var)
+        sys.exit(1)
 
 PROJECT_ID = sys.argv[1]
 SUBPROJECT_ID = sys.argv[2]
 CATEGORY = sys.argv[3]
 
-API_TOKEN = os.environ['API_TOKEN']
-BACKEND_URL = os.environ['BACKEND_URL']
+TOKEN = os.environ['TOKEN']
+PORT = os.environ.get('PORT', '')
+HOST_URL = 'https://{}{}{}'.format(
+    os.environ['BACKEND_HOST'],
+    ':' if PORT else '',
+    PORT
+)
+API_VERSION = 'v1.9'
 
-url = '%s/API/V1.5/%s/subProject/%s' % (BACKEND_URL, PROJECT_ID, SUBPROJECT_ID)
-headers= {'token':API_TOKEN}
+url = '%s/API/V1.5/%s/subProject/%s' % (HOST_URL, PROJECT_ID, SUBPROJECT_ID)
+headers= {'token':TOKEN}
 r = requests.get(url, headers=headers)
 response = r.json()
 stagedAssets = response["stagedAssets"]
