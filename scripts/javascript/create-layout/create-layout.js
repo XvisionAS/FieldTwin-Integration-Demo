@@ -3,8 +3,8 @@ const parseArgs = require('minimist')
 
 const TOKEN           = process.env.TOKEN
 const PORT            = process.env.PORT || ''
-const LEGACY_API_HOST = process.env.LEGACY_API_HOST
-const HOST_URL        = LEGACY_API_HOST ? `https://${LEGACY_API_HOST}${PORT}` : "http://legacyapi.lvh.me:3002"
+const BACKEND_HOST    = process.env.BACKEND_HOST
+const HOST_URL        = `https://${BACKEND_HOST}${PORT ? ':' : ''}${PORT}`
 const API_VERSION     = 'v1.9'
 
 const argv            = parseArgs(process.argv.slice(2))
