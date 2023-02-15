@@ -26,13 +26,23 @@ HOST_URL = 'https://{}{}{}'.format(
 )
 API_VERSION = 'v1.9'
 
-url = '%s/API/V1.5/%s/subProject/%s/connection/%s' % (HOST_URL, PROJECT_ID, SUBPROJECT_ID, CONNECTION_ID)
-headers= {'token':TOKEN}
+url = f'{HOST_URL}/API/{API_VERSION}/{PROJECT_ID}/subProject/{SUBPROJECT_ID}/connection/{CONNECTION_ID}'
+headers= {
+    'token': TOKEN
+}
 r = requests.get(url, headers=headers)
+if r.status_code != 200:
+    print(r.text)
+    sys.exit(1)
 response = r.json()
-print('%s %s %s' % (response['fromCoordinate']['x'], response['fromCoordinate']['y'], response['fromCoordinate']['z']))
 
-for p in response['intermediaryPoints']:
-    print('%s %s %s' % (p['x'], p['y'], p['z']))
+# Print the connection path as x,y,z values
 
-print('%s %s %s' % (response['toCoordinate']['x'], response['toCoordinate']['y'], response['toCoordinate']['z']))
+start_point = response['fromCoordinate']
+inter_points = response['intermediaryPoints']
+end_point = response['toCoordinate']
+
+print('{} {} {}'.format(start_point['x'], start_point['y'], start_point['z']))
+for p in inter_points:
+    print('{} {} {}'.format(p['x'], p['y'], p['z']))
+print('{} {} {}'.format(end_point['x'], end_point['y'], end_point['z']))

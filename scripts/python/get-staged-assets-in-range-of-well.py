@@ -14,7 +14,8 @@ for var in ["TOKEN", "BACKEND_HOST"]:
         sys.exit(1)
 
 def inRange(p1, p2, range):
-    return (((float(p1[0]) - float(p2[0])) ** 2 + (float(p1[0]) - float(p2[0])) ** 2) ** 0.5) <= float(range)
+    dist = ((float(p1[0]) - float(p2[0])) ** 2 + (float(p1[1]) - float(p2[1])) ** 2) ** 0.5
+    return dist <= range
 
 PROJECT_ID = sys.argv[1]
 SUBPROJECT_ID = sys.argv[2]
@@ -30,18 +31,29 @@ HOST_URL = 'https://{}{}{}'.format(
 )
 API_VERSION = 'v1.9'
 
-url = '%s/API/V1.5/%s/subProject/%s/well/%s' % (HOST_URL, PROJECT_ID, SUBPROJECT_ID, WELL_ID)
-headers= {'token':TOKEN}
+url = f'{HOST_URL}/API/{API_VERSION}/{PROJECT_ID}/subProject/{SUBPROJECT_ID}/well/{WELL_ID}'
+headers = {
+    'token': TOKEN
+}
 r = requests.get(url, headers=headers)
+if r.status_code != 200:
+    print(r.text)
+    sys.exit(1)
 response = r.json()
-wellPos = (response["x"], response["y"])
+wellPos = [response["x"], response["y"]]
 
-url = '%s/API/V1.5/%s/subProject/%s' % (HOST_URL, PROJECT_ID, SUBPROJECT_ID)
-headers= {'token':TOKEN}
+url = f'{HOST_URL}/API/{API_VERSION}/{PROJECT_ID}/subProject/{SUBPROJECT_ID}'
 r = requests.get(url, headers=headers)
+if r.status_code != 200:
+    print(r.text)
+    sys.exit(1)
 response = r.json()
+
 stagedAssets = response["stagedAssets"]
-stagedAssetsFiltered = {k: v  for k,v in stagedAssets.items() if inRange((v['initialState']['x'], v['initialState']['y']), wellPos, RANGE)}
-
+stagedAssetsFiltered = [
+    v for v in stagedAssets.values() if inRange(
+        [v['initialState']['x'], v['initialState']['y']], wellPos, float(RANGE)
+    )
+]
 
 print(stagedAssetsFiltered)
