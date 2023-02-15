@@ -26,12 +26,17 @@ HOST_URL = 'https://{}{}{}'.format(
 )
 API_VERSION = 'v1.9'
 
-url = '%s/API/V1.5/%s/subProject/%s' % (HOST_URL, PROJECT_ID, SUBPROJECT_ID)
-headers= {'token':TOKEN}
+url = f'{HOST_URL}/API/{API_VERSION}/{PROJECT_ID}/subProject/{SUBPROJECT_ID}'
+headers = {
+    'token': TOKEN
+}
 r = requests.get(url, headers=headers)
+if r.status_code != 200:
+    print(r.text)
+    sys.exit(1)
 response = r.json()
-connections = response["connections"]
-connectionsFiltered = {k: v  for k,v in connections.items() if v['designType'] == DESIGN}
 
+connections = response["connections"]
+connectionsFiltered = [ v for v in connections.values() if v['designType'] == DESIGN ]
 
 print(connectionsFiltered)

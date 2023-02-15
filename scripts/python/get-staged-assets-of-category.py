@@ -26,12 +26,17 @@ HOST_URL = 'https://{}{}{}'.format(
 )
 API_VERSION = 'v1.9'
 
-url = '%s/API/V1.5/%s/subProject/%s' % (HOST_URL, PROJECT_ID, SUBPROJECT_ID)
-headers= {'token':TOKEN}
+url = f'{HOST_URL}/API/{API_VERSION}/{PROJECT_ID}/subProject/{SUBPROJECT_ID}'
+headers = {
+    'token': TOKEN
+}
 r = requests.get(url, headers=headers)
+if r.status_code != 200:
+    print(r.text)
+    sys.exit(1)
 response = r.json()
-stagedAssets = response["stagedAssets"]
-stagedAssetsFiltered = {k: v  for k,v in stagedAssets.items() if v['asset']['category'] == CATEGORY}
 
+stagedAssets = response["stagedAssets"]
+stagedAssetsFiltered = [ v for v in stagedAssets.values() if v['asset']['category'] == CATEGORY ]
 
 print(stagedAssetsFiltered)
