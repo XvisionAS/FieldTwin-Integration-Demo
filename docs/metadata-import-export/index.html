@@ -15,21 +15,24 @@
       <div class="card-body">
         <ul class="list-group list-group-flush">
           <li class="list-group-item">
-            <p>Button below will export Object MetaData to excel file</p>
-            <button class="btn btn-primary" @click="DownloadMetaData">DownloadMetaData</button>
+            <p>Click to export the selected object's metadata to an Excel file</p>
+            <button class="btn btn-primary" @click="DownloadMetaData">Download Metadata</button>
           </li>
           <li class="list-group-item">
-            <p>Section below allows you to compare uploaded file with stagedAsset, and eventually upload it</p>
+            <p>
+              This section allows you to upload an Excel file containing object metadata
+              and (step 1) compare the uploaded values with the existing values then (step 2)
+              apply the values from the Excel file in FieldTwin.
+            </p>
             <input type="file" ref="fileInput" @change="uploadFile" />
-            <button class="btn btn-primary" @click="compareMetaData">Compare Data</button>
-            <button class="btn btn-success" @click="uploadMetaData" v-if="comparisonResults.length">Upload
-              MetaData</button>
+            <button class="btn btn-primary" @click="compareMetaData">Compare Metadata</button>
+            <button class="btn btn-success" @click="uploadMetaData" v-if="comparisonResults.length">Store Metadata</button>
             <div v-if="comparisonResults.length">
               <table class="table mt-3" v-if="comparisonResults.length">
                 <thead>
                   <tr>
                     <th>Match</th>
-                    <th>Existing MetaData</th>
+                    <th>Existing Metadata</th>
                     <th>Uploaded File</th>
                   </tr>
                 </thead>
@@ -129,7 +132,7 @@
       switch (event.data.event) {
         case 'loaded':
         case 'tokenRefresh':
-          app.message = 'Please Select Object'
+          app.message = 'Select an object...'
           app.token = event.data.token
           app.backendUrl = event.data.backendUrl
           app.projectId = event.data.project
@@ -147,7 +150,7 @@
               .then(response => response.json())
               .then(data => {
                 app.metaData = data.metaData
-                app.message = `Selected ${app.selected.type} ${app.selected.id}`
+                app.message = `Selected: ${app.selected.type} ${app.selected.id}`
               })
               .catch(error => {
                 console.error('Error:', error);
