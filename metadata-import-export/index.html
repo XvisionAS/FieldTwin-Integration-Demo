@@ -9,12 +9,17 @@
 </head>
 
 <body>
-  <div id="app" class="m-5">
+  <div id="app" class="continer-fluid m-3">
     <h3 v-if="message">{{ message }}</h3>
-    <div class="card" v-if="selected.id">
+    <div class="card mt-3" v-if="selected.id">
       <div class="card-body">
-        <ul class="list-group list-group-flush">
+        <ul class="list-group list-group-flush" v-if="!metaData.length">
           <li class="list-group-item">
+            This object has no metadata.
+          </li>
+        </ul>
+        <ul class="list-group list-group-flush" v-if="metaData.length">
+          <li class="list-group-item pb-3">
             <p>Click to export the selected object's metadata to an Excel file</p>
             <button class="btn btn-primary" @click="DownloadMetaData">Download Metadata</button>
           </li>
@@ -25,15 +30,17 @@
               apply the values from the Excel file in FieldTwin.
             </p>
             <input type="file" ref="fileInput" @change="uploadFile" />
-            <button class="btn btn-primary" @click="compareMetaData">Compare Metadata</button>
-            <button class="btn btn-success" @click="uploadMetaData" v-if="comparisonResults.length">Store Metadata</button>
-            <div v-if="comparisonResults.length">
-              <table class="table mt-3" v-if="comparisonResults.length">
+            <div class="mt-2">
+              <button class="btn btn-primary" @click="compareMetaData">Compare Metadata</button>
+              <button class="btn btn-success" @click="uploadMetaData" v-if="comparisonResults.length">Store Metadata</button>
+            </div>
+            <div class="table-responsive" v-if="comparisonResults.length">
+              <table class="table mt-3">
                 <thead>
                   <tr>
                     <th>Match</th>
                     <th>Existing Metadata</th>
-                    <th>Uploaded File</th>
+                    <th>Uploaded Metadata</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -65,18 +72,28 @@
         comparisonResults: []
       },
       methods: {
+        reset() {
+          this.selected = { id: null };
+          this.metaData = [];
+          this.comparisonResults = [];
+          this.clearUploadFile();
+        },
         uploadFile() {
           this.file = this.$refs.fileInput.files[0];
         },
+        clearUploadFile() {
+          this.$refs.fileInput.value = '';
+        },
         DownloadMetaData() {
           const workbook = XLSX.utils.book_new();
-          const worksheet = XLSX.utils.json_to_sheet(app.metaData);
+          const worksheet = XLSX.utils.json_to_sheet(this.metaData);
           XLSX.utils.book_append_sheet(workbook, worksheet, "Data");
-          const filename = app.selected.id + ".xlsx";
+          const filename = this.selected.id + ".xlsx";
           XLSX.writeFile(workbook, filename);
-          app.message = "Data exported to " + filename;
+          this.message = "Data exported to " + filename;
         },
         compareMetaData() {
+          this.comparisonResults = [];
           const reader = new FileReader();
           reader.onload = e => {
 
@@ -89,15 +106,22 @@
 
             // Load metaData into SheetJS
             const workbook2 = XLSX.utils.book_new();
-            const worksheet2 = XLSX.utils.json_to_sheet(app.metaData);
+            const worksheet2 = XLSX.utils.json_to_sheet(this.metaData);
             XLSX.utils.book_append_sheet(workbook2, worksheet2, "Data");
             const metaData = XLSX.utils.sheet_to_json(worksheet2, { header: 1 });
 
-            for (let i = 0; i < this.metaData.length; i++) {
+            for (let i = 0; i < Math.max(metaData.length, uploadedJSON.length); i++) {
               const rowNumber = i + 1;
-              const value1 = metaData[i];
-              const value2 = uploadedJSON[i];
-              const match = JSON.stringify(value1) === JSON.stringify(value2);
+              let match = false;
+              let value1 = metaData[i];
+              let value2 = uploadedJSON[i];
+              if (value1 === undefined) {
+                value1 = '';
+              } else if (value2 === undefined) {
+                value2 = '';
+              } else {
+                match = JSON.stringify(value1) === JSON.stringify(value2);
+              }
               this.comparisonResults.push({ rowNumber, value1, value2, match });
             }
           };
@@ -110,23 +134,42 @@
             const workbook = XLSX.read(data, { type: "array" });
             const worksheet = workbook.Sheets[workbook.SheetNames[0]];
             const uploadedJSON = XLSX.utils.sheet_to_json(worksheet);
-            fetch(`${app.backendUrl}/API/v1.9/${app.projectId}/subProject/${app.subProjectId}/${app.selected.type}/${app.selected.id}`, {
+            fetch(`${this.backendUrl}/API/v1.9/${this.projectId}/subProject/${this.subProjectId}/${this.selected.type}/${this.selected.id}`, {
               method: 'PATCH',
-              headers: { 'Authorization': 'Bearer ' + app.token, 'Content-Type': 'application/json' },
+              headers: { 'Authorization': 'Bearer ' + this.token, 'Content-Type': 'application/json' },
               body: JSON.stringify({ metaData: uploadedJSON })
             })
               .then(response => response.json())
               .then(data => {
-                app.message = `Uploaded ${app.selected.type} metadata to ${app.selected.id}`
+                this.message = `Stored ${this.selected.type} metadata on ${this.selected.id}`
+                this.reset()
               })
               .catch(error => {
                 console.error('Error:', error);
               });
           }
           reader.readAsArrayBuffer(this.file);
+        },
+        filterMetadataKeys(mdArray) {
+          return mdArray.map(md => {
+            const obj = {...md}
+            delete obj.id
+            delete obj.metaDatumLinkId
+            delete obj.definitionId
+            delete obj.vendorId
+            delete obj.tags
+            delete obj.cost
+            delete obj.costObject
+            delete obj.costPerLength
+            delete obj.unit
+            delete obj.vendorAttributes
+            return obj
+          });
         }
       }
     });
+
+    const appReset = app.reset.bind(app)
 
     function onWindowMessage(event) {
       switch (event.data.event) {
@@ -149,18 +192,20 @@
             })
               .then(response => response.json())
               .then(data => {
-                app.metaData = data.metaData
+                app.metaData = app.filterMetadataKeys(data.metaData || [])
                 app.message = `Selected: ${app.selected.type} ${app.selected.id}`
               })
               .catch(error => {
                 console.error('Error:', error);
               });
           } else {
-            app.selected = { id: null }
+            appReset()
+            app.message = 'Select an object...'
           }
           break
         case 'unselect':
-          app.selected = { id: null }
+          appReset()
+          app.message = 'Select an object...'
           break
       }
     }
