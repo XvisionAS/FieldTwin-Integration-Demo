@@ -9,12 +9,12 @@
 </head>
 
 <body>
-  <div id="app" class="m-5">
+  <div id="app" class="continer-fluid mt-3">
     <h3 v-if="message">{{ message }}</h3>
-    <div class="card" v-if="selected.id">
+    <div class="card mt-3" v-if="selected.id">
       <div class="card-body">
         <ul class="list-group list-group-flush">
-          <li class="list-group-item">
+          <li class="list-group-item pb-3">
             <p>Click to export the selected object's metadata to an Excel file</p>
             <button class="btn btn-primary" @click="DownloadMetaData">Download Metadata</button>
           </li>
@@ -25,15 +25,17 @@
               apply the values from the Excel file in FieldTwin.
             </p>
             <input type="file" ref="fileInput" @change="uploadFile" />
-            <button class="btn btn-primary" @click="compareMetaData">Compare Metadata</button>
-            <button class="btn btn-success" @click="uploadMetaData" v-if="comparisonResults.length">Store Metadata</button>
-            <div v-if="comparisonResults.length">
+            <div class="mt-2">
+              <button class="btn btn-primary" @click="compareMetaData">Compare Metadata</button>
+              <button class="btn btn-success" @click="uploadMetaData" v-if="comparisonResults.length">Store Metadata</button>
+            </div>
+            <div class="table-responsive" v-if="comparisonResults.length">
               <table class="table mt-3" v-if="comparisonResults.length">
                 <thead>
                   <tr>
                     <th>Match</th>
                     <th>Existing Metadata</th>
-                    <th>Uploaded File</th>
+                    <th>Uploaded Metadata</th>
                   </tr>
                 </thead>
                 <tbody>
