@@ -26,3 +26,5 @@ env.*.bat
 /.project
 
 **/.DS_Store
+metadata-import-export/cert.pem
+metadata-import-export/key.pem
