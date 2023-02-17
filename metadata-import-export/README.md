@@ -27,12 +27,14 @@ and queries FieldTwin for metadata attached to a staged asset, connection or wel
 
 ## Usage
 
-1. Open a project in FieldTwin Design, and select a staged asset, connection, or well
-2. You can now download attached metadata using excel file from sheetJs library
+1. Open a project in FieldTwin Design, then select a staged asset, connection or well
+2. Download the selected object's metadata as an Excel file
 
-![Object with no documents uploaded](./step1-2.png)
+![Select an object to download Excel file](./step1-2.png)
 
-3. You can select local excel file (3) and compare metadata with selected object (4) 
-4. Upload excel metadata to selected object
+3. To import, select a local Excel file containing the same data columns
+4. Click the _Compare_ button to upload the file and compare the current current
+   metadata with the uploaded metadata
+5. Click the _Store_ button to save the values from the uploaded file in FieldTwin
 
-![Object with one document uploaded](./step3-4-5.png)
+![Upload Excel file](./step3-4-5.png)
