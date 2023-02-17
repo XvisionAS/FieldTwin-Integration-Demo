@@ -101,11 +101,20 @@
             XLSX.utils.book_append_sheet(workbook2, worksheet2, "Data");
             const metaData = XLSX.utils.sheet_to_json(worksheet2, { header: 1 });
 
-            for (let i = 0; i < this.metaData.length; i++) {
+            for (let i = 0; i < Math.max(metaData.length, uploadedJSON.length); i++) {
               const rowNumber = i + 1;
-              const value1 = metaData[i];
-              const value2 = uploadedJSON[i];
-              const match = JSON.stringify(value1) === JSON.stringify(value2);
+              let match = false;
+              let value1 = metaData[i];
+              let value2 = uploadedJSON[i];
+              if (value1 === undefined) {
+                value1 = '';
+                match = false;
+              } else if (value2 === undefined) {
+                value2 = '';
+                match = false;
+              } else {
+                match = JSON.stringify(value1) === JSON.stringify(value2);
+              }
               this.comparisonResults.push({ rowNumber, value1, value2, match });
             }
           };
