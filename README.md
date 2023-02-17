@@ -19,11 +19,12 @@ You will find the following resources helpful:
 ---------|-------------|-------------------|-----------
 | archived | Old samples that are no longer maintained | | 
 | [asset-dumper](./asset-dumper/) | Exports 3D assets from FieldTwin as Collada files | API | Javascript, Node.js, API token
-| [doc-tab](./doc-tab/) | Simple integration that shows the document files uploaded against an object in FieldTwin Design | Integration | HTML, Javascript, JWT
+| [doc-tab](./doc-tab/) | A minimal single page integration that shows the document files uploaded against an object in FieldTwin Design | Integration | HTML, Javascript, JWT
 | [events-demo](./events-demo/) | Pending review | | 
 | [excel-macro](./excel-macro/) | Calling the API from an Excel workbook | API | Excel, API token
 | [heat-loss-custom-tab](./heat-loss-custom-tab/) | Pending review | | 
 | [lay-connection](./lay-connection/) | Pending review | | 
+| [metadata-import-export](./metadata-import-export/) | A single page integration that exports/imports metadata to/from an Excel worksheet | Integration | HTML, Vue.js, Excel, JWT
 | [scripts/javascript](./scripts/javascript/) | Scripts to export a project layout and recreate it in an empty project | API | Javascript, Node.js, API token
 | [scripts/python](./scripts/python/) | Scripts for reading project data and updating metadata values using Python | API | Python, API token
 | [simple-cost-server](./simple-cost-server/) | Pending review | | 
