@@ -13,7 +13,12 @@
     <h3 v-if="message">{{ message }}</h3>
     <div class="card mt-3" v-if="selected.id">
       <div class="card-body">
-        <ul class="list-group list-group-flush">
+        <ul class="list-group list-group-flush" v-if="!metaData.length">
+          <li class="list-group-item">
+            This object has no metadata.
+          </li>
+        </ul>
+        <ul class="list-group list-group-flush" v-if="metaData.length">
           <li class="list-group-item pb-3">
             <p>Click to export the selected object's metadata to an Excel file</p>
             <button class="btn btn-primary" @click="DownloadMetaData">Download Metadata</button>
