@@ -1,16 +1,16 @@
 {
   "name": "create-layout",
   "version": "1.0.0",
-  "description": "Read and (re)create layout through API",
+  "description": "FieldTwin API sample to read and (re)create a field layout",
   "main": "create-layout.js",
   "dependencies": {
-    "axios": "^0.20.0",
-    "minimist": "^1.2.5"
+    "axios": "^1.3.2",
+    "minimist": "^1.2.7"
   },
   "devDependencies": {},
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "",
-  "license": "ISC"
+  "author": "FutureOn",
+  "license": "MIT"
 }
