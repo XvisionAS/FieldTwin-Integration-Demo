@@ -72,8 +72,17 @@
         comparisonResults: []
       },
       methods: {
+        reset() {
+          this.selected = { id: null };
+          this.metaData = [];
+          this.comparisonResults = [];
+          this.clearUploadFile();
+        },
         uploadFile() {
           this.file = this.$refs.fileInput.files[0];
+        },
+        clearUploadFile() {
+          this.$refs.fileInput.value = '';
         },
         DownloadMetaData() {
           const workbook = XLSX.utils.book_new();
@@ -108,10 +117,8 @@
               let value2 = uploadedJSON[i];
               if (value1 === undefined) {
                 value1 = '';
-                match = false;
               } else if (value2 === undefined) {
                 value2 = '';
-                match = false;
               } else {
                 match = JSON.stringify(value1) === JSON.stringify(value2);
               }
@@ -135,6 +142,7 @@
               .then(response => response.json())
               .then(data => {
                 this.message = `Stored ${this.selected.type} metadata on ${this.selected.id}`
+                this.reset()
               })
               .catch(error => {
                 console.error('Error:', error);
@@ -183,18 +191,19 @@
               .then(response => response.json())
               .then(data => {
                 app.metaData = app.filterMetadataKeys(data.metaData || [])
-                console.log('Read', app.metaData)
                 app.message = `Selected: ${app.selected.type} ${app.selected.id}`
               })
               .catch(error => {
                 console.error('Error:', error);
               });
           } else {
-            app.selected = { id: null }
+            app.reset()
+            app.message = 'Select an object...'
           }
           break
         case 'unselect':
-          app.selected = { id: null }
+          app.reset()
+          app.message = 'Select an object...'
           break
       }
     }
