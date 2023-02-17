@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+    integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+  <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.16.1/xlsx.core.min.js"></script>
+</head>
+
+<body>
+  <div id="app" class="m-5">
+    <h3 v-if="message">{{ message }}</h3>
+    <div class="card" v-if="selected.id">
+      <div class="card-body">
+        <ul class="list-group list-group-flush">
+          <li class="list-group-item">
+            <p>Click to export the selected object's metadata to an Excel file</p>
+            <button class="btn btn-primary" @click="DownloadMetaData">Download Metadata</button>
+          </li>
+          <li class="list-group-item">
+            <p>
+              This section allows you to upload an Excel file containing object metadata
+              and (step 1) compare the uploaded values with the existing values then (step 2)
+              apply the values from the Excel file in FieldTwin.
+            </p>
+            <input type="file" ref="fileInput" @change="uploadFile" />
+            <button class="btn btn-primary" @click="compareMetaData">Compare Metadata</button>
+            <button class="btn btn-success" @click="uploadMetaData" v-if="comparisonResults.length">Store Metadata</button>
+            <div v-if="comparisonResults.length">
+              <table class="table mt-3" v-if="comparisonResults.length">
+                <thead>
+                  <tr>
+                    <th>Match</th>
+                    <th>Existing Metadata</th>
+                    <th>Uploaded File</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr v-for="result in comparisonResults" :class="{ 'table-danger': !result.match }">
+                    <td>{{ result.match }}</td>
+                    <td>{{ result.value1 }}</td>
+                    <td>{{ result.value2 }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const app = new Vue({
+      el: "#app",
+      data: {
+        message: "Initialising...",
+        token: '',
+        backendUrl: '',
+        projectId: '',
+        subProject: '',
+        selected: { id: null },
+        metaData: [],
+        comparisonResults: []
+      },
+      methods: {
+        uploadFile() {
+          this.file = this.$refs.fileInput.files[0];
+        },
+        DownloadMetaData() {
+          const workbook = XLSX.utils.book_new();
+          const worksheet = XLSX.utils.json_to_sheet(app.metaData);
+          XLSX.utils.book_append_sheet(workbook, worksheet, "Data");
+          const filename = app.selected.id + ".xlsx";
+          XLSX.writeFile(workbook, filename);
+          app.message = "Data exported to " + filename;
+        },
+        compareMetaData() {
+          const reader = new FileReader();
+          reader.onload = e => {
+
+            // Read uploaded file
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: "array" });
+            const firstSheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[firstSheetName];
+            const uploadedJSON = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+
+            // Load metaData into SheetJS
+            const workbook2 = XLSX.utils.book_new();
+            const worksheet2 = XLSX.utils.json_to_sheet(app.metaData);
+            XLSX.utils.book_append_sheet(workbook2, worksheet2, "Data");
+            const metaData = XLSX.utils.sheet_to_json(worksheet2, { header: 1 });
+
+            for (let i = 0; i < this.metaData.length; i++) {
+              const rowNumber = i + 1;
+              const value1 = metaData[i];
+              const value2 = uploadedJSON[i];
+              const match = JSON.stringify(value1) === JSON.stringify(value2);
+              this.comparisonResults.push({ rowNumber, value1, value2, match });
+            }
+          };
+          reader.readAsArrayBuffer(this.file);
+        },
+        uploadMetaData() {
+          const reader = new FileReader();
+          reader.onload = e => {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: "array" });
+            const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+            const uploadedJSON = XLSX.utils.sheet_to_json(worksheet);
+            fetch(`${app.backendUrl}/API/v1.9/${app.projectId}/subProject/${app.subProjectId}/${app.selected.type}/${app.selected.id}`, {
+              method: 'PATCH',
+              headers: { 'Authorization': 'Bearer ' + app.token, 'Content-Type': 'application/json' },
+              body: JSON.stringify({ metaData: uploadedJSON })
+            })
+              .then(response => response.json())
+              .then(data => {
+                app.message = `Uploaded ${app.selected.type} metadata to ${app.selected.id}`
+              })
+              .catch(error => {
+                console.error('Error:', error);
+              });
+          }
+          reader.readAsArrayBuffer(this.file);
+        }
+      }
+    });
+
+    function onWindowMessage(event) {
+      switch (event.data.event) {
+        case 'loaded':
+        case 'tokenRefresh':
+          app.message = 'Select an object...'
+          app.token = event.data.token
+          app.backendUrl = event.data.backendUrl
+          app.projectId = event.data.project
+          app.subProjectId = event.data.subProject
+          break
+        case 'select':
+          if (event.data.data.length && ["connection", "stagedAsset", "well"].includes(event.data.data[0].type)) {
+            app.selected = {
+              id: event.data.data[0].id,
+              type: event.data.data[0].type
+            }
+            fetch(`${app.backendUrl}/API/v1.9/${app.projectId}/subProject/${app.subProjectId}/${app.selected.type}/${app.selected.id}`, {
+              headers: { 'Authorization': 'Bearer ' + app.token }
+            })
+              .then(response => response.json())
+              .then(data => {
+                app.metaData = data.metaData
+                app.message = `Selected: ${app.selected.type} ${app.selected.id}`
+              })
+              .catch(error => {
+                console.error('Error:', error);
+              });
+          } else {
+            app.selected = { id: null }
+          }
+          break
+        case 'unselect':
+          app.selected = { id: null }
+          break
+      }
+    }
+    window.addEventListener("message", onWindowMessage);
+  </script>
+</body>
+
+</html>
