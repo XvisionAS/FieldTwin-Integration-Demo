@@ -1,31 +1,26 @@
-const axios  = require('axios')
-const parseArgs =require('minimist')
+const axios     = require('axios')
+const parseArgs = require('minimist')
 
+const TOKEN           = process.env.TOKEN
+const PORT            = process.env.PORT || ''
+const BACKEND_HOST    = process.env.BACKEND_HOST
+const HOST_URL        = `https://${BACKEND_HOST}${PORT ? ':' : ''}${PORT}`
+const API_VERSION     = 'v1.9'
 
-const PORT = process.env.PORT
-const LEGACY_API_HOST =  process.env.LEGACY_API_HOST 
-const HOST_URL  = LEGACY_API_HOST ? `https://${LEGACY_API_HOST}${PORT ? `:${PORT}` : ''}` : "http://legacyapi.lvh.me:3002"
-const API_VERSION = 'v1.7'
-
-const TOKEN = process.env.TOKEN
-const argv = parseArgs(process.argv.slice(2))
-const PROJECT_ID = argv.project
-const SUB_PROJECT_ID= argv['sub-project']
+const argv            = parseArgs(process.argv.slice(2))
+const PROJECT_ID      = argv['project']
+const SUB_PROJECT_ID  = argv['sub-project']
 
 const main = async () => {
   const layout = {}
-  //first get subProject Informations
-  
+
+  // First get subProject information
   const subProject = await axios({
     method: 'get',
     url: `${HOST_URL}/API/${API_VERSION}/${PROJECT_ID}/subProject/${SUB_PROJECT_ID}`,
     headers: {token: TOKEN}
   })
-  const object = [
-    'stagedAssets',
-    'connections'
-  ]
-  
+
   const stagedAssetsId = Object.keys(subProject.data.stagedAssets || {})
   layout.stagedAssets = {}
   for (let i = 0; i < stagedAssetsId.length; i++) {
@@ -73,15 +68,11 @@ const main = async () => {
     })
     layout.wellBores[id] = wellBore.data
   }
-  
+
   console.log(JSON.stringify(layout))
 }
 
-main().then(
-  () => process.exit(0)
-).catch(
-  (e) => {
-    console.log(e)
-    return process.exit(1)
-  }
-)
+main().catch((e) => {
+  console.error(e)
+  process.exit(1)
+})
