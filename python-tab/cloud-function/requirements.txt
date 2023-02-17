@@ -1,6 +1,6 @@
 # pip requirements.txt file for the Python FieldTwin API demo
 # defines the python modules required for the demo function.
 functions-framework==3.*
-requests
-matplotlib
-flask
+requests==2.*
+matplotlib==3.*
+flask==2.*

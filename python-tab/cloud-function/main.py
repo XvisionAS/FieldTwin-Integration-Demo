@@ -13,12 +13,12 @@ def api_get_project(request):
   # the FieldTwin project id
   project_id = request['projectId']
   # the FieldTwin API access token
-  api_token = request['token']
+  jwt = request['token']
   # retrieve the FieldTwin project data using the API
   response = requests.get(
-    f'{api_url}/API/v1.9/{project_id}',
+    f'{api_url}/API/v1.9/{project_id}/basic',
     headers={
-      'authorization': f'bearer {api_token}',
+      'authorization': f'bearer {jwt}',
     }
   )
   project_data = response.json()
@@ -37,12 +37,12 @@ def api_get_connection(request):
   # the FieldTwin connection id
   connection_id = request['connectionId']
   # the FieldTwin API access token
-  api_token = request['token']
+  jwt = request['token']
   # retrieve the connection data using the FieldTwin API
   response = requests.get(
     f'{api_url}/API/v1.9/{project_id}/subProject/{subproject_id}/connection/{connection_id}',
     headers={
-      'authorization': f'bearer {api_token}',
+      'authorization': f'bearer {jwt}',
       # request that the connection is sampled every 1 unit 
       'sample-every': '1',
       # set the sampling method to simplify to significantly reduce the data size
@@ -119,7 +119,7 @@ def get_connection(request):
 
   # obtain the FieldTwin project data (to get the distance unit)
   project_data = api_get_project(request_args)
-  unit = project_data['coordinateUnits']
+  unit = project_data.get('coordinateUnits', 'm')
 
   # obtain the FieldTwin connection data for the selected connection
   connection_data = api_get_connection(request_args)
