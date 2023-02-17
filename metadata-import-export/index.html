@@ -30,7 +30,7 @@
               <button class="btn btn-success" @click="uploadMetaData" v-if="comparisonResults.length">Store Metadata</button>
             </div>
             <div class="table-responsive" v-if="comparisonResults.length">
-              <table class="table mt-3" v-if="comparisonResults.length">
+              <table class="table mt-3">
                 <thead>
                   <tr>
                     <th>Match</th>
@@ -79,6 +79,7 @@
           app.message = "Data exported to " + filename;
         },
         compareMetaData() {
+          this.comparisonResults = [];
           const reader = new FileReader();
           reader.onload = e => {
 
@@ -119,13 +120,29 @@
             })
               .then(response => response.json())
               .then(data => {
-                app.message = `Uploaded ${app.selected.type} metadata to ${app.selected.id}`
+                app.message = `Stored ${app.selected.type} metadata on ${app.selected.id}`
               })
               .catch(error => {
                 console.error('Error:', error);
               });
           }
           reader.readAsArrayBuffer(this.file);
+        },
+        filterMetadataKeys(mdArray) {
+          return mdArray.map(md => {
+            const obj = {...md}
+            delete obj.id
+            delete obj.metaDatumLinkId
+            delete obj.definitionId
+            delete obj.vendorId
+            delete obj.tags
+            delete obj.cost
+            delete obj.costObject
+            delete obj.costPerLength
+            delete obj.unit
+            delete obj.vendorAttributes
+            return obj
+          });
         }
       }
     });
@@ -151,7 +168,7 @@
             })
               .then(response => response.json())
               .then(data => {
-                app.metaData = data.metaData
+                app.metaData = filterMetadataKeys(data.metaData || [])
                 app.message = `Selected: ${app.selected.type} ${app.selected.id}`
               })
               .catch(error => {
