@@ -9,7 +9,7 @@
 </head>
 
 <body>
-  <div id="app" class="continer-fluid mt-3">
+  <div id="app" class="continer-fluid m-3">
     <h3 v-if="message">{{ message }}</h3>
     <div class="card mt-3" v-if="selected.id">
       <div class="card-body">
@@ -72,11 +72,11 @@
         },
         DownloadMetaData() {
           const workbook = XLSX.utils.book_new();
-          const worksheet = XLSX.utils.json_to_sheet(app.metaData);
+          const worksheet = XLSX.utils.json_to_sheet(this.metaData);
           XLSX.utils.book_append_sheet(workbook, worksheet, "Data");
-          const filename = app.selected.id + ".xlsx";
+          const filename = this.selected.id + ".xlsx";
           XLSX.writeFile(workbook, filename);
-          app.message = "Data exported to " + filename;
+          this.message = "Data exported to " + filename;
         },
         compareMetaData() {
           this.comparisonResults = [];
@@ -92,7 +92,7 @@
 
             // Load metaData into SheetJS
             const workbook2 = XLSX.utils.book_new();
-            const worksheet2 = XLSX.utils.json_to_sheet(app.metaData);
+            const worksheet2 = XLSX.utils.json_to_sheet(this.metaData);
             XLSX.utils.book_append_sheet(workbook2, worksheet2, "Data");
             const metaData = XLSX.utils.sheet_to_json(worksheet2, { header: 1 });
 
@@ -113,14 +113,14 @@
             const workbook = XLSX.read(data, { type: "array" });
             const worksheet = workbook.Sheets[workbook.SheetNames[0]];
             const uploadedJSON = XLSX.utils.sheet_to_json(worksheet);
-            fetch(`${app.backendUrl}/API/v1.9/${app.projectId}/subProject/${app.subProjectId}/${app.selected.type}/${app.selected.id}`, {
+            fetch(`${this.backendUrl}/API/v1.9/${this.projectId}/subProject/${this.subProjectId}/${this.selected.type}/${this.selected.id}`, {
               method: 'PATCH',
-              headers: { 'Authorization': 'Bearer ' + app.token, 'Content-Type': 'application/json' },
+              headers: { 'Authorization': 'Bearer ' + this.token, 'Content-Type': 'application/json' },
               body: JSON.stringify({ metaData: uploadedJSON })
             })
               .then(response => response.json())
               .then(data => {
-                app.message = `Stored ${app.selected.type} metadata on ${app.selected.id}`
+                this.message = `Stored ${this.selected.type} metadata on ${this.selected.id}`
               })
               .catch(error => {
                 console.error('Error:', error);
@@ -151,35 +151,36 @@
       switch (event.data.event) {
         case 'loaded':
         case 'tokenRefresh':
-          app.message = 'Select an object...'
-          app.token = event.data.token
-          app.backendUrl = event.data.backendUrl
-          app.projectId = event.data.project
-          app.subProjectId = event.data.subProject
+          this.message = 'Select an object...'
+          this.token = event.data.token
+          this.backendUrl = event.data.backendUrl
+          this.projectId = event.data.project
+          this.subProjectId = event.data.subProject
           break
         case 'select':
           if (event.data.data.length && ["connection", "stagedAsset", "well"].includes(event.data.data[0].type)) {
-            app.selected = {
+            this.selected = {
               id: event.data.data[0].id,
               type: event.data.data[0].type
             }
-            fetch(`${app.backendUrl}/API/v1.9/${app.projectId}/subProject/${app.subProjectId}/${app.selected.type}/${app.selected.id}`, {
-              headers: { 'Authorization': 'Bearer ' + app.token }
+            fetch(`${this.backendUrl}/API/v1.9/${this.projectId}/subProject/${this.subProjectId}/${this.selected.type}/${this.selected.id}`, {
+              headers: { 'Authorization': 'Bearer ' + this.token }
             })
               .then(response => response.json())
               .then(data => {
-                app.metaData = filterMetadataKeys(data.metaData || [])
-                app.message = `Selected: ${app.selected.type} ${app.selected.id}`
+                this.metaData = filterMetadataKeys(data.metaData || [])
+                console.log('Read', this.metaData)
+                this.message = `Selected: ${this.selected.type} ${this.selected.id}`
               })
               .catch(error => {
                 console.error('Error:', error);
               });
           } else {
-            app.selected = { id: null }
+            this.selected = { id: null }
           }
           break
         case 'unselect':
-          app.selected = { id: null }
+          this.selected = { id: null }
           break
       }
     }
