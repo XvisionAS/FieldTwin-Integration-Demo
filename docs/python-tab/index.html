@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<!--
+  This html page provides the static content for a FieldTwin API demo example
+  invoking a backend python cloud function.
+
+  The demo page is displayed in a FieldTwin integration frame and responds
+  to the selection of a connection in FieldTwin. When a connection is selected
+  it sends a request to the backend python cloud function to return a graphical
+  plot of the connection profile.
+-->
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>FieldTwin Python Integration Demo</title>
+  <script>
+    // Shortcut for accessing html elements
+    const $ = document.getElementById.bind(document)
+
+    // !! Change this if your FieldTwin domain is not fieldtwin.com !!
+    const domain = '.fieldtwin.com'
+
+    let token
+    let ftApiUrl
+    let projectId
+    let subProjectId
+    let selected
+
+    // Subscribe to window messages
+    window.addEventListener('message', function(event) {
+      if (event.origin.endsWith(domain)) {
+
+        // Check whether this tab is the active (visible) tab
+        const activeTab = event.data.isFrameActive
+
+        // Handle the window message received from the FieldTwin main application
+        switch(event.data.event) {
+          case 'loaded':
+          case 'tokenRefresh':
+            // Retrieve the FieldTwin API Url, token and project info
+            ftApiUrl = event.data.backendUrl
+            token = event.data.token
+            projectId = event.data.project
+            subProjectId = event.data.subProject
+            break
+          case 'select':
+            // Respond to selection events from FieldTwin
+            if (event.data.data.length) {
+              selected = {
+                id:   event.data.data[0].id,
+                name: event.data.data[0].name,
+                type: event.data.data[0].type
+              }
+              if (token && activeTab && selected.type == 'connection') {
+                requestConnectionProfile(ftApiUrl, projectId, subProjectId, selected, token)
+              } else {
+                setIdle()
+              }
+            }
+            break
+          case 'unselect':
+            selected = null
+            setIdle()
+            break
+        }
+      }
+    })
+
+    // Loads the connection profile image by calling the backend python cloud function
+    function requestConnectionProfile(ftApiUrl, projectId, subProjectId, selected, token) {
+      // Display the selected connection 
+      $('info').innerHTML = `Selected connection: ${selected.name}</br>Calculating profile, please wait...`
+
+      // The URL for the backend Python Cloud Function
+      // !! Change this to be your cloud function URL
+      const cloudFunctionUrl = 'https://python-demo-gt72w42gxa-uc.a.run.app'
+
+      // Create the URL to request the connection profile image 
+      const profileImageUrl = (
+        `${cloudFunctionUrl}?projectId=${projectId}&subProjectId=${subProjectId}` +
+        `&connectionId=${selected.id}&ftApiUrl=${ftApiUrl}&token=${token}`
+      )
+
+      // The backend python cloud function returns a calculated connection profile
+      // image for the selected connection. Display the returned image.
+      $('results').innerHTML = `<img src="${profileImageUrl}" onload="onProfileLoaded()" />`
+    }
+
+    function setIdle() {
+      // Initialise message display
+      $('info').innerHTML= 'Select a connection...'
+      $('results').innerHTML = ''
+    }
+
+    function onProfileLoaded() {
+      // Update the display when the image has been loaded
+      $('info').innerHTML = `Selected connection: ${selected.name}`
+    }
+  </script>
+  <style>
+    body {
+      background-color: #FFFFFF;
+      font-family: Arial, Helvetica, sans-serif;
+      color: #666666;
+    }
+  </style>
+</head>
+<body>
+  <h2>FieldTwin Python Integration Demo</h2>
+  <p id="info"></p>
+  <p id="results"></p>
+</body>
+<script>
+  setTimeout(setIdle, 0)
+</script>
+</html>
