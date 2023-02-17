@@ -151,36 +151,36 @@
       switch (event.data.event) {
         case 'loaded':
         case 'tokenRefresh':
-          this.message = 'Select an object...'
-          this.token = event.data.token
-          this.backendUrl = event.data.backendUrl
-          this.projectId = event.data.project
-          this.subProjectId = event.data.subProject
+          app.message = 'Select an object...'
+          app.token = event.data.token
+          app.backendUrl = event.data.backendUrl
+          app.projectId = event.data.project
+          app.subProjectId = event.data.subProject
           break
         case 'select':
           if (event.data.data.length && ["connection", "stagedAsset", "well"].includes(event.data.data[0].type)) {
-            this.selected = {
+            app.selected = {
               id: event.data.data[0].id,
               type: event.data.data[0].type
             }
-            fetch(`${this.backendUrl}/API/v1.9/${this.projectId}/subProject/${this.subProjectId}/${this.selected.type}/${this.selected.id}`, {
-              headers: { 'Authorization': 'Bearer ' + this.token }
+            fetch(`${app.backendUrl}/API/v1.9/${app.projectId}/subProject/${app.subProjectId}/${app.selected.type}/${app.selected.id}`, {
+              headers: { 'Authorization': 'Bearer ' + app.token }
             })
               .then(response => response.json())
               .then(data => {
-                this.metaData = filterMetadataKeys(data.metaData || [])
-                console.log('Read', this.metaData)
-                this.message = `Selected: ${this.selected.type} ${this.selected.id}`
+                app.metaData = app.filterMetadataKeys(data.metaData || [])
+                console.log('Read', app.metaData)
+                app.message = `Selected: ${app.selected.type} ${app.selected.id}`
               })
               .catch(error => {
                 console.error('Error:', error);
               });
           } else {
-            this.selected = { id: null }
+            app.selected = { id: null }
           }
           break
         case 'unselect':
-          this.selected = { id: null }
+          app.selected = { id: null }
           break
       }
     }
