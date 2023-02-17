@@ -169,6 +169,8 @@
       }
     });
 
+    const appReset = app.reset.bind(app)
+
     function onWindowMessage(event) {
       switch (event.data.event) {
         case 'loaded':
@@ -197,12 +199,12 @@
                 console.error('Error:', error);
               });
           } else {
-            app.reset()
+            appReset()
             app.message = 'Select an object...'
           }
           break
         case 'unselect':
-          app.reset()
+          appReset()
           app.message = 'Select an object...'
           break
       }
