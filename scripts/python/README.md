@@ -4,8 +4,6 @@
 
 A collection of Python scripts that call the FieldTwin API 
 
-* `batch-modify-metadata-value-of-staged-assets.py` - changes the value of a particular
-  metadata field on all staged assets in a subproject
 * `get-connection-points.py` - prints the start, middle, and end coordinates of a
   connection
 * `get-connections-with-design.py` - prints the list of connections in a subproject
@@ -14,6 +12,8 @@ A collection of Python scripts that call the FieldTwin API
   subproject that are within a straight line distance from a particular well
 * `get-staged-assets-of-category.py` - prints the list of staged assets in a subproject
   that have a particular asset category
+* `batch-modify-metadata-value-of-staged-assets.py` - changes the stored value of a
+  particular metadata field on all staged assets in a subproject
 
 ## Installation
 
@@ -42,9 +42,6 @@ Run the tools from the Command Prompt:
 export TOKEN=api-token
 export BACKEND_HOST=legacyapi.[instance].fieldtwin.com
 
-python3 batch-modify-metadata-value-of-staged-assets.py  <PROJECT_ID>          <SUBPROJECT_ID>       <VENDOR_ID>  <METADATA_VALUE>
-python3 batch-modify-metadata-value-of-staged-assets.py  -MuVwueeyoYvwUw2eIra  -MuVwueeyoYvwUw2eIrb  Std.Service  "Oil Production"
-
 python3 get-connection-points.py  <PROJECT_ID>          <SUBPROJECT_ID>       <CONNECTION_ID>
 python3 get-connection-points.py  -MuVwueeyoYvwUw2eIra  -MuVwueeyoYvwUw2eIrb  -MuVwuegoQkES3lvYuix
 
@@ -66,3 +63,17 @@ on the end of the URL.
 The required API token can be created by an administrator in FieldTwin Admin from the
 Account Settings / API section. It must be created for the same account that the project
 lives in.
+
+### batch-modify-metadata-value
+
+This tool examines every staged asset in a subproject and resets the stored value of
+all their metadata entries for a given "vendor ID". The vendor ID is an optional part
+of the metadata field definition, set up in FieldTwin Admin. FutureOn's standard
+metadata library defines vendor IDs with the prefix `Std.`.
+
+:warning: Run this tool against a test project so that you do not overwrite good data.
+
+```
+python3 batch-modify-metadata-value-of-staged-assets.py  <PROJECT_ID>          <SUBPROJECT_ID>       <VENDOR_ID>  <METADATA_VALUE>
+python3 batch-modify-metadata-value-of-staged-assets.py  -MuVwueeyoYvwUw2eIra  -MuVwueeyoYvwUw2eIrb  Std.Service  "Production"
+```
