@@ -152,18 +152,16 @@
         },
         filterMetadataKeys(mdArray) {
           return mdArray.map(md => {
-            const obj = {...md}
-            delete obj.id
-            delete obj.metaDatumLinkId
-            delete obj.definitionId
-            delete obj.vendorId
-            delete obj.tags
-            delete obj.cost
-            delete obj.costObject
-            delete obj.costPerLength
-            delete obj.unit
-            delete obj.vendorAttributes
-            return obj
+            // metaDatumId is required to identify the metadata field
+            // name and type are only for information
+            // the value and option (unit) are the values that can be updated
+            return {
+              metaDatumId: md.metaDatumId,
+              name: md.name,
+              type: md.type,
+              value: md.value,
+              option: md.option
+            }
           });
         }
       }
