@@ -8,10 +8,11 @@ create a FieldTwin integration or call the FieldTwin API.
 You will find the following resources helpful:
 
 * [FieldTwin Documentation Center](https://docs.fieldtwin.com/)
-* [API Reference](https://api.fieldtwin.com/)
 * [Integrations in FieldTwin](./INTEGRATIONS.md)
   * How to develop an integration
   * Reference for the window messages that can be sent to and from an integration
+* [API Reference](https://api.fieldtwin.com/)
+* [Example API calls](./HOWTO.md)
 
 ## List of samples
 
