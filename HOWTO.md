@@ -1,7 +1,7 @@
 # How to ... with the FieldTwin API
 
-The following examples can be run with the [`curl`](https://curl.se/) command line
-utility or imported into the [`Postman`](https://www.postman.com/) application
+The following examples can be run with the [curl](https://curl.se/) command line
+utility or imported into the [Postman](https://www.postman.com/) application
 (_File_ menu, _Import_, select _Raw Text_, paste the whole `curl` command, _Continue_,
 review and replace the variable placeholders with values).
 
@@ -13,8 +13,6 @@ export BACKEND_HOST=backend.<your company>.fieldtwin.com
 export PROJECT=<project id>
 export SUBPROJECT=<subproject id>
 ```
-
-In a Microsoft Windows Command Prompt use `set` instead of `export`.
 
 The API token can be created by an administrator in FieldTwin Admin from the
 Account Settings / API section. It must be created for the same account that the
