@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>Events Tab</title>
+    <style>
+      body {
+        background-color: #ffffff;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div style="display: flex">
+      <div style="max-width: 50%">
+        <div>
+          <button onclick="getProjectData()">
+            <strong> Get data for project </strong>
+          </button>
+        </div>
+        <div>
+          <button onclick="computeCostUsingServer()">
+            <strong> Get Cost from Cost server </strong>
+          </button>
+        </div>
+        <div>
+          <button onclick="getCostQuery()">
+            <strong> Get Cost Query </strong>
+          </button>
+        </div>
+        <div id="focusOn"></div>
+        <h4>Token:</h4>
+        <pre style="max-width: 100%; overflow-x: auto" id="token"></pre>
+      </div>
+      <div>
+        <h4>Event log:</h4>
+        <ol id="event_log" reversed></ol>
+      </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.19.1/moment.js"></script>
+    <script>
+      function onMessage(message) {
+        addTextNode(JSON.stringify(message.data, null, 2))
+
+        switch (message.data.event) {
+          case 'didDelete':
+          case 'didDeleteFromNetwork':
+          case 'unselect':
+            break
+          case 'requestInfo':
+            {
+              const items = message.data.data.items
+              const reply = {
+                event: 'replyInfo',
+                data: {
+                  items: items.map((e) => {
+                    e.documentCount = Math.floor(Math.random() * 10)
+                    return e
+                  }),
+                },
+              }
+
+              window.parent.postMessage(reply, '*')
+            }
+            break
+          case 'loaded':
+            {
+              const token = document.getElementById('token')
+              token.innerHTML = `${message.data.token}`
+            }
+            break
+          default:
+            if (message.data.type) {
+              const focusOn = document.getElementById('focusOn')
+              focusOn.innerHTML = `
+            <button onclick="focusOn('${message.data.type}', '${message.data.id}')">
+              <strong>
+                Focus on ${message.data.type} with id ${message.data.id}
+              </strong>
+            </button>
+            <button onclick="getCostQueryForItem('${message.data.type}', '${message.data.id}')">
+              <strong>
+                Get Cost Query For id ${message.data.id}
+              </strong>
+            </button>
+            `
+            }
+        }
+      }
+
+      window.addEventListener('message', onMessage)
+
+      function getCostQuery() {
+        const message = {
+          event: 'getCostQuery',
+        }
+        window.parent.postMessage(message, '*')
+      }
+
+      function getCostQueryForItem(type, id) {
+        const message = {
+          event: 'getCostQuery',
+          data: {
+            items: [
+              {
+                type,
+                id,
+              },
+            ],
+            queryId: `query_${id}`,
+          },
+        }
+        window.parent.postMessage(message, '*')
+      }
+
+      function computeCostUsingServer() {
+        const message = {
+          event: 'computeCostUsingServer',
+        }
+        window.parent.postMessage(message, '*')
+      }
+
+      function getProjectData() {
+        const message = {
+          event: 'getProjectData',
+        }
+        window.parent.postMessage(message, '*')
+      }
+
+      function focusOn(type, id) {
+        const message = {
+          event: 'zoomOn',
+          data: {
+            type,
+            id,
+          },
+        }
+        window.parent.postMessage(message, '*')
+      }
+
+      function addTextNode(text) {
+        var newDiv = document.createElement('li')
+        newDiv.innerHTML = `[${moment().format('HH:MM:ss')}]<pre><code>${text}</code></pre>`
+        event_log = document.getElementById('event_log')
+        event_log.prepend(newDiv)
+        console.log(text)
+      }
+    </script>
+  </body>
+</html>
