@@ -41,6 +41,18 @@
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.19.1/moment.js"></script>
     <script>
+      function decodeJWT(jwt) {
+        try {
+          const parts = jwt.split('.')
+          const header = JSON.parse(atob(parts[0]))
+          const payload = JSON.parse(atob(parts[1]))
+          return { header, payload }
+        } catch (e) {
+          console.log('Invalid JWT', e)
+          return { header: {}, payload: {} }
+        }
+      }
+
       function onMessage(message) {
         addTextNode(JSON.stringify(message.data, null, 2))
 
@@ -67,8 +79,9 @@
             break
           case 'loaded':
             {
+              const decoded = decodeJWT(message.data.token)
               const token = document.getElementById('token')
-              token.innerHTML = `${message.data.token}`
+              token.innerHTML = `${message.data.token}<br/><br/>Decoded:<br/>${JSON.stringify(decoded.payload, null, 2)}`
             }
             break
           default:
