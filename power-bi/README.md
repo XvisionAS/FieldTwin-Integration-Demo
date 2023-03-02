@@ -2,7 +2,7 @@
 
 ## Installation
 
-A Power BI report can be displayed in FieldTwin as integration tab. The process is as follows:
+A Power BI report can be displayed in FieldTwin as an integration tab. The process is as follows:
 
 1. Open the report in Power BI
 2. Click _File_, _Embed Report_, to _Website or portal_
