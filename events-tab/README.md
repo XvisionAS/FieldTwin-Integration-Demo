@@ -8,6 +8,7 @@ A testing and debugging tool that is deployed as a tab inside FieldTwin Design.
 * Prints all [integration window messages](../INTEGRATIONS.md#communication-from-fieldtwin-to-integration)
   received from FieldTwin as they arrive
 * Buttons to send window messages to FieldTwin
+* Operates as a visible or a hidden tool
 
 ## Installation
 
@@ -24,6 +25,15 @@ A testing and debugging tool that is deployed as a tab inside FieldTwin Design.
    Do not pass arguments in URL:   yes
    Tab Display Position:           Module Panel (default)
    ```
+
+The integration can also be installed as a hidden/headless tab by setting the
+_Tab Display Position_ to either:
+
+* Hidden Local Tab, or
+* Hidden Global Tab
+
+In this case the events received can be monitored by opening _Developer Tools_ in the web
+browser and viewing the _JavaScript Console_.
 
 ## Usage
 
