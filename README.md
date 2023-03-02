@@ -26,6 +26,7 @@ You will find the following resources helpful:
 | [heat-loss-custom-tab](./heat-loss-custom-tab/) | Pending review | | 
 | [lay-connection](./lay-connection/) | Pending review | | 
 | [metadata-import-export](./metadata-import-export/) | A single page integration that exports/imports metadata to/from an Excel worksheet | Integration | HTML, Vue.js, Excel, JWT
+| [power-bi](./power-bi/) | Instructions for how to embed a Power BI report inside FieldTwin | Integration | Power BI
 | [python-notebook](./python-notebook/) | Jupyter notebooks for plotting the seabed profile of a connection, sorting connections into length order, and getting and setting metadata values | API | Python, API token
 | [python-tab](./python-tab/) | An integration that calls a serverless Python function to plot the seabed profile of a connection | Integration | HTML, Python, Serverless, JWT
 | [scripts/javascript](./scripts/javascript/) | Scripts to export a project layout and recreate it in an empty project | API | Javascript, Node.js, API token
