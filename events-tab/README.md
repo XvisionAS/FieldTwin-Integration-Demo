@@ -32,3 +32,5 @@ A testing and debugging tool that is deployed as a tab inside FieldTwin Design.
 2. Drag the tab to a convenient location in FieldTwin Design
 3. Use FieldTwin Design normally
 4. The tab will show selection and change events as they arrive
+
+![Events tab showing selection event](./screenshot-1.png)
