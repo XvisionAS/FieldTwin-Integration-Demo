@@ -18,7 +18,7 @@ A testing and debugging tool that is deployed as a tab inside FieldTwin Design.
 2. In FieldTwin Admin, go to Account Settings, then Integrations, and click _Create New Tab_.
    Set the following values:  
    ```
-   Name:                           _Events Tab
+   Name:                           Events Tab
    URL:                            <the URL from step 1>
    Use GET verb:                   yes
    Do not pass arguments in URL:   yes
