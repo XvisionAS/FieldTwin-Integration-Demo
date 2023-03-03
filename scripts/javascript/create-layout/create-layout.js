@@ -60,6 +60,7 @@ const main = async () => {
       console.log(wellBorePayload.name)
       wellBorePayload.targets = [{x:0, y:0, z:0}, {x:0, y:0, z:0}]
       delete wellBorePayload.kind
+      delete wellBorePayload.subProject
       delete wellBorePayload.clonedFroms
       delete wellBorePayload.importParams
       if (!RESTORE_METADATA) {
@@ -123,10 +124,16 @@ const main = async () => {
     delete payload.subProject
     delete payload.clonedFroms
     delete payload.importParams
+    delete payload.bendable
+    delete payload.bendParams
     delete payload.length
-    delete payload.connectionType // taken from params.type
-    delete payload.definition     // taken from params.type
-    delete payload.designName     // taken from designType
+    delete payload.shapes
+    delete payload.connectionType  // taken from params.type
+    delete payload.definition      // taken from params.type
+    delete payload.designName      // taken from designType
+    delete payload.renderAs        // taken from designType
+    delete payload.fromSocketLabel // taken from fromSocket
+    delete payload.toSocketLabel   // taken from toSocket
     payload.designType ||= 'None'
 
     payload.from = mapIds[payload.from.id]
@@ -136,9 +143,6 @@ const main = async () => {
       delete payload.metaData
     }
 
-    // TODO FIXME API v1.9 validation needs updating for connection creation
-    connectionFilter(payload)
-
     const connection = await axios({
       method: 'post',
       data: payload,
@@ -146,24 +150,6 @@ const main = async () => {
       headers: {token: TOKEN}
     })
     mapIds[id] = connection.data.id
-  }
-}
-
-// TODO FIXME API v1.9 this can be deleted after connection validation has been updated
-const connectionFilter = (conn) => {
-  const remove = [
-    'bendable', 'bendParams', 'shapes', 'visible', 'isValidForCost', 'tags',
-    'noHeightSampling', 'isInactive', 'opacity', 'renderAs', 'fromSocketLabel',
-    'toSocketLabel'
-  ]
-  remove.forEach(attr => delete conn[attr])
-  if (conn.costObject) { delete conn.costObject.costPerDay }
-  if (conn.params) {
-    const typeId = conn.params.type
-    for (const attr in conn.params) {
-      delete conn.params[attr]
-    }
-    conn.params.type = typeId
   }
 }
 
