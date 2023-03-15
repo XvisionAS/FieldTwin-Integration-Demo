@@ -128,13 +128,19 @@ const main = async () => {
     delete payload.bendParams
     delete payload.length
     delete payload.shapes
-    delete payload.connectionType  // taken from params.type
-    delete payload.definition      // taken from params.type
-    delete payload.designName      // taken from designType
-    delete payload.renderAs        // taken from designType
-    delete payload.fromSocketLabel // taken from fromSocket
-    delete payload.toSocketLabel   // taken from toSocket
+    delete payload.connectionType  // generated from params.type
+    delete payload.definition      // generated from params.type
+    delete payload.designName      // generated from designType
+    delete payload.renderAs        // generated from designType
+    delete payload.fromSocketLabel // generated from fromSocket
+    delete payload.toSocketLabel   // generated from toSocket
+    delete payload.fromCoordinate  // generated from fromSocket
+    delete payload.toCoordinate    // generated from toSocket
+
     payload.designType ||= 'None'
+    if (payload.designType !== 'None') {
+      delete payload.intermediaryPoints  // generated from designType and params[designType]
+    }
 
     payload.from = mapIds[payload.from.id]
     payload.to = mapIds[payload.to.id]
