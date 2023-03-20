@@ -88,7 +88,7 @@ curl -H "token: ${TOKEN}" \
 * Providing `simplify: true` removes the points that fall in a straight line
 * The connection profile is returned in the `sampled` attribute
 
-## Set custom results for a staged asset
+## Visualise custom data for a staged asset
 
 [docs link](https://api.fieldtwin.com/#api-StagedAssets-SetStagedAsset)
 
@@ -127,7 +127,7 @@ curl -H "token: ${TOKEN}" \
      https://${BACKEND_HOST}/API/v1.9/${PROJECT}/subProject/${SUBPROJECT}/stagedAsset/${STAGEDASSET}
 ```
 
-## Set visualisation data along a connection
+## Visualise custom data along a connection
 
 [docs link](https://api.fieldtwin.com/#api-Connections-SetConnection)
 
@@ -176,6 +176,64 @@ curl -H "token: ${TOKEN}" \
      --data '{ "visibleVisualisationMapId": null }' \
      https://${BACKEND_HOST}/API/v1.9/${PROJECT}/subProject/${SUBPROJECT}/connection/${CONNECTION}
 ```
+
+## Store custom data at project level
+
+[docs link (write)](https://api.fieldtwin.com/#api-Projects-PatchProject)  
+[docs link (read)](https://api.fieldtwin.com/#api-Projects-GetProjectVendorAttributes)
+
+FieldTwin provides the `vendorAttributes` attribute on many objects including account,
+project, subproject, staged asset, connection, and document. This can be used to attach
+custom data to the object. There is no built-in visualisation of this data.
+
+Because `vendorAttributes` can be used by more than one integration or for more than one
+purpose, we use a convention of storing data objects inside a child key to keep the different
+uses separate. The API will merge the provided top-level key(s) into the `vendorAttributes`
+without overwriting other existing top-level keys.
+
+```
+curl -H "token: ${TOKEN}" \
+     -H "content-type: application/json" \
+     --request PATCH \
+     --data '{ "vendorAttributes": { "myIntegration": { "foo": "bar"} } }' \
+     https://${BACKEND_HOST}/API/v1.9/${PROJECT}
+```
+
+Example of data separation using keys:
+
+```
+curl -H "token: ${TOKEN}" \
+     -H "content-type: application/json" \
+     --request PATCH \
+     --data '{ "vendorAttributes": { "drillPro": { "settings": { "name": "Drill Pro v1" } } } }' \
+     https://${BACKEND_HOST}/API/v1.9/${PROJECT}
+
+curl -H "token: ${TOKEN}" \
+     -H "content-type: application/json" \
+     --request PATCH \
+     --data '{ "vendorAttributes": { "heatCalc": { "scenario": "Base Case", "autoCalc": true, "pipes": ["c-1", "c-2", "c-3"] } } }' \
+     https://${BACKEND_HOST}/API/v1.9/${PROJECT}
+
+curl -H "token: ${TOKEN}" \
+     https://${BACKEND_HOST}/API/v1.9/${PROJECT}/vendorAttributes
+-->
+     {
+          "drillPro": {
+               "settings": {
+                    "name": "Drill Pro v1"
+               }
+          },
+          "heatCalc": {
+               "scenario": "Base Case",
+               "autoCalc": true,
+               "pipes": ["c-1", "c-2", "c-3"]
+          }
+     }
+```
+
+* Only one level of keys is merged into `vendorAttributes`
+     * In the above example, to add something new into `drillPro` you have to
+       PATCH the whole `drillPro` object a second time
 
 ## Delete a staged asset
 
