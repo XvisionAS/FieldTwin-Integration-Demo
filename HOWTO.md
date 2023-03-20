@@ -232,8 +232,10 @@ curl -H "token: ${TOKEN}" \
 ```
 
 * Only one level of keys is merged into `vendorAttributes`
-     * In the above example, to add something new into `drillPro` you have to
-       PATCH the whole `drillPro` object a second time
+     * In the above example, to add something new into `drillPro` you have to PATCH
+       the whole `drillPro` object a second time
+* To delete one set of `vendorAttributes`,
+  send PATCH data of the format: `{ "vendorAttributes": { "myIntegration": null } }`
 
 ## Delete a staged asset
 
