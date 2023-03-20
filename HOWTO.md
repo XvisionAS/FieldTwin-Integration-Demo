@@ -195,7 +195,7 @@ without overwriting other existing top-level keys.
 curl -H "token: ${TOKEN}" \
      -H "content-type: application/json" \
      --request PATCH \
-     --data '{ "vendorAttributes": { "myIntegration": { "foo": "bar"} } }' \
+     --data '{ "vendorAttributes": { "myIntegration": { "foo": "bar" } } }' \
      https://${BACKEND_HOST}/API/v1.9/${PROJECT}
 ```
 
