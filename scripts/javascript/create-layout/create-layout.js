@@ -1,3 +1,4 @@
+const fs        = require('fs')
 const axios     = require('axios')
 const parseArgs = require('minimist')
 
@@ -15,9 +16,21 @@ const SUB_PROJECT_ID  = argv['sub-project']
 // (otherwise the metadata definition IDs may not match)
 const RESTORE_METADATA = false
 
-const main = async () => {
-  const fs = require("fs")
+// Deletes attributes that do not apply or are set automatically when creating new objects
+const deleteCommonAttributes = (obj) => {
+  delete obj.subProject
+  delete obj.clonedFroms
+  delete obj.importParams
+  delete obj.kind
+  delete obj.creator
+  delete obj.created
 
+  if (!RESTORE_METADATA) {
+    delete obj.metaData
+  }
+}
+
+const main = async () => {
   console.log('#### Creating Layout')
   console.log(`## Project ${PROJECT_ID}`)
   console.log(`## Sub Project ${SUB_PROJECT_ID}`)
@@ -35,16 +48,10 @@ const main = async () => {
     console.log(`# well head: ${payload.name}`)
     // create well without the well bores
     payload.kind = payload.kind && payload.kind.id
-    const wellBores = payload.wellBores || []
-    delete payload.kind
-    delete payload.subProject
-    delete payload.clonedFroms
-    delete payload.importParams
+    deleteCommonAttributes(payload)
     delete payload.wellBores
     delete payload.activeWellBore
-    if (!RESTORE_METADATA) {
-      delete payload.metaData
-    }
+    const wellBores = payload.wellBores || []
 
     const well = await axios({
       method: 'post',
@@ -58,14 +65,8 @@ const main = async () => {
     for (let i = 0; i < wellBores.length; i++) {
       const wellBorePayload = wellBores[i]
       console.log(wellBorePayload.name)
+      deleteCommonAttributes(wellBorePayload)
       wellBorePayload.targets = [{x:0, y:0, z:0}, {x:0, y:0, z:0}]
-      delete wellBorePayload.kind
-      delete wellBorePayload.subProject
-      delete wellBorePayload.clonedFroms
-      delete wellBorePayload.importParams
-      if (!RESTORE_METADATA) {
-        delete wellBorePayload.metaData
-      }
 
       const wellBore = await axios({
         method: 'post',
@@ -90,20 +91,13 @@ const main = async () => {
       payload.initialState.z = undefined
     }
 
+    deleteCommonAttributes(payload)
     payload.initialState.lastSelectedWell = payload.well?.id ? mapIds[payload.well?.id] : undefined
-    delete payload.subProject
-    delete payload.clonedFroms
-    delete payload.importParams
     delete payload.lastSelectedWell
     delete payload.well
-
     // connections do not exist yet
     delete payload.connectionsAsFrom
     delete payload.connectionsAsTo
-
-    if (!RESTORE_METADATA) {
-      delete payload.metaData
-    }
 
     const stagedAsset = await axios({
       method: 'post',
@@ -120,10 +114,8 @@ const main = async () => {
   for (let id of connectionsIds) {
 
     const payload = JSON.parse(JSON.stringify(layout.connections[id]))
-    console.log(`# creating ${payload.params.label}`) 
-    delete payload.subProject
-    delete payload.clonedFroms
-    delete payload.importParams
+    console.log(`# creating ${payload.params.label}`)
+    deleteCommonAttributes(payload)
     delete payload.bendable
     delete payload.bendParams
     delete payload.length
@@ -144,10 +136,6 @@ const main = async () => {
 
     payload.from = mapIds[payload.from.id]
     payload.to = mapIds[payload.to.id]
-
-    if (!RESTORE_METADATA) {
-      delete payload.metaData
-    }
 
     const connection = await axios({
       method: 'post',
