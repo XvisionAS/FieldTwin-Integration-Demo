@@ -271,3 +271,15 @@ curl -H "Authorization: Bearer ${JWT}" \
 For integration user interfaces and settings pages you should use the provided JWT
 whenever possible. API tokens are suitable for back-end tasks when there is no user
 session or when administration permission is required.
+
+## Linked Projects
+
+Requesting child subproject will return a sum of objects from both parent and child subprojects. Requesting parent subproject will only return objects from parent subproject
+
+[docs link](https://design.fieldtwin.com/dashboard/#links)
+
+```
+curl -H "token: ${TOKEN}" \
+     --request DELETE \
+     https://${BACKEND_HOST}/API/v1.9/${PROJECT}/subProject/${SUBPROJECT}
+```
