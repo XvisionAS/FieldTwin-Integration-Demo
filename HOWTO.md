@@ -322,6 +322,10 @@ curl -H "token: ${TOKEN}" \
 
 Requesting a parent subproject returns only the objects that live in the parent.
 
+## Using Smart Models
+
+Smart models consist of several models that enable the creation of intricate custom models. To achieve this, it is essential to have smart assets metadata groups in your library. For instance, when working with turbines and foundations, you must initially assign the foundation metadata group to the turbine. This will allow you to select the turbine foundation by modifying the metadata in the designer. Once the objects are linked, all connections to foundation are easily accessible through the turbine.
+
 ## Provide a JWT instead of an API token
 
 A JWT is passed to an integration in the [`loaded` window message](./INTEGRATIONS.md#loaded)
