@@ -249,6 +249,79 @@ curl -H "token: ${TOKEN}" \
      https://${BACKEND_HOST}/API/v1.9/${PROJECT}/subProject/${SUBPROJECT}/stagedAsset/${STAGEDASSET}
 ```
 
+## Requesting linked (parent/child) subprojects
+
+[docs link](https://design.fieldtwin.com/dashboard/#links)
+
+By default, requesting a child subproject returns the sum of objects from both the parent
+subproject(s) and the child. Objects that are automatically merged from a parent subproject
+have a different `subProject` value and are given additional attributes in the JSON:
+
+```
+curl -H "token: ${TOKEN}" \
+     https://${BACKEND_HOST}/API/v1.9/${PROJECT}/subProject/${SUBPROJECT}
+-->
+{
+     "id": "-MjF6TYxJ-mkAzWnnsfa",
+     "name": "Child Subproject",
+     "stagedAssets": {
+          "-MkaNgEfqAYhqyhQHNsz": {
+               "name": "Local FPSO #1",
+               "visible": true,
+               "subProject": "-MjF6TYxJ-mkAzWnnsfa"
+          },
+          "-MjF4vtXQ574Bid3Zbs2": {
+               "name": "XMT from parent backdrop",
+               "visible": true,
+               "subProject": "-MjF3wciX_dTQzLL4aOu",
+               "project": "-MjF3L9vJdSXSOiYZiMQ",
+               "isForeign": true,
+               "getFromSubProject": "https://example.fieldtwin.com/API/v1.9/-MjF3L9vJdSXSOiYZiMQ/subProject/-MjF3wciX_dTQzLL4aOu",
+               "getFrom": "https://example.fieldtwin.com/API/v1.9/-MjF3L9vJdSXSOiYZiMQ/subProject/-MjF3wciX_dTQzLL4aOu/stagedAsset/-MjF4vtXQ574Bid3Zbs2"
+          }
+     }
+}
+```
+
+If you wish to request a child subproject without merging the items from the parent(s),
+set the `merge-foreign` request header to `false`. The parent objects are then returned
+in a separate list of `foreignSubProjects`.
+
+```
+curl -H "token: ${TOKEN}" \
+     -H "merge-foreign: false" \
+     https://${BACKEND_HOST}/API/v1.9/${PROJECT}/subProject/${SUBPROJECT}
+-->
+{
+     "id": "-MjF6TYxJ-mkAzWnnsfa",
+     "name": "Child Subproject",
+     "stagedAssets": {
+          "-MkaNgEfqAYhqyhQHNsz": {
+               "name": "Local FPSO #1",
+               "visible": true,
+               "subProject": "-MjF6TYxJ-mkAzWnnsfa"
+          }
+     },
+     "foreignSubProjects": [
+          {
+               "id": "-MjF3wciX_dTQzLL4aOu",
+               "name": "Parent Project 1",
+               "stagedAssets": {
+                    "-MjF4vtXQ574Bid3Zbs2": {
+                         "name": "XMT from parent backdrop",
+                         "visible": true,
+                         "subProject": "-MjF3wciX_dTQzLL4aOu",
+                         "project": "-MjF3L9vJdSXSOiYZiMQ",
+                         "isForeign": true
+                    }
+               }
+          }
+     ]
+}
+```
+
+Requesting a parent subproject returns only the objects that live in the parent.
+
 ## Provide a JWT instead of an API token
 
 A JWT is passed to an integration in the [`loaded` window message](./INTEGRATIONS.md#loaded)
