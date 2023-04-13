@@ -249,7 +249,7 @@ curl -H "token: ${TOKEN}" \
      https://${BACKEND_HOST}/API/v1.9/${PROJECT}/subProject/${SUBPROJECT}/stagedAsset/${STAGEDASSET}
 ```
 
-## Requesting linked (parent/child) subprojects
+## Request linked (parent/child) subprojects
 
 [docs link](https://design.fieldtwin.com/dashboard/#links)
 
