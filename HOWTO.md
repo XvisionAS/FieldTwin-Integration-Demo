@@ -327,7 +327,7 @@ Requesting a parent subproject returns only the objects that live in the parent.
 Smart models consist of several models that enable the creation of intricate custom models. To achieve this, it is essential to have smart model metadata definitions in your library. For instance, when working with turbines and foundations, you must initially assign the foundation metadata definition to the turbine model. This will allow you to select the turbine foundation by modifying the metadata in the designer. Once the objects are linked, all connections to foundation are easily accessible through the turbine.
 
 ## Finding a available Smart Models Definitions
-Each smart model definition has a {'type': 'asset'} and specyfic filters, for wind turbine fundations thouse will be: {
+Each smart model definition has a {'type': 'asset'} and specyfic option filters, for wind turbine fundations those will be: {
      "assetCategories": [ "WindTurbine" ],
      "assetTypes": [ "vessel" ], 
      "assetSubTypes": [ "WindTurbine" ]
@@ -343,10 +343,12 @@ And filter results by the following:
 ```
 {
      "type": "asset",
-     "filters": {
-          "assetCategories": [ "WindTurbine" ],
-          "assetTypes": [ "vessel" ], 
-          "assetSubTypes": [ "WindTurbine" ]
+     options: {
+          "filters": {
+               "assetCategories": [ "WindTurbine" ],
+               "assetTypes": [ "vessel" ], 
+               "assetSubTypes": [ "WindTurbine" ]
+          }
      }
 }
 ```
