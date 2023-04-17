@@ -324,7 +324,42 @@ Requesting a parent subproject returns only the objects that live in the parent.
 
 ## Using Smart Models
 
-Smart models consist of several models that enable the creation of intricate custom models. To achieve this, it is essential to have smart assets metadata groups in your library. For instance, when working with turbines and foundations, you must initially assign the foundation metadata group to the turbine. This will allow you to select the turbine foundation by modifying the metadata in the designer. Once the objects are linked, all connections to foundation are easily accessible through the turbine.
+Smart models consist of several models that enable the creation of intricate custom models. To achieve this, it is essential to have smart model metadata definitions in your library. For instance, when working with turbines and foundations, you must initially assign the foundation metadata definition to the turbine model. This will allow you to select the turbine foundation by modifying the metadata in the designer. Once the objects are linked, all connections to foundation are easily accessible through the turbine.
+
+## Finding a available Smart Models Definitions
+Each smart model definition has a {'type': 'asset'} and specyfic filters, for wind turbine fundations thouse will be: {
+     "assetCategories": [ "WindTurbine" ],
+     "assetTypes": [ "vessel" ], 
+     "assetSubTypes": [ "WindTurbine" ]
+}. To find the ID of a smart model definition, you can use the following API call and filter results:
+
+```
+export JWT=<jwt value>
+
+curl -H "Authorization: Bearer ${JWT}" \
+     https://${BACKEND_HOST}/API/v1.9/metadatadefinition
+```
+And filter results by the following:
+```
+{
+     "type": "asset",
+     "filters": {
+          "assetCategories": [ "WindTurbine" ],
+          "assetTypes": [ "vessel" ], 
+          "assetSubTypes": [ "WindTurbine" ]
+     }
+}
+```
+
+## Finding a available Smart Models Definitions for given asset
+Once smart model definition are assigned to asset you can find available options by filtering metaData object using {"type": "asset"}
+```
+export JWT=<jwt value>
+
+curl -H "Authorization: Bearer ${JWT}" \
+     https://${BACKEND_HOST}/API/v1.9/${PROJECT}/subProject/${SUBPROJECT}/stagedAsset/${STAGEDASSET}
+```
+Availave smart models are stored in `metaData` object and can be filtered by {"type": "asset"}.
 
 ## Provide a JWT instead of an API token
 
