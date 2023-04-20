@@ -3,7 +3,7 @@
 The following examples can be run with the [curl](https://curl.se/) command line
 utility or imported into the [Postman](https://www.postman.com/) application
 (_File_ menu, _Import_, select _Raw Text_, paste the whole `curl` command, _Continue_,
-review and replace the variable placeholders with values).
+review and replace the variable placeholders with actual values).
 
 Command line setup for curl commands:
 
@@ -16,7 +16,8 @@ export SUBPROJECT=<subproject id>
 
 The API token can be created by an administrator in FieldTwin Admin from the
 Account Settings / API section. It must be created for the same account that the
-project lives in.
+project lives in. API tokens are powerful so once you are familiar with the API
+you might (depending on your use case) [change to use a JWT instead](#provide-a-jwt-instead-of-an-api-token).
 
 The IDs of the project and subproject (and objects below) can be found from the
 URL in your browser's address bar when the project is open in FieldTwin Design.
@@ -85,7 +86,7 @@ curl -H "token: ${TOKEN}" \
 ```
 
 * The value of sample resolution can be `1` or more
-* Providing `simplify: true` removes the points that fall in a straight line
+* Providing `simplify: true` removes the points that fall in a straight line which reduces the data size
 * The connection profile is returned in the `sampled` attribute
 
 ## Visualise custom data for a staged asset
@@ -322,46 +323,146 @@ curl -H "token: ${TOKEN}" \
 
 Requesting a parent subproject returns only the objects that live in the parent.
 
-## Using Smart Models
+## Use Smart Models
 
-Smart models consist of several models that enable the creation of intricate custom models. To achieve this, it is essential to have smart model metadata definitions in your library. For instance, when working with turbines and foundations, you must initially assign the foundation metadata definition to the turbine model. This will allow you to select the turbine foundation by modifying the metadata in the designer. Once the objects are linked, all connections to foundation are easily accessible through the turbine.
+[docs link](https://design.fieldtwin.com/Releasenotes/#smart-models)
 
-## Finding a available Smart Models Definitions
-Each smart model definition has a {'type': 'asset'} and specyfic option filters, for wind turbine fundations those will be: {
-     "assetCategories": [ "WindTurbine" ],
-     "assetTypes": [ "vessel" ], 
-     "assetSubTypes": [ "WindTurbine" ]
-}. To find the ID of a smart model definition, you can use the following API call and filter results:
+Smart 3D models consist of special 3D assets that can be combined together as components
+to create a customized staged asset. The customizations are controlled by setting special
+metadata attributes.
+
+To use smart models, ask FutureOn to deploy the required smart assets and associated
+metadata definitions into your Asset Library.
+
+When a staged asset is created from a smart model in FieldTwin, its "docking slots" will
+be made available as metadata values with `"type": "asset"`:
 
 ```
-export JWT=<jwt value>
+export STAGEDASSET=<staged asset id>
 
-curl -H "Authorization: Bearer ${JWT}" \
-     https://${BACKEND_HOST}/API/v1.9/metadatadefinition
-```
-And filter results by the following:
-```
+curl -H "token: ${TOKEN}" \
+     https://${BACKEND_HOST}/API/v1.9/${PROJECT}/subProject/${SUBPROJECT}/stagedAsset/${STAGEDASSET}
+-->
 {
-     "type": "asset",
-     options: {
-          "filters": {
-               "assetCategories": [ "WindTurbine" ],
-               "assetTypes": [ "vessel" ], 
-               "assetSubTypes": [ "WindTurbine" ]
-          }
-     }
+     "name": "5MW Wind Turbine #1",
+     "visible": true,
+     "virtual": false,
+     ...
+     "metaData": [{
+          "id": "-N5o5X-wuAK1D25k249p",
+          "metaDatumId": "-N5o5X-wuAK1D25k249e",
+          "metaDatumLinkId": "-N5o5X-wuAK1D25k249p",
+          "definitionId": "WindPOC:5MWMonoPile[asset]",
+          "name": "5MW MonoPile",
+          "type": "asset",
+          "tags": [],
+          "cost": 0,
+          "costPerLength": false,
+          "subValue": []
+     },
+     ...
+     ]
 }
 ```
 
-## Finding a available Smart Models Definitions for given asset
-Once smart model definition are assigned to asset you can find available options by filtering metaData object using {"type": "asset"}
-```
-export JWT=<jwt value>
+In the above example, there is no `value` attribute in the `metaData` object. The docking slot
+for `5MW MonoPile` is empty. To add a monopile component to the parent staged asset, set the
+`value` to the ID of an allowable asset from the asset library (note: use the ID of an asset
+definition, not a staged asset):
 
-curl -H "Authorization: Bearer ${JWT}" \
+```
+curl -H "token: ${TOKEN}" \
+     -H "content-type: application/json" \
+     --request PATCH \
+     --data '{
+                "metaData": [{
+                    "id": "-N5o5X-wuAK1D25k249p",
+                    "metaDatumId": "-N5o5X-wuAK1D25k249e",
+                    "value": "-N4Rz5E2U88Qoq02TLF2"
+                }]
+            }' \
      https://${BACKEND_HOST}/API/v1.9/${PROJECT}/subProject/${SUBPROJECT}/stagedAsset/${STAGEDASSET}
 ```
-Availave smart models are stored in `metaData` object and can be filtered by {"type": "asset"}.
+
+To find the allowable asset IDs for a docking slot, first request the metadata definition
+using the metadata definition ID in `metaDatumId`:
+
+```
+curl -H "token: ${TOKEN}" \
+     https://${BACKEND_HOST}/API/v1.9/metadatadefinitions/-N5o5X-wuAK1D25k249e
+-->
+{
+     "name": "5MW MonoPile",
+     "definitionId": "WindPOC:5MWMonoPile[asset]",
+     "vendorAttributes": {},
+     "shouldFilterChoices": false,
+     "options": {
+          "unit": {},
+          "filter": {
+               "assetSubCategories": ["5MW WT MP F"],
+               "assetCategories": ["Wind"],
+               "assetTypes": ["vessel"],
+               "assetSubTypes": ["WindTurbine"]
+          }
+     },
+     "cost": 0,
+     "costPerLength": false,
+     "order": 280000,
+     "public": false,
+     "tags": [],
+     "clonedFroms": [],
+     "hideInInfoPanel": false,
+     "global": false,
+     "id": "-N5o5X-wuAK1D25k249e",
+     "displayIfConditions": [],
+     "type": "asset",
+     "account": "-MY45O6R7qkBUXnN1uTb"
+}
+```
+
+Then use the filters given in `options.filter` to find asset definitions in the asset
+library that match the filters:
+
+```
+curl -H "token: ${TOKEN}" \
+     https://${BACKEND_HOST}/API/v1.9/assets
+-->
+{
+     ...
+     "-N4Rz5E2U88Qoq02TLF2": {
+          "name": "5MW MonoPile",
+          "description": "",
+          "category": "Wind",                          // match on filter.assetCategories
+          "subCategory": "5MW WT MP F",                // match on filter.assetSubCategories
+          "type": "vessel",                            // match on filter.assetTypes
+          "subType": "WindTurbine",                    // match on filter.assetSubTypes
+          "imageUrl": "https://...",
+          "model3dUrl": "https://...",
+          "sockets2d": [],
+          "dockingMales": [],
+          "dockingFemale": { ... },
+          "params": {
+               "isGLTF": true,
+               "width": 8.557730674743652,
+               "height": 8.557730831003877,
+               "left": -4.278812885284424,
+               "top": -4.27881488333273
+          },
+          "shared": true,
+          "filename3D": "5MW_MonoPile.glb - Wed, 22 Jun 2022 11:24:30 GMT",
+          "filename2D": "5MW_MonoPile.png - Mon, 13 Jun 2022 12:09:54 GMT",
+          "filenameSockets": "5MW_MonoPile.sockets - Wed, 22 Jun 2022 11:28:23 GMT",
+          "hideInAssetLibrary": true
+     },
+     ...
+}
+```
+
+In this example the allowable values for the `5MW MonoPile` docking slot in the
+parent staged asset are:
+
+* `-N4Rz5E2U88Qoq02TLF2` to create a `5MW MonoPile` in the slot, or
+* `null` to set the docking slot as empty
 
 ## Provide a JWT instead of an API token
 
