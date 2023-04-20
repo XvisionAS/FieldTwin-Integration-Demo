@@ -40,6 +40,8 @@ In a Microsoft Windows Command Prompt use `set` instead of `export`.
 :warning: Be sure to change the `--sub-project` value (and optionally the `--project`
 value) so that you do not duplicate the field in the same subproject it came from!
 
+:warning: The target project must use the same Coordinate Reference System as the source project.
+
 ```
 export TOKEN=api-token
 export BACKEND_HOST=legacyapi.[instance].fieldtwin.com

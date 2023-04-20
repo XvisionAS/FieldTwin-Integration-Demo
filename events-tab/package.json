@@ -1,0 +1,11 @@
+{
+  "name": "events-tab",
+  "version": "1.0.0",
+  "description": "FieldTwin events debugging tab",
+  "scripts": {
+    "deploy": "cp index.html ../docs/events-tab/"
+  },
+  "author": "FutureOn",
+  "license": "MIT",
+  "dependencies": {}
+}
