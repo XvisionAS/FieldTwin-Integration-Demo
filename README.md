@@ -29,4 +29,4 @@ You will find the following resources helpful:
 | [python-tab](./python-tab/) | An integration that calls a serverless Python function to plot the seabed profile of a connection | Integration | HTML, Python, Serverless, JWT
 | [scripts/javascript](./scripts/javascript/) | Scripts to export a project layout and recreate it in an empty project | API | Javascript, Node.js, API token
 | [scripts/python](./scripts/python/) | Scripts for reading project data and updating metadata values using Python | API | Python, API token
-| [simple-cost-server](./simple-cost-server/) | Pending review | | 
+| [simple-cost-server](./simple-cost-server/) | Example "Compute Using Server" function for use with the standard Cost tab | Integration | Javascript, Node.js
