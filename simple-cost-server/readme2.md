@@ -1,21 +1,43 @@
-# Creating a cost server to interact with FieldAp cost computation.
-Since version 1.5, it is possible to develop a small piece of sofware that will receive query from FieldAp to compute a cost.
-From the user point of view, a button appears on the UI of the costs module, that allows her or him to launch a computation using this so call `cost server`.
+# Creating a cost server to provide the FieldTwin cost computation
+
+Since version 1.5, it is possible to develop a software service that will receive a
+request from FieldTwin to compute a cost. In the _Cost_ tab in the user interface,
+the service is triggered using the _Compute Using Server_ button for either the whole
+subproject or for a single object in the field.
+
+![Compute Using Server](./docs/compute-buttons.png)
+
+# Setup in FieldTwin
+
+To use the cost server in FieldTwin, ask FutureOn to enable the "cost server" module in
+your account. This will provide a setup screen for the service:
+
+![Cost server module setup](./docs/admin-cost-server.png)
+
+Enter the URL of the deployed service and whether to cost objects one at a time (batch mode off)
+or cost all objects together (batch mode on). For more information, see _batch request_ below.
 
 # Technical details
-The cost server is just a simple server that replies to a `POST` query. The address FieldAp should use to make this query is defined on the account administration page, section `module`.
 
-Each `POST` query to the `cost server` contains information about one element. So if the user ask to compute cost on 10 assets, the `cost server` will receive 10 different queries.
+The cost server is an HTTP server that replies to a single `POST` request. It can be written
+in any language of your choice but the sample code here is server-side Javascript. The URL
+FieldTwin should call is defined on the cost server administration page as shown above.
 
-## POST query
-Depending on how the cost server is setup on the account admin page, the server can be query either in a one shot format ( each connection / stage asset will have it own query ) or in batch mode, where one query will contains multiple sub query.
+## POST request
 
-### One shot query
-For each cost computation query, FieldAp client will send all the metadata concerning the assets ( or connection ) with the query.
+By default each `POST` request to the cost server contains information about one object.
+So if there are 10 staged assets, the cost server will receive 10 single requests. To
+post all 10 at the same time instead, enable _Batch multiple cost requests_ on the cost
+server administration page.
 
-Here is an example of a simple query for a connection, with only one meta datum.
+### Single request
 
-```javascript
+For each cost computation request, FieldTwin will send all the metadata concerning
+the staged asset (or connection) cost in the request body.
+
+Here is an example of a cost request for a connection, with only one metadatum.
+
+```js
 {
   "isBatch":false,
   "connections":{
@@ -77,9 +99,9 @@ Here is an example of a simple query for a connection, with only one meta datum.
 }
 ```
 
-Here is the reply from the basic cost server, provided by the FieldAp:
+Here is the reply that the cost server should return:
 
-```javascript
+```js
 {
   "connections": {
     "-LRQs4ZryGJur2nKAiX6": {
@@ -89,25 +111,27 @@ Here is the reply from the basic cost server, provided by the FieldAp:
       "stateText":"Computed on: 2018-11-16T10:56:32.819Z",
       "stateType":"success"}
     },
-  "stagedAssets":{}
+  "stagedAssets": {}
 }
 ```
 
-The answer is JSON object, that must contains two object with key (`"stagedAssets"` and `"connections"`) each of this object containing  an costs object per connection/sytagedAsset Id.
-this cost object contains an  `entries` array, each entry in this array is a cost. The cost is then computed by adding the cost of each of these entries ( quantity is a multiplicator for the cost entry ).
+The reply is a JSON object that must contains two objects with keys `stagedAssets` and
+`connections`, each object containing connection/staged asset IDs and an associated cost
+object. The cost object contains an  `entries` array, where each entry in this array is
+a cost item. The final cost is then computed by summing the cost of every entry, using
+`quantity` as a multiplier for the entry.
 
-It can also contains `stateText` which is a text that will be displayed in the cost UI, as well as `stateType`, which can be one of 'warning', 'danger', 'primary', 'success', 'default', and will determine the way `stateText` will be displayed.
+Each object can have `stateText` which is text that will be displayed in the cost user
+interface, as well as `stateType` which determines the color of the text and can be one
+of: 'warning', 'danger', 'primary', 'success', 'default'.
 
-### Batch query
+### Batch request
 
-In this mode, a master query is sent, that contains multiple sub query. Each sub query is an object that is indexed by the `id` of the model it relate to, and each of these sub queries object is indexed by the type of each model.
-Field ap support cost for two models : `connections` and `stagedAssets`.
+In this mode, a request is sent that contains multiple objects in the `connections`
+and `stagedAssets` sections. The request body also contains `"isBatch": true`. 
+Here is an example:
 
-Also at the root of the query you will find an attribute `isBatch` set to true.
-
-Here is an example of such query :
-
-```javascript
+```js
 {
   "isBatch":true,
   "connections":{
@@ -358,9 +382,9 @@ Here is an example of such query :
 }
 ```
 
-The answer should follow the same format, which each cost contains within the structure like this :
+The reply should follow the same format as before, with each cost in a structure like this:
 
-```javascript
+```js
 {
   "stagedAssets":{
     "-KlcQpneT-B6dxambHID":{
