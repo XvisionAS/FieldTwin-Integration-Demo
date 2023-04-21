@@ -22,7 +22,7 @@ You will find the following resources helpful:
 | [asset-dumper](./asset-dumper/) | Exports 3D assets from FieldTwin as Collada files | API | Javascript, Node.js, API token
 | [doc-tab](./doc-tab/) | A minimal single page integration that shows the document files uploaded against an object in FieldTwin Design | Integration | HTML, Javascript, JWT
 | [events-tab](./events-tab/) | An integration that prints all window messages from FieldTwin as they arrive, and the contents of the decoded JWT. Useful for testing and debugging. | Integration | HTML, Javascript, JWT
-| [excel-macro](./excel-macro/) | Calling the API from an Excel workbook using Excel macros | API | Excel, VB Script, API token
+| [excel-macro](./excel-macro/) | Calling the API from an Excel workbook using Excel macros | API | Excel, VB Script, VBA, API token
 | [heat-loss-custom-tab](./heat-loss-custom-tab/) | Pending review | | 
 | [lay-connection](./lay-connection/) | Pending review | | 
 | [metadata-import-export](./metadata-import-export/) | A single page integration that exports/imports metadata to/from an Excel worksheet | Integration | HTML, Vue.js, Excel, JWT
