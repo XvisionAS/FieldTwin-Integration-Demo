@@ -4,16 +4,15 @@
 
 A collection of Python scripts that call the FieldTwin API 
 
-* `get-connection-points.py` - prints the start, middle, and end coordinates of a
-  connection
+* `get-connection-points.py` - prints the start, middle, and end coordinates of a connection
 * `get-connections-with-design.py` - prints the list of connections in a subproject
   that have a particular design type
 * `get-staged-assets-in-range-of-well.py` - prints the list of staged assets in a
   subproject that are within a straight line distance from a particular well
 * `get-staged-assets-of-category.py` - prints the list of staged assets in a subproject
   that have a particular asset category
-* `batch-modify-metadata-value-of-staged-assets.py` - changes the stored value of a
-  particular metadata field on all staged assets in a subproject
+* `batch-modify-metadata-value.py` - changes the stored value of a particular metadata
+  field on connections, staged assets, layers and wells in a subproject
 
 ## Installation
 
@@ -66,14 +65,14 @@ lives in.
 
 ### batch-modify-metadata-value
 
-This tool examines every staged asset in a subproject and resets the stored value of
-all their metadata entries for a given "vendor ID". The vendor ID is an optional part
-of the metadata field definition, set up in FieldTwin Admin. FutureOn's standard
-metadata library defines vendor IDs with the prefix `Std.`.
+This tool examines connections, staged assets, layers and wells in a subproject and
+changes the value of all metadata entries that match a given "vendor ID". The vendor ID
+is an optional part of the metadata field definition, set up in FieldTwin Admin.
+FutureOn's standard metadata library defines vendor IDs with the prefix `Std.`.
 
 :warning: Run this tool against a test project so that you do not overwrite good data.
 
 ```
-python3 batch-modify-metadata-value-of-staged-assets.py  <PROJECT_ID>          <SUBPROJECT_ID>       <VENDOR_ID>  <METADATA_VALUE>
-python3 batch-modify-metadata-value-of-staged-assets.py  -MuVwueeyoYvwUw2eIra  -MuVwueeyoYvwUw2eIrb  Std.Service  "Production"
+python3 batch-modify-metadata-value.py  <PROJECT_ID>          <SUBPROJECT_ID>       <VENDOR_ID>  <METADATA_VALUE>
+python3 batch-modify-metadata-value.py  -MuVwueeyoYvwUw2eIra  -MuVwueeyoYvwUw2eIrb  Std.Service  "Production"
 ```
