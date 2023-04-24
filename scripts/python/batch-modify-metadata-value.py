@@ -51,28 +51,30 @@ if r.status_code != 200:
     sys.exit(1)
 response = r.json()
 
-staged_assets = response["stagedAssets"]
-for id in staged_assets:
-    staged_asset = staged_assets[id]
-    metadata_list = staged_asset.get("metaData", [])
-    change_list = []
-    for metadata in metadata_list:
-        vendor_id = metadata.get("vendorId", "")
-        metadata_type = metadata.get("type", "string")
-        if vendor_id == VENDOR_ID:
-            change_list.append({
-                "metaDatumId": metadata["metaDatumId"],
-                "value": valueForType(NEW_VALUE, metadata_type)
-            })
-    if len(change_list) > 0:
-        print('Updating {} on staged asset {} {}'.format(VENDOR_ID, id, staged_asset["name"]))
-        url = f'{HOST_URL}/API/{API_VERSION}/{PROJECT_ID}/subProject/{SUBPROJECT_ID}/stagedAsset/{id}'
-        payload = {
-            "metaData": change_list
-        }
-        r = requests.patch(url, data=json.dumps(payload), headers=headers)
-        if r.status_code != 200:
-            print(r.text)
-            sys.exit(1)
+for object_type in ["stagedAssets", "connections", "wells", "layers"]:
+    objects = response.get(object_type, {})
+    for id in objects:
+        object = objects[id]
+        metadata_list = object.get("metaData", [])
+        change_list = []
+        for metadata in metadata_list:
+            vendor_id = metadata.get("vendorId", "")
+            metadata_type = metadata.get("type", "string")
+            if vendor_id == VENDOR_ID:
+                change_list.append({
+                    "metaDatumId": metadata["metaDatumId"],
+                    "value": valueForType(NEW_VALUE, metadata_type)
+                })
+        if len(change_list) > 0:
+            object_singular = object_type[:-1]
+            print('Updating {} on {} {}'.format(VENDOR_ID, object_singular, id))
+            url = f'{HOST_URL}/API/{API_VERSION}/{PROJECT_ID}/subProject/{SUBPROJECT_ID}/{object_singular}/{id}'
+            payload = {
+                "metaData": change_list
+            }
+            r = requests.patch(url, data=json.dumps(payload), headers=headers)
+            if r.status_code != 200:
+                print(r.text)
+                sys.exit(1)
 
 print('Done')
