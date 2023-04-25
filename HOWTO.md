@@ -23,6 +23,11 @@ The IDs of the project and subproject (and objects below) can be found from the
 URL in your browser's address bar when the project is open in FieldTwin Design.
 They look like this: `-MeidQjcOmxpYWFIq5zp`.
 
+![Hostname and IDs in the address bar](./excel-macro/docs/address-bar.png)
+
+<br>
+<hr>
+
 ## Create a manifold
 
 [docs link](https://api.fieldtwin.com/#api-StagedAssets-AddStagedAsset)
@@ -57,6 +62,24 @@ curl -H "token: ${TOKEN}" \
 * `z` values in FieldTwin are `0` at sea level, negative below sea level and positive
   above sea level
 
+<br>
+<hr>
+
+## Delete a staged asset
+
+[docs link](https://api.fieldtwin.com/#api-StagedAssets-DeleteStagedAsset)
+
+```
+export STAGEDASSET=<staged asset id>
+
+curl -H "token: ${TOKEN}" \
+     --request DELETE \
+     https://${BACKEND_HOST}/API/v1.9/${PROJECT}/subProject/${SUBPROJECT}/stagedAsset/${STAGEDASSET}
+```
+
+<br>
+<hr>
+
 ## Get a 3D well bore profile
 
 [docs link](https://api.fieldtwin.com/#api-Wells-GetWell)
@@ -70,6 +93,9 @@ curl -H "token: ${TOKEN}" \
 
 * The bore profile is returned in the `wellBores[0 .. n].path` attribute
 * The bore path is empty by default, it can be set or imported from FieldTwin Design
+
+<br>
+<hr>
 
 ## Get the generated seabed profile for a connection
 
@@ -88,6 +114,326 @@ curl -H "token: ${TOKEN}" \
 * The value of sample resolution can be `1` or more
 * Providing `simplify: true` removes the points that fall in a straight line which reduces the data size
 * The connection profile is returned in the `sampled` attribute
+
+<br>
+<hr>
+
+## Get and set metadata values
+
+Metadata values are stored in the `metaData` array attribute on objects in the field.
+You can see the general data structure by requesting a single connection / staged asset / well / layer / shape:
+
+```
+export CONNECTION=<connection id>
+
+curl -H "token: ${TOKEN}" \
+     https://${BACKEND_HOST}/API/v1.9/${PROJECT}/subProject/${SUBPROJECT}/connection/${CONNECTION}
+-->
+{
+     "visible": true,
+     "fromSocket": "b",
+     "toSocket": "a",
+     "params": {
+          "type": 4,
+          "label": "Water Injection #1",
+          "width": 1
+     },
+     "from": { ... },
+     "to": { ... },
+     ...
+     "metaData": [
+          {
+               "id": "-NTruDmpGaWmFq5dY1UL",
+               "metaDatumId": "-MX1hgyA5rMYnffSIDqS",
+               "metaDatumLinkId": "-NTruDmpGaWmFq5dY1UL",
+               "definitionId": "IntegrationsTeam:CustomString[string]",
+               "name": "Custom String",
+               "type": "string",
+               "tags": [],
+               "value": "my string",
+               "cost": 0,
+               "costPerLength": false,
+               "vendorAttributes": {}
+          },
+          {
+               "id": "-NTruFFZ1QdcHPX7DsWg",
+               "metaDatumId": "-MKeJ9PrkJXvPLg9vYzB",
+               "metaDatumLinkId": "-NTruFFZ1QdcHPX7DsWg",
+               "definitionId": "IntegrationsTeam:KeyPoints[table]",
+               "name": "Key Points",
+               "type": "table",
+               "tags": [],
+               "value": [
+                    {
+                         "-MKeJHF9Q0jyb4AIwicf": "1",
+                         "-MKeJIq3E-RffPBFbJdG": "100"
+                    },
+                    {
+                         "-MKeJHF9Q0jyb4AIwicf": "2",
+                         "-MKeJIq3E-RffPBFbJdG": "200"
+                    }
+               ],
+               "cost": 0,
+               "costPerLength": false,
+               "vendorAttributes": {}
+          }
+     ]
+}
+```
+
+:warning: At the time of writing (FieldTwin 7.0), requesting a whole subproject will return
+metadata values for the connections, staged assets and shapes but not for wells and layers - 
+metadata for these must be fetched with separate API calls.
+
+To add or change the metadata values for an object, `PATCH` the object by sending the
+`metaData` array with only the metadata attributes to update. The minimum attributes to
+send are either `id` (identifying the value block to update) or `metaDatumId` (identifying
+the metadatum definition) and `value`.
+
+The following example updates the 2 metadata values on the connection shown above.
+Both `id` and `metaDatumId` are given here to show how the IDs are used, but you only
+need to provide one or the other. If you are adding a new metadatum value you will only
+have the `metaDatumId`.
+
+```
+export CONNECTION=<connection id>
+
+curl -H "token: ${TOKEN}" \
+     -H "content-type: application/json" \
+     --request PATCH \
+     --data '{
+                "metaData": [
+                    {
+                         "id": "-NTruDmpGaWmFq5dY1UL",
+                         "metaDatumId": "-MX1hgyA5rMYnffSIDqS",
+                         "value": "Flexible"
+                    },
+                    {
+                         "id": "-NTruFFZ1QdcHPX7DsWg",
+                         "metaDatumId": "-MKeJ9PrkJXvPLg9vYzB",
+                         "value": []
+                    }
+                ]
+            }' \
+     https://${BACKEND_HOST}/API/v1.9/${PROJECT}/subProject/${SUBPROJECT}/connection/${CONNECTION}
+```
+
+:warning: When a metadatum value has been cleared or has not been set, the `value` attribute
+will be missing from the metadatum object. In your code be sure to check that `value` exists
+before reading from it. The data type and content of `value` varies depending on the
+metadatum's `type`. The following types are supported:
+
+### string
+
+To set a string, provide a string in `value`:
+
+```
+PATCH object
+<--
+{ "metaData": [{
+     "metaDatumId": "-MHm9G9TaN4W_4jMYPHl",
+     "value": "value as a string"
+}]}
+```
+
+### numerical and slider
+
+To set a numerical, provide an integer or a floating point number in `value`.
+To set the unit (if applicable), specify the unit in the `option` attribute
+(for example `mm`, `ft3`, `C`, `sm3/m3`, `W/m2/C`):
+
+```
+PATCH object
+<--
+{ "metaData": [{
+     "metaDatumId": "-MHm9G9TaN4W_4jMYPHl",
+     "value": 150.1,
+     "option": "m"
+}]}
+```
+
+### boolean
+
+To set a boolean, provide the string `true` or `false` in `value`:
+
+```
+PATCH object
+<--
+{ "metaData": [{
+     "metaDatumId": "-MHm9G9TaN4W_4jMYPHl",
+     "value": "true"
+}]}
+```
+
+Depending on your use case, if the `value` attribute is missing (meaning that no
+value has been saved) you may want to treat this as `false`.
+
+### choices - single selection
+
+Use [Request all metadata definitions](https://api.fieldtwin.com/#api-MetadataDefinitions-GetMetaDataDefinitions)
+or [Request one metadata definition](https://api.fieldtwin.com/#api-MetadataDefinitions-GetMetaDataDefinition)
+with the `metaDatumId` to fetch the metadatum definition and its list of possible choices.
+
+Each choice is its own separate object with attributes for: `id`, `name`, and optionally
+a `customValue`. The name is what is displayed in the user interface, and the custom value
+(if present) is the value to use for the choice instead of its name.
+
+When reading metadata, the `value` will be the selected choice object. For example:
+
+```
+GET object
+-->
+"metaData": [
+     {
+          "id": "-NTsQ5XGQctE7dDV5OrH",
+          "metaDatumId": "-MX1hgyA5rMYnffSIDqS",
+          "metaDatumLinkId": "-NTsQ5XGQctE7dDV5OrH",
+          "definitionId": "MyAccount:NumberOfSlots[choices]",
+          "name": "Number of slots",
+          "type": "choices",
+          "tags": [],
+          "value": {
+               "id": "-NTt33VQYMf-LD6VKZzR",
+               "name": "6 Slot",
+               "customValue": "6",
+               "filterValue": []
+          },
+          "cost": 0,
+          "costPerLength": false,
+          "vendorAttributes": {}
+     }
+]
+```
+
+So the final metadata value to use here is `6`, or it would be `6 Slot` if there was
+no `customValue`.
+
+To set a choice, provide one of the choice objects in `value`.
+You can provide just the `id` of the choice object if you prefer:
+
+```
+PATCH object
+<--
+{ "metaData": [{
+     "metaDatumId": "-MX1hgyA5rMYnffSIDqS",
+     "value": { "id": "-NTt33VQYMf-LD6VKZzR" }
+}]}
+```
+
+### choices - multiple selection
+
+This case is similar to _choices - single selection_, but the `value` is now an array
+of choice objects. To clear all choices, apply a zero length array:
+
+```
+PATCH object
+<--
+{ "metaData": [{
+     "metaDatumId": "-MX1hgyA5rMYnffSIDqS",
+     "value": []
+}]}
+```
+
+Or to select 2 choices:
+
+```
+PATCH object
+<--
+{ "metaData": [{
+     "metaDatumId": "-MX1hgyA5rMYnffSIDqS",
+     "value": [
+          { "id": "-NTt33VQYMf-LD6VKZzR" },
+          { "id": "-NTt34S9xlSnOcx-FAhy" }
+     ]
+}]}
+```
+
+### asset
+
+A type of asset allows for the selection of an asset from the asset library or a
+virtual asset defined in FieldTwin Admin. All metadata values associated with the
+selected asset will then be presented in FieldTwin and nested inside this metadatum
+object in a new `subValue` attribute.
+
+The `value` to store in the metadatum object is the ID of the asset definition
+or the virtual asset. Request the list of allowable IDs using
+[Request the list of asset definitions](https://api.fieldtwin.com/#api-Assets-GetAssets).
+
+To set an asset and create the nested `subValue` containing that asset's metadata,
+provide the asset ID as a string in `value`:
+
+```
+PATCH object
+<--
+{ "metaData": [{
+     "metaDatumId": "-MHm9G9TaN4W_4jMYPHl",
+     "value": "-M3LRYZGl2h0K902juxA"
+}]}
+```
+
+### connection
+
+A type of connection allows for the selection of a connection type. All metadata
+values associated with the selected connection type will then be presented in FieldTwin
+and nested inside this metadatum object in a new `subValue` attribute.
+
+The `value` to store in the metadatum object is the ID of the connection type.
+Request the list of allowable IDs using
+[Request the list of connection definitions](https://api.fieldtwin.com/#api-Accounts-GetAccountConnections).
+
+To set a connection type and create the nested `subValue` containing that connection's metadata,
+provide the definition ID in `value`:
+
+```
+PATCH object
+<--
+{ "metaData": [{
+     "metaDatumId": "-MHm9G9TaN4W_4jMYPHl",
+     "value": 4
+}]}
+```
+
+:warning: At the time of writing (FieldTwin 7.0) the pre-installed connection types
+have a numeric ID while custom connection types have a string ID.
+
+### table
+
+Use [Request all metadata definitions](https://api.fieldtwin.com/#api-MetadataDefinitions-GetMetaDataDefinitions)
+or [Request one metadata definition](https://api.fieldtwin.com/#api-MetadataDefinitions-GetMetaDataDefinition)
+with the `metaDatumId` to fetch the metadatum definition and its list of table headers.
+
+Each table header / column in the definition has an `id` and `name`.
+
+The metadatum `value` is an array of rows, where each row is a key/value object with
+the column ID as its key.
+
+To set a 2x2 table, provide the following array in `value`:
+
+```
+PATCH object
+<--
+{ "metaData": [{
+     "metaDatumId": "-MHm9G9TaN4W_4jMYPHl",
+     "value": [
+          {
+               "id-of-column-1": "col A row 1",
+               "id-of-column-2": "col B row 1"
+          },
+          {
+               "id-of-column-1": "col A row 2",
+               "id-of-column-2": "col B row 2"
+          }
+     ]
+}]}
+```
+
+### button
+
+Button metadata shows a button on the user interface that launches a web page when clicked.
+It does not have a `value` and setting one has no effect.
+
+<br>
+<hr>
 
 ## Visualise custom data for a staged asset
 
@@ -127,6 +473,9 @@ curl -H "token: ${TOKEN}" \
      --data '{ "showCustomResults": false }' \
      https://${BACKEND_HOST}/API/v1.9/${PROJECT}/subProject/${SUBPROJECT}/stagedAsset/${STAGEDASSET}
 ```
+
+<br>
+<hr>
 
 ## Visualise custom data along a connection
 
@@ -177,6 +526,9 @@ curl -H "token: ${TOKEN}" \
      --data '{ "visibleVisualisationMapId": null }' \
      https://${BACKEND_HOST}/API/v1.9/${PROJECT}/subProject/${SUBPROJECT}/connection/${CONNECTION}
 ```
+
+<br>
+<hr>
 
 ## Store custom data at project level
 
@@ -238,17 +590,8 @@ curl -H "token: ${TOKEN}" \
 * To delete one set of `vendorAttributes`,
   send PATCH data of the format: `{ "vendorAttributes": { "myIntegration": null } }`
 
-## Delete a staged asset
-
-[docs link](https://api.fieldtwin.com/#api-StagedAssets-DeleteStagedAsset)
-
-```
-export STAGEDASSET=<staged asset id>
-
-curl -H "token: ${TOKEN}" \
-     --request DELETE \
-     https://${BACKEND_HOST}/API/v1.9/${PROJECT}/subProject/${SUBPROJECT}/stagedAsset/${STAGEDASSET}
-```
+<br>
+<hr>
 
 ## Request linked (parent/child) subprojects
 
@@ -322,6 +665,9 @@ curl -H "token: ${TOKEN}" \
 ```
 
 Requesting a parent subproject returns only the objects that live in the parent.
+
+<br>
+<hr>
 
 ## Use Smart Models
 
@@ -463,6 +809,9 @@ parent staged asset are:
 
 * `-N4Rz5E2U88Qoq02TLF2` to create a `5MW MonoPile` in the slot, or
 * `null` to set the docking slot as empty
+
+<br>
+<hr>
 
 ## Provide a JWT instead of an API token
 
