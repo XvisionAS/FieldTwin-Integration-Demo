@@ -12,7 +12,7 @@ A collection of Python scripts that call the FieldTwin API
 * `get-staged-assets-of-category.py` - prints the list of staged assets in a subproject
   that have a particular asset category
 * `batch-modify-metadata-value.py` - changes the stored value of a particular metadata
-  field on connections, staged assets, layers and wells in a subproject
+  field on connections and staged assets in a subproject
 
 ## Installation
 
@@ -65,10 +65,10 @@ lives in.
 
 ### batch-modify-metadata-value
 
-This tool examines connections, staged assets, layers and wells in a subproject and
-changes the value of all metadata entries that match a given "vendor ID". The vendor
-ID is an optional part of the metadata field definition, set up in FieldTwin Admin.
-FutureOn's standard metadata library defines vendor IDs with the prefix `Std.`.
+This tool examines connections and staged assets in a subproject and changes the value
+of all metadata entries that match a given "vendor ID". The vendor ID is an optional
+part of the metadata field definition, set up in FieldTwin Admin. FutureOn's standard
+metadata library defines vendor IDs with the prefix `Std.`.
 
 Currently the tool supports metadata values of type `string`, `numerical`, `slider`,
 `boolean`, `asset` and `connection`. It does not support types of `choices` or `table`

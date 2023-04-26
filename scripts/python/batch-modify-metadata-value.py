@@ -54,7 +54,7 @@ if r.status_code != 200:
     sys.exit(1)
 response = r.json()
 
-for object_type in ["stagedAssets", "connections", "wells", "layers"]:
+for object_type in ["stagedAssets", "connections"]:
     objects = response.get(object_type, {})
     for id in objects:
         object = objects[id]
