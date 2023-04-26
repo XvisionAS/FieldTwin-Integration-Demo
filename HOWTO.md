@@ -716,7 +716,6 @@ curl -H "token: ${TOKEN}" \
      --request PATCH \
      --data '{
                 "metaData": [{
-                    "id": "-N5o5X-wuAK1D25k249p",
                     "metaDatumId": "-N5o5X-wuAK1D25k249e",
                     "value": "-N4Rz5E2U88Qoq02TLF2"
                 }]
