@@ -66,9 +66,14 @@ lives in.
 ### batch-modify-metadata-value
 
 This tool examines connections, staged assets, layers and wells in a subproject and
-changes the value of all metadata entries that match a given "vendor ID". The vendor ID
-is an optional part of the metadata field definition, set up in FieldTwin Admin.
+changes the value of all metadata entries that match a given "vendor ID". The vendor
+ID is an optional part of the metadata field definition, set up in FieldTwin Admin.
 FutureOn's standard metadata library defines vendor IDs with the prefix `Std.`.
+
+Currently the tool supports metadata values of type `string`, `numerical`, `slider`,
+`boolean`, `asset` and `connection`. It does not support types of `choices` or `table`
+(see the [how-to guide](../../HOWTO.md#get-and-set-metadata-values) for how to set
+these types).
 
 :warning: Run this tool against a test project so that you do not overwrite good data.
 

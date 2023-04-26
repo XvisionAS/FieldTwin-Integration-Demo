@@ -9,7 +9,10 @@ def valueForType(value, type):
     if type == 'numerical' or type == 'slider':
         return float(value)
     elif type == 'boolean':
-        return value.lower() in ['true', '1', 'yes']
+        return 'true' if value.lower() in ['true', '1', 'yes'] else 'false'
+    elif type == 'choices' or type == 'table':
+        # See HOWTO.md for how to handle these types
+        raise NotImplementedError('Type %s is not yet handled by this script' % type)
     else:
         return value
 
