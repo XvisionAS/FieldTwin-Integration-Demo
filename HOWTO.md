@@ -187,13 +187,9 @@ metadata for these must be fetched with separate API calls.
 
 To add or change the metadata values for an object, `PATCH` the object by sending the
 `metaData` array with only the metadata attributes to update. The minimum attributes to
-send are either `id` (identifying the value block to update) or `metaDatumId` (identifying
-the metadatum definition) and `value`.
+send are the `metaDatumId` (identifying the relevant metadatum definition) and `value`.
 
 The following example updates the 2 metadata values on the connection shown above.
-Both `id` and `metaDatumId` are given here to show how the IDs are used, but you only
-need to provide one or the other. If you are adding a new metadatum value you will only
-have the `metaDatumId`.
 
 ```
 export CONNECTION=<connection id>
@@ -204,12 +200,10 @@ curl -H "token: ${TOKEN}" \
      --data '{
                 "metaData": [
                     {
-                         "id": "-NTruDmpGaWmFq5dY1UL",
                          "metaDatumId": "-MX1hgyA5rMYnffSIDqS",
                          "value": "Flexible"
                     },
                     {
-                         "id": "-NTruFFZ1QdcHPX7DsWg",
                          "metaDatumId": "-MKeJ9PrkJXvPLg9vYzB",
                          "value": []
                     }
