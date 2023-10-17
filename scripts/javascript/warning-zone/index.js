@@ -3,7 +3,11 @@ const parseArgs = require('minimist')
 
 const TOKEN = process.env.TOKEN || '91f8153e-ab28-43f6-b389-a6af824f8fcc'
 const PORT = process.env.PORT || ''
-const BACKEND_HOST = `${process.env.BACKEND_HOST ? 'https://' + process.env.BACKEND_HOST : 'http://futureon-backend.lvh.me'}`
+const BACKEND_HOST = `${
+  process.env.BACKEND_HOST
+    ? 'https://' + process.env.BACKEND_HOST
+    : 'http://futureon-backend.lvh.me'
+}`
 const HOST_URL = `${BACKEND_HOST}${PORT ? ':' : ''}${PORT}`
 const API_VERSION = 'v1.9'
 
@@ -16,62 +20,76 @@ const stagedAssetsUrl = `${HOST_URL}/API/${API_VERSION}/${PROJECT_ID}/subProject
 const shapesUrl = `${HOST_URL}/API/${API_VERSION}/${PROJECT_ID}/subProject/${SUB_PROJECT_ID}:${STREAM_ID}/shapes`
 
 const main = async () => {
-    const stagedAssetsReq = await axios.get(stagedAssetsUrl, { headers: { token: TOKEN } })
-    const stagedAssets = stagedAssetsReq.data
+  const stagedAssetsReq = await axios.get(stagedAssetsUrl, {
+    headers: { token: TOKEN },
+  })
+  // get list of staged assets
+  const stagedAssets = stagedAssetsReq.data
 
-    const shapesReq = await axios.get(shapesUrl, { headers: { token: TOKEN } })
-    const shapes = shapesReq.data.shapes
+  const shapesReq = await axios.get(shapesUrl, { headers: { token: TOKEN } })
+  // get list of shapes
+  const shapes = shapesReq.data.shapes
 
-    if (stagedAssets && shapes) {
-        for (const shape of shapes) {
-            if (shape.shapeType === 'Circle') {
-                const stagedAssetsInOverlappedZone = await isInside(shape, stagedAssets)
-                if (stagedAssetsInOverlappedZone.length > 0) {
-                    const patchedShapes = await addWarningTag(stagedAssetsInOverlappedZone)
-                    console.log(patchedShapes)
-                }
-            }
+  if (stagedAssets && shapes) {
+    for (const shape of shapes) {
+      // for each circle shape find out the list of staged assets with origin inside the circle
+      if (shape.shapeType === 'Circle') {
+        const stagedAssetsInOverlappedZone = await isInside(shape, stagedAssets)
+        // add warning as tag for staged assets.
+        if (stagedAssetsInOverlappedZone.length > 0) {
+          const patchedShapes = await addWarningTag(
+            shape, stagedAssetsInOverlappedZone
+          )
+          console.log(patchedShapes)
         }
+      }
     }
+  }
 }
 
 const isInside = async (shape, stagedAssets) => {
-    const inDangerZoneAsstes = []
-    for (const key in stagedAssets) {
-        if ((stagedAssets[key].initialState.x - shape.x) * (stagedAssets[key].initialState.x - shape.x) +
-            (stagedAssets[key].initialState.y - shape.y) * (stagedAssets[key].initialState.y - shape.y) <= shape.circleRadius * shape.circleRadius)
-            inDangerZoneAsstes.push(stagedAssets[key])
-    }
-    return inDangerZoneAsstes
+  const inDangerZoneAsstes = []
+  for (const key in stagedAssets) {
+    if (
+      (stagedAssets[key].initialState.x - shape.x) *
+        (stagedAssets[key].initialState.x - shape.x) +
+        (stagedAssets[key].initialState.y - shape.y) *
+          (stagedAssets[key].initialState.y - shape.y) <=
+      shape.circleRadius * shape.circleRadius
+    )
+      inDangerZoneAsstes.push(stagedAssets[key])
+  }
+  return inDangerZoneAsstes
 }
 
-const addWarningTag = async (stagedAssetsInOverlappedZone) => {
-    const payload = {
-        "globals": {
-            "tags": ["warning!!"]
-        }
-    };
-    for (const stagedAsset of stagedAssetsInOverlappedZone) {
-        payload[stagedAsset.id] = {}
-    }
+const addWarningTag = async (shape, stagedAssetsInOverlappedZone) => {
+  const payload = {
+    globals: {
+      tags: [`Falls inside ${shape.name}`],
+    },
+  }
+  for (const stagedAsset of stagedAssetsInOverlappedZone) {
+    payload[stagedAsset.id] = {}
+  }
 
-    const patchShapesReq = await axios.patch(stagedAssetsUrl,
-        payload,
-        { headers: { 'Content-Type': 'application/json', token: TOKEN }, }
-    )
-    const patchedShapes = patchShapesReq.data
+  const patchShapesReq = await axios.patch(stagedAssetsUrl, payload, {
+    headers: { 'Content-Type': 'application/json', token: TOKEN },
+  })
+  const patchedShapes = patchShapesReq.data
 
-    return patchedShapes
+  return patchedShapes
 }
 
 main().catch((e) => {
-    if (e.response) {
-        console.error(
-            `\nError:\n${e.request.method} ${e.request.path}\n` +
-            `${e.response.status} ${e.response.statusText}\n${JSON.stringify(e.response.data)}`
-        )
-    } else {
-        console.error(e)
-    }
-    process.exit(1)
+  if (e.response) {
+    console.error(
+      `\nError:\n${e.request.method} ${e.request.path}\n` +
+        `${e.response.status} ${e.response.statusText}\n${JSON.stringify(
+          e.response.data
+        )}`
+    )
+  } else {
+    console.error(e)
+  }
+  process.exit(1)
 })
