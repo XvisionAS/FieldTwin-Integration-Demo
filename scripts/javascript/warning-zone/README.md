@@ -2,7 +2,7 @@
 
 ## Description
 
-This example contains a script which demonstrates a way to find out list of assets that fall inside circle shapes. For calculation only asset's origin coordinates have been considered whether it is inside the circle's radius or not. Assets that fall inside circle updated with `warning!!` tags
+This example contains a script which demonstrates a way to find out list of assets that fall inside circle shapes. For calculation only asset's origin coordinates have been considered whether it is inside the circle's radius or not. Assets that fall inside circle updated with `Falls inside ${shape.name}` tags
 
 ## Installation
 
@@ -20,6 +20,8 @@ This example contains a script which demonstrates a way to find out list of asse
 
 ## Usage
 
+Run the script from the Command Prompt:
+
 ```
-node index.js --project=projectId --sub-project=subProjectId --stream=streamId
+TOKEN=api_token node index.js --project=projectId --sub-project=subProjectId --stream=streamId
 ```
