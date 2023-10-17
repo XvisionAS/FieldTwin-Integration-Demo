@@ -1,7 +1,7 @@
 const axios = require('axios')
 const parseArgs = require('minimist')
 
-const TOKEN = process.env.TOKEN || '91f8153e-ab28-43f6-b389-a6af824f8fcc'
+const TOKEN = process.env.TOKEN
 const PORT = process.env.PORT || ''
 const BACKEND_HOST = `${
   process.env.BACKEND_HOST
