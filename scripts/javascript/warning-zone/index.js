@@ -16,8 +16,8 @@ const PROJECT_ID = argv['project']
 const SUB_PROJECT_ID = argv['sub-project']
 const STREAM_ID = argv['stream']
 
-const stagedAssetsUrl = `${HOST_URL}/API/${API_VERSION}/${PROJECT_ID}/subProject/${SUB_PROJECT_ID}:${STREAM_ID}/stagedassets`
-const shapesUrl = `${HOST_URL}/API/${API_VERSION}/${PROJECT_ID}/subProject/${SUB_PROJECT_ID}:${STREAM_ID}/shapes`
+const stagedAssetsUrl = `${HOST_URL}/API/${API_VERSION}/${PROJECT_ID}/subProject/${SUB_PROJECT_ID}${STREAM_ID ? ':'+STREAM_ID : ''}/stagedassets`
+const shapesUrl = `${HOST_URL}/API/${API_VERSION}/${PROJECT_ID}/subProject/${SUB_PROJECT_ID}${STREAM_ID ? ':'+STREAM_ID : ''}/shapes`
 
 const main = async () => {
   const stagedAssetsReq = await axios.get(stagedAssetsUrl, {
