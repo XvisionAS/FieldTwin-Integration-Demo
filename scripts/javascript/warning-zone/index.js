@@ -48,7 +48,7 @@ const main = async () => {
 }
 
 const isInside = (shape, stagedAssets) => {
-  const inDangerZoneAssts = []
+  const inDangerZoneAsstes = []
   for (const key in stagedAssets) {
     if (
       (stagedAssets[key].initialState.x - shape.x) *
@@ -57,9 +57,9 @@ const isInside = (shape, stagedAssets) => {
           (stagedAssets[key].initialState.y - shape.y) <=
       shape.circleRadius * shape.circleRadius
     )
-      inDangerZoneAssts.push(stagedAssets[key])
+      inDangerZoneAsstes.push(stagedAssets[key])
   }
-  return inDangerZoneAssts
+  return inDangerZoneAsstes
 }
 
 const addWarningTag = async (shape, stagedAssetsInOverlappedZone) => {
