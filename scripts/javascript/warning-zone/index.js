@@ -37,10 +37,10 @@ const main = async () => {
         const stagedAssetsInOverlappedZone = isInside(shape, stagedAssets)
         // add warning as tag for staged assets.
         if (stagedAssetsInOverlappedZone.length > 0) {
-          const patchedShapes = await addWarningTag(
+          const patchedStagedAssets = await addWarningTag(
             shape, stagedAssetsInOverlappedZone
           )
-          console.log(patchedShapes)
+          console.log(patchedStagedAssets)
         }
       }
     }
