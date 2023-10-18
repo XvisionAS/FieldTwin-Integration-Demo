@@ -22,6 +22,8 @@ This example contains a script which demonstrates a way to find out list of asse
 
 Run the script from the Command Prompt:
 
-```
-TOKEN=api_token node index.js --project=projectId --sub-project=subProjectId --stream=streamId
-```
+FieldTwin 7.1 and below:  
+`BACKEND_HOST=backend.<instance>.fieldtwin.com TOKEN=api_token node index.js --project=projectId --sub-project=subProjectId`
+
+FieldTwin 7.2 and above:  
+`BACKEND_HOST=backend.<instance>.fieldtwin.com TOKEN=api_token node index.js --project=projectId --sub-project=subProjectId --stream=streamId`
