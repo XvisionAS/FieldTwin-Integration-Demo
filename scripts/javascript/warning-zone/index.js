@@ -16,8 +16,12 @@ const PROJECT_ID = argv['project']
 const SUB_PROJECT_ID = argv['sub-project']
 const STREAM_ID = argv['stream']
 
-const stagedAssetsUrl = `${HOST_URL}/API/${API_VERSION}/${PROJECT_ID}/subProject/${SUB_PROJECT_ID}${STREAM_ID ? ':'+STREAM_ID : ''}/stagedassets`
-const shapesUrl = `${HOST_URL}/API/${API_VERSION}/${PROJECT_ID}/subProject/${SUB_PROJECT_ID}${STREAM_ID ? ':'+STREAM_ID : ''}/shapes`
+const stagedAssetsUrl = `${HOST_URL}/API/${API_VERSION}/${PROJECT_ID}/subProject/${SUB_PROJECT_ID}${
+  STREAM_ID ? ':' + STREAM_ID : ''
+}/stagedassets`
+const shapesUrl = `${HOST_URL}/API/${API_VERSION}/${PROJECT_ID}/subProject/${SUB_PROJECT_ID}${
+  STREAM_ID ? ':' + STREAM_ID : ''
+}/shapes`
 
 const main = async () => {
   const stagedAssetsReq = await axios.get(stagedAssetsUrl, {
@@ -38,7 +42,8 @@ const main = async () => {
         // add warning as tag for staged assets.
         if (stagedAssetsInOverlappedZone.length > 0) {
           const patchedStagedAssets = await addWarningTag(
-            shape, stagedAssetsInOverlappedZone
+            shape,
+            stagedAssetsInOverlappedZone
           )
           console.log(patchedStagedAssets)
         }
@@ -48,18 +53,16 @@ const main = async () => {
 }
 
 const isInside = (shape, stagedAssets) => {
-  const inDangerZoneAssts = []
+  const inDangerZoneAssets = []
   for (const key in stagedAssets) {
-    if (
-      (stagedAssets[key].initialState.x - shape.x) *
-        (stagedAssets[key].initialState.x - shape.x) +
-        (stagedAssets[key].initialState.y - shape.y) *
-          (stagedAssets[key].initialState.y - shape.y) <=
-      shape.circleRadius * shape.circleRadius
-    )
-      inDangerZoneAssts.push(stagedAssets[key])
+    const initialState = stagedAssets[key].initialState
+    const xx = initialState.x - shape.x
+    const yy = initialState.y - shape.y
+    if (xx * xx + yy * yy <= shape.circleRadius * shape.circleRadius) {
+      inDangerZoneAssets.push(stagedAssets[key])
+    }
   }
-  return inDangerZoneAssts
+  return inDangerZoneAssets
 }
 
 const addWarningTag = async (shape, stagedAssetsInOverlappedZone) => {
