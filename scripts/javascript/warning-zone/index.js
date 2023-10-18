@@ -34,7 +34,7 @@ const main = async () => {
     for (const shape of shapes) {
       // for each circle shape find out the list of staged assets with origin inside the circle
       if (shape.shapeType === 'Circle') {
-        const stagedAssetsInOverlappedZone = isInside(shape, stagedAssets)
+        const stagedAssetsInOverlappedZone = await isInside(shape, stagedAssets)
         // add warning as tag for staged assets.
         if (stagedAssetsInOverlappedZone.length > 0) {
           const patchedShapes = await addWarningTag(
@@ -47,7 +47,7 @@ const main = async () => {
   }
 }
 
-const isInside = (shape, stagedAssets) => {
+const isInside = async (shape, stagedAssets) => {
   const inDangerZoneAsstes = []
   for (const key in stagedAssets) {
     if (
