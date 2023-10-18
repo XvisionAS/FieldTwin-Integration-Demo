@@ -75,9 +75,9 @@ const addWarningTag = async (shape, stagedAssetsInOverlappedZone) => {
   const patchAssetsReq = await axios.patch(stagedAssetsUrl, payload, {
     headers: { 'Content-Type': 'application/json', token: TOKEN },
   })
-  const patchedAssets = patchAssetsReq.data
+  const patchedStagedAssets = patchAssetsReq.data
 
-  return patchedAssets
+  return patchedStagedAssets
 }
 
 main().catch((e) => {
