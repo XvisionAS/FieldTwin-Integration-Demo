@@ -504,26 +504,27 @@ Sent when a project or subproject is cloned (_copied_ in 7.2).
 
 The event will contain these attributes:
 
-| Attribute          | Description                                                                          |
-| :----------------- | :----------------------------------------------------------------------------------- |
-| event              | is set to `didClone`                                                                 |
-| type               | type of the cloned item (`project` or `subProject`)                                  |
-| id                 | unique ID of the newly created item                                                  |
-| data               | contains the raw data of the newly created item (as for `didCreate`)                 |
-| fromSubProjectId   | only for type subProject, the original subproject ID
-| fromSubProjectName | only for type subProject, the original subproject ID
-| toSubProjectId     | only for type subProject, the newly created subproject ID
-| toSubProjectName   | only for type subProject, the newly created subproject name
-| subProjectId       | only for type subProject, the newly created subproject ID
-| fromProjectId      | the original project ID
-| fromProjectName    | the original project name
-| fromAccountId      | the original account ID
-| toProjectId        | the new (type project) or target (type subProject) project ID
-| toProjectName      | the new (type project) or target (type subProject) project name
-| project            | the new (type project) or target (type subProject) project ID
-| projectId          | the new (type project) or target (type subProject) project ID
-| projectName        | the new (type project) or target (type subProject) project name
-| toAccountId        | the target account ID
+| Attribute          | Description                                                          |
+| :----------------- | :--------------------------------------------------------------------|
+| event              | is set to `didClone`                                                 |
+| type               | type of the cloned item (`project` or `subProject`)                  |
+| id                 | unique ID of the newly created item                                  |
+| data               | contains the raw data of the newly created item (as for `didCreate`) |
+| fromSubProjectId   | only for type subProject, the original subproject ID                 |
+| fromSubProjectName | only for type subProject, the original subproject ID                 |
+| toSubProjectId     | only for type subProject, the newly created subproject ID            |
+| toSubProjectName   | only for type subProject, the newly created subproject name          |
+| subProjectId       | only for type subProject, the newly created subproject ID            |
+| fromProjectId      | the original project ID                                              |
+| fromProjectName    | the original project name                                            |
+| fromAccountId      | the original account ID                                              |
+| toProjectId        | the new (type project) or target (type subProject) project ID        |
+| toProjectName      | the new (type project) or target (type subProject) project name      |
+| project            | the new (type project) or target (type subProject) project ID        |
+| projectId          | the new (type project) or target (type subProject) project ID        |
+| projectName        | the new (type project) or target (type subProject) project name      |
+| toAccountId        | the target account ID                                                |
+| idsMap             | map of original IDs to newly created IDs                             |
 
 ### didCreate and didCreateFromNetwork
 
