@@ -2,10 +2,9 @@
 <html>
 
 <head>
-  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
-    integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
-  <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.16.1/xlsx.core.min.js"></script>
+  <link  href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css" rel="stylesheet" crossorigin="anonymous">
+  <script src="https://cdn.jsdelivr.net/npm/vue@2.7.15/dist/vue.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.16.9/dist/xlsx.core.min.js"></script>
 </head>
 
 <body>
@@ -13,12 +12,17 @@
     <h3 v-if="message">{{ message }}</h3>
     <div class="card mt-3" v-if="selected.id">
       <div class="card-body">
-        <ul class="list-group list-group-flush" v-if="!metaData.length">
+        <ul class="list-group list-group-flush" v-if="loading">
+          <li class="list-group-item">
+            Fetching metadata...
+          </li>
+        </ul>
+        <ul class="list-group list-group-flush" v-if="!loading && !metaData.length">
           <li class="list-group-item">
             This object has no metadata.
           </li>
         </ul>
-        <ul class="list-group list-group-flush" v-if="metaData.length">
+        <ul class="list-group list-group-flush" v-if="!loading && metaData.length">
           <li class="list-group-item pb-3">
             <p>Click to export the selected object's metadata to an Excel file</p>
             <button class="btn btn-primary" @click="DownloadMetaData">Download Metadata</button>
@@ -63,6 +67,7 @@
       el: "#app",
       data: {
         message: "Initialising...",
+        loading: false,
         token: '',
         backendUrl: '',
         projectId: '',
@@ -139,22 +144,22 @@
               headers: { 'Authorization': 'Bearer ' + this.token, 'Content-Type': 'application/json' },
               body: JSON.stringify({ metaData: uploadedJSON })
             })
-              .then(response => response.json())
-              .then(data => {
-                this.message = `Stored ${this.selected.type} metadata on ${this.selected.id}`
-                this.reset()
-              })
-              .catch(error => {
-                console.error('Error:', error);
-              });
+            .then(response => response.json())
+            .then(data => {
+              this.message = `Stored ${this.selected.type} metadata on ${this.selected.id}`
+              this.reset()
+            })
+            .catch(error => {
+              console.error('Error:', error);
+            });
           }
           reader.readAsArrayBuffer(this.file);
         },
         filterMetadataKeys(mdArray) {
           return mdArray.map(md => {
-            // metaDatumId is required to identify the metadata field
-            // name and type are only for information
-            // the value and option (unit) are the values that can be updated
+            // metaDatumId is required to identify the metadata field definition
+            // the value and option (unit for numerics) are the values that can be updated
+            // the format of value depends on type
             return {
               metaDatumId: md.metaDatumId,
               name: md.name,
@@ -185,17 +190,22 @@
               id: event.data.data[0].id,
               type: event.data.data[0].type
             }
+            app.message = `Selected: ${app.selected.type} ${app.selected.id}`
+            app.metaData = []
+            app.loading = true
             fetch(`${app.backendUrl}/API/v1.9/${app.projectId}/subProject/${app.subProjectId}/${app.selected.type}/${app.selected.id}`, {
               headers: { 'Authorization': 'Bearer ' + app.token }
             })
-              .then(response => response.json())
-              .then(data => {
-                app.metaData = app.filterMetadataKeys(data.metaData || [])
-                app.message = `Selected: ${app.selected.type} ${app.selected.id}`
-              })
-              .catch(error => {
-                console.error('Error:', error);
-              });
+            .then(response => response.json())
+            .then(data => {
+              app.metaData = app.filterMetadataKeys(data.metaData || [])
+            })
+            .catch(error => {
+              console.error('Error:', error);
+            })
+            .finally(() => {
+              app.loading = false
+            })
           } else {
             appReset()
             app.message = 'Select an object...'
