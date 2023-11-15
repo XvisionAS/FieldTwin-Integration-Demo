@@ -25,7 +25,7 @@
         <ul class="list-group list-group-flush" v-if="!loading && metaData.length">
           <li class="list-group-item pb-3">
             <p>Click to export the selected object's metadata to an Excel file</p>
-            <button class="btn btn-primary" @click="DownloadMetaData">Download Metadata</button>
+            <button class="btn btn-primary" @click="downloadMetaData">Download Metadata</button>
           </li>
           <li class="list-group-item">
             <p>
@@ -78,6 +78,7 @@
       },
       methods: {
         reset() {
+          this.message = 'Select an object...'
           this.selected = { id: null }
           this.metaData = []
           this.comparisonResults = []
@@ -89,7 +90,26 @@
         clearUploadFile() {
           this.$refs.fileInput.value = ''
         },
-        DownloadMetaData() {
+        setSelected(id, name, type) {
+          this.message = `Selected: ${type} ${id}`
+          this.selected = { id, name, type }
+          this.metaData = []
+          this.loading = true
+          fetch(`${this.backendUrl}/API/v1.9/${this.projectId}/subProject/${this.subProjectId}/${this.selected.type}/${this.selected.id}`, {
+            headers: { 'Authorization': 'Bearer ' + this.token }
+          })
+            .then((response) => response.json())
+            .then((data) => {
+              this.metaData = this.filterMetadata(data.metaData || [])
+            })
+            .catch((error) => {
+              console.error('Error:', error)
+            })
+            .finally(() => {
+              this.loading = false
+            })
+        },
+        downloadMetaData() {
           const workbook = XLSX.utils.book_new()
           const worksheet = XLSX.utils.json_to_sheet(this.metaData)
           XLSX.utils.book_append_sheet(workbook, worksheet, "Data")
@@ -139,24 +159,28 @@
             const workbook = XLSX.read(data, { type: "array" })
             const worksheet = workbook.Sheets[workbook.SheetNames[0]]
             const uploadedJSON = XLSX.utils.sheet_to_json(worksheet)
+            // TODO choices
             fetch(`${this.backendUrl}/API/v1.9/${this.projectId}/subProject/${this.subProjectId}/${this.selected.type}/${this.selected.id}`, {
               method: 'PATCH',
               headers: { 'Authorization': 'Bearer ' + this.token, 'Content-Type': 'application/json' },
               body: JSON.stringify({ metaData: uploadedJSON })
             })
-            .then((response) => response.json())
-            .then((data) => {
-              this.message = `Stored ${this.selected.type} metadata on ${this.selected.id}`
-              this.reset()
-            })
-            .catch((error) => {
-              console.error('Error:', error)
-            })
+              .then((response) => response.json())
+              .then((data) => {
+                this.message = `Stored ${this.selected.type} metadata on ${this.selected.id}`
+                this.reset()
+              })
+              .catch((error) => {
+                console.error('Error:', error)
+              })
           }
           reader.readAsArrayBuffer(this.file)
         },
-        filterMetadataKeys(mdArray) {
-          return mdArray.map((md) => {
+        filterMetadata(mdArray) {
+          const supportedTypes = ['string', 'numerical', 'slider', 'boolean', 'choices']
+          return mdArray
+            .filter((md) => supportedTypes.includes(md.type))
+            .map((md) => {
             // metaDatumId is required to identify the metadata field definition
             // the value and option (unit for numerics) are the values that can be updated
             // the format of value depends on type
@@ -178,42 +202,23 @@
       switch (event.data.event) {
         case 'loaded':
         case 'tokenRefresh':
-          app.message = 'Select an object...'
           app.token = event.data.token
           app.backendUrl = event.data.backendUrl
           app.projectId = event.data.project
           app.subProjectId = event.data.subProject
+          app.message = 'Select an object...'
           break
         case 'select':
-          if (event.data.data.length && ["connection", "stagedAsset", "well"].includes(event.data.data[0].type)) {
-            app.selected = {
-              id: event.data.data[0].id,
-              type: event.data.data[0].type
-            }
-            app.message = `Selected: ${app.selected.type} ${app.selected.id}`
-            app.metaData = []
-            app.loading = true
-            fetch(`${app.backendUrl}/API/v1.9/${app.projectId}/subProject/${app.subProjectId}/${app.selected.type}/${app.selected.id}`, {
-              headers: { 'Authorization': 'Bearer ' + app.token }
-            })
-            .then((response) => response.json())
-            .then((data) => {
-              app.metaData = app.filterMetadataKeys(data.metaData || [])
-            })
-            .catch((error) => {
-              console.error('Error:', error)
-            })
-            .finally(() => {
-              app.loading = false
-            })
+          const eventData = event.data.data
+          const supportedTypes = ['connection', 'stagedAsset', 'well']
+          if (eventData.length && supportedTypes.includes(eventData[0].type)) {
+            app.setSelected(eventData[0].id, eventData[0].name, eventData[0].type)
           } else {
             appReset()
-            app.message = 'Select an object...'
           }
           break
         case 'unselect':
           appReset()
-          app.message = 'Select an object...'
           break
       }
     }
