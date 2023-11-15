@@ -12,6 +12,13 @@
     <h3 v-if="message">{{ message }}</h3>
     <div class="card mt-3" v-if="selected.id">
       <div class="card-body">
+        <ul class="list-group list-group-flush" v-if="!loading && !!errorMessage">
+          <li class="list-group-item">
+            <div class="alert alert-warning" role="alert">
+              {{ errorMessage }}
+            </div>
+          </li>
+        </ul>
         <ul class="list-group list-group-flush" v-if="loading">
           <li class="list-group-item">
             Fetching metadata...
@@ -64,21 +71,34 @@
 
   <script>
     const app = new Vue({
-      el: "#app",
+      el: '#app',
       data: {
-        message: "Initialising...",
-        loading: false,
-        token: '',
         backendUrl: '',
+        token: '',
         projectId: '',
-        subProject: '',
+        subProjectId: '',
+        loading: false,
+        metaDataDefinitions: null,
+        message: 'Initialising...',
+        errorMessage: '',
         selected: { id: null },
         metaData: [],
         comparisonResults: []
       },
       methods: {
+        init(backendUrl, token, projectId, subProjectId) {
+          this.backendUrl = backendUrl
+          this.token = token
+          this.projectId = projectId
+          this.subProjectId = subProjectId
+
+          if (!this.metaDataDefinitions) {
+            this.fetchMetadataDefinitions()
+          }
+        },
         reset() {
           this.message = 'Select an object...'
+          this.errorMessage = ''
           this.selected = { id: null }
           this.metaData = []
           this.comparisonResults = []
@@ -88,7 +108,23 @@
           this.file = this.$refs.fileInput.files[0]
         },
         clearUploadFile() {
-          this.$refs.fileInput.value = ''
+          if (this.$refs.fileInput) {
+            this.$refs.fileInput.value = ''
+          }
+        },
+        fetchMetadataDefinitions() {
+          this.metaDataDefinitions = {}
+          fetch(`${this.backendUrl}/API/v1.9/metadatadefinitions`, {
+            headers: { 'Authorization': 'Bearer ' + this.token }
+          })
+            .then((response) => response.json())
+            .then((data) => {
+              this.metaDataDefinitions = data
+            })
+            .catch((error) => {
+              this.errorMessage = `Error loading metadata definitions: ${error.message}`
+              console.error(error)
+            })
         },
         setSelected(id, name, type) {
           this.message = `Selected: ${type} ${id}`
@@ -103,7 +139,8 @@
               this.metaData = this.filterMetadata(data.metaData || [])
             })
             .catch((error) => {
-              console.error('Error:', error)
+              this.errorMessage = `Error loading metadata values: ${error.message}`
+              console.error(error)
             })
             .finally(() => {
               this.loading = false
@@ -127,19 +164,20 @@
             const workbook = XLSX.read(data, { type: "array" })
             const firstSheetName = workbook.SheetNames[0]
             const worksheet = workbook.Sheets[firstSheetName]
-            const uploadedJSON = XLSX.utils.sheet_to_json(worksheet, { header: 1 })
+            const uploadedList = XLSX.utils.sheet_to_json(worksheet, { header: 1 })
 
-            // Load metaData into SheetJS
+            // Load metaData into SheetJS to get it in the same format
             const workbook2 = XLSX.utils.book_new()
             const worksheet2 = XLSX.utils.json_to_sheet(this.metaData)
             XLSX.utils.book_append_sheet(workbook2, worksheet2, "Data")
-            const metaData = XLSX.utils.sheet_to_json(worksheet2, { header: 1 })
+            const originalList = XLSX.utils.sheet_to_json(worksheet2, { header: 1 })
 
-            for (let i = 0; i < Math.max(metaData.length, uploadedJSON.length); i++) {
+            // Compare the rows
+            for (let i = 0; i < Math.max(originalList.length, uploadedList.length); i++) {
               const rowNumber = i + 1
               let match = false
-              let value1 = metaData[i]
-              let value2 = uploadedJSON[i]
+              let value1 = originalList[i]
+              let value2 = uploadedList[i]
               if (value1 === undefined) {
                 value1 = ''
               } else if (value2 === undefined) {
@@ -158,40 +196,118 @@
             const data = new Uint8Array(e.target.result)
             const workbook = XLSX.read(data, { type: "array" })
             const worksheet = workbook.Sheets[workbook.SheetNames[0]]
-            const uploadedJSON = XLSX.utils.sheet_to_json(worksheet)
-            // TODO choices
-            fetch(`${this.backendUrl}/API/v1.9/${this.projectId}/subProject/${this.subProjectId}/${this.selected.type}/${this.selected.id}`, {
-              method: 'PATCH',
-              headers: { 'Authorization': 'Bearer ' + this.token, 'Content-Type': 'application/json' },
-              body: JSON.stringify({ metaData: uploadedJSON })
-            })
-              .then((response) => response.json())
-              .then((data) => {
-                this.message = `Stored ${this.selected.type} metadata on ${this.selected.id}`
-                this.reset()
+            const uploadedList = XLSX.utils.sheet_to_json(worksheet)
+
+            try {
+              fetch(`${this.backendUrl}/API/v1.9/${this.projectId}/subProject/${this.subProjectId}/${this.selected.type}/${this.selected.id}`, {
+                method: 'PATCH',
+                headers: { 'Authorization': 'Bearer ' + this.token, 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  metaData: this.sheetArrayToAPI(uploadedList)
+                })
               })
-              .catch((error) => {
-                console.error('Error:', error)
-              })
+                .then((response) => response.json())
+                .then((data) => {
+                  this.message = `Successfully stored ${this.selected.type} metadata for ${this.selected.id}`
+                  setTimeout(this.reset.bind(this), 2000)
+                })
+                .catch((error) => {
+                  this.errorMessage = `Error saving metadata values: ${error.message}`
+                  console.error(error)
+                })
+            } catch (error) {
+              this.errorMessage = `Error preparing metadata values: ${error.message}`
+              console.error(error)
+            }
           }
           reader.readAsArrayBuffer(this.file)
         },
+
+        /**** Metadata loading helpers ****/
+
         filterMetadata(mdArray) {
           const supportedTypes = ['string', 'numerical', 'slider', 'boolean', 'choices']
           return mdArray
             .filter((md) => supportedTypes.includes(md.type))
             .map((md) => {
-            // metaDatumId is required to identify the metadata field definition
-            // the value and option (unit for numerics) are the values that can be updated
-            // the format of value depends on type
-            return {
-              metaDatumId: md.metaDatumId,
-              name: md.name,
-              type: md.type,
-              value: md.value,
-              option: md.option
+              // Get the attributes to put in the xlsx file
+              //   - metaDatumId is required to identify the metadatum field definition
+              //   - the format of value depends on type
+              //   - the value and option (unit for numerics) are the values that can be updated
+              return {
+                metaDatumId: md.metaDatumId,
+                name: md.name,
+                type: md.type,
+                value: this.formatMetadataValue(md.value, md.type),
+                option: md.option
+              }
+            })
+            .sort((a, b) => a.metaDatumId <= b.metaDatumId ? -1 : 1)
+        },
+        formatMetadataValue(value, type) {
+          switch (type) {
+            case 'choices':
+              if (Array.isArray(value)) {
+                return value.map((v) => v.customValue || v.name).join('; ')
+              }
+              return value ? (value.customValue || value.name) : ''
+            case 'boolean':
+              return (value === true || value === 'true') ? 'true' : 'false'
+            case 'numerical':
+            case 'slider':
+              return (value !== null && value !== undefined) ? value : ''
+            default:
+              return String(value || '')
+          }
+        },
+
+        /**** Metadata saving helpers ****/
+
+        sheetArrayToAPI(arr) {
+          arr.forEach((row) => {
+            if (!row.metaDatumId) {
+              throw new Error(`metaDatumId missing for value: ${row.value}`)
             }
+            // Set the value attribute according to its type
+            row.value = this.parseMetadataValue(row.value, row.type, row.metaDatumId)
           })
+          return arr
+        },
+        parseMetadataValue(strValue, type, definitionId) {
+          switch (type) {
+            case 'choices':
+              return strValue ? this.createChoiceValue(strValue, definitionId) : null
+            case 'boolean':
+              return strValue ? strValue === 'true' : null
+            case 'numerical':
+            case 'slider':
+              return strValue ? parseFloat(strValue) : null
+            default:
+              return strValue || null
+          }
+        },
+        createChoiceValue(strValue, definitionId) {
+          const definition = this.metaDataDefinitions[definitionId]
+          if (!definition) {
+            throw new Error(`Metadatum definition not found with id: ${definitionId}`)
+          }
+          if (definition.options.multi) {
+            // value will be an array of choices
+            const strValues = strValue.split(';').map((v) => v.trim()).filter((v) => !!v)
+            return strValues.map((v) => this.findOption(definition, v))
+          } else {
+            // value will be a single choice
+            return this.findOption(definition, strValue)
+          }
+        },
+        findOption(definition, name) {
+          const option = definition.options.items.list.find(
+            (option) => (option.customValue || option.name || '').toLowerCase() === name.toLowerCase()
+          )
+          if (!option) {
+            throw new Error(`'${name}' is not a valid choice for metaDatumId ${definition.id}`)
+          }
+          return option
         }
       }
     })
@@ -202,17 +318,14 @@
       switch (event.data.event) {
         case 'loaded':
         case 'tokenRefresh':
-          app.token = event.data.token
-          app.backendUrl = event.data.backendUrl
-          app.projectId = event.data.project
-          app.subProjectId = event.data.subProject
+          app.init(event.data.backendUrl, event.data.token, event.data.project, event.data.subProject)
           app.message = 'Select an object...'
           break
         case 'select':
-          const eventData = event.data.data
+          const selection = event.data.data
           const supportedTypes = ['connection', 'stagedAsset', 'well']
-          if (eventData.length && supportedTypes.includes(eventData[0].type)) {
-            app.setSelected(eventData[0].id, eventData[0].name, eventData[0].type)
+          if (selection.length && supportedTypes.includes(selection[0].type)) {
+            app.setSelected(selection[0].id, selection[0].name, selection[0].type)
           } else {
             appReset()
           }
