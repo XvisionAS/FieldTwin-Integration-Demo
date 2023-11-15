@@ -78,85 +78,85 @@
       },
       methods: {
         reset() {
-          this.selected = { id: null };
-          this.metaData = [];
-          this.comparisonResults = [];
-          this.clearUploadFile();
+          this.selected = { id: null }
+          this.metaData = []
+          this.comparisonResults = []
+          this.clearUploadFile()
         },
         uploadFile() {
-          this.file = this.$refs.fileInput.files[0];
+          this.file = this.$refs.fileInput.files[0]
         },
         clearUploadFile() {
-          this.$refs.fileInput.value = '';
+          this.$refs.fileInput.value = ''
         },
         DownloadMetaData() {
-          const workbook = XLSX.utils.book_new();
-          const worksheet = XLSX.utils.json_to_sheet(this.metaData);
-          XLSX.utils.book_append_sheet(workbook, worksheet, "Data");
-          const filename = this.selected.id + ".xlsx";
-          XLSX.writeFile(workbook, filename);
-          this.message = "Data exported to " + filename;
+          const workbook = XLSX.utils.book_new()
+          const worksheet = XLSX.utils.json_to_sheet(this.metaData)
+          XLSX.utils.book_append_sheet(workbook, worksheet, "Data")
+          const filename = this.selected.id + ".xlsx"
+          XLSX.writeFile(workbook, filename)
+          this.message = "Data exported to " + filename
         },
         compareMetaData() {
-          this.comparisonResults = [];
-          const reader = new FileReader();
-          reader.onload = e => {
+          this.comparisonResults = []
+          const reader = new FileReader()
+          reader.onload = (e) => {
 
             // Read uploaded file
-            const data = new Uint8Array(e.target.result);
-            const workbook = XLSX.read(data, { type: "array" });
-            const firstSheetName = workbook.SheetNames[0];
-            const worksheet = workbook.Sheets[firstSheetName];
-            const uploadedJSON = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+            const data = new Uint8Array(e.target.result)
+            const workbook = XLSX.read(data, { type: "array" })
+            const firstSheetName = workbook.SheetNames[0]
+            const worksheet = workbook.Sheets[firstSheetName]
+            const uploadedJSON = XLSX.utils.sheet_to_json(worksheet, { header: 1 })
 
             // Load metaData into SheetJS
-            const workbook2 = XLSX.utils.book_new();
-            const worksheet2 = XLSX.utils.json_to_sheet(this.metaData);
-            XLSX.utils.book_append_sheet(workbook2, worksheet2, "Data");
-            const metaData = XLSX.utils.sheet_to_json(worksheet2, { header: 1 });
+            const workbook2 = XLSX.utils.book_new()
+            const worksheet2 = XLSX.utils.json_to_sheet(this.metaData)
+            XLSX.utils.book_append_sheet(workbook2, worksheet2, "Data")
+            const metaData = XLSX.utils.sheet_to_json(worksheet2, { header: 1 })
 
             for (let i = 0; i < Math.max(metaData.length, uploadedJSON.length); i++) {
-              const rowNumber = i + 1;
-              let match = false;
-              let value1 = metaData[i];
-              let value2 = uploadedJSON[i];
+              const rowNumber = i + 1
+              let match = false
+              let value1 = metaData[i]
+              let value2 = uploadedJSON[i]
               if (value1 === undefined) {
-                value1 = '';
+                value1 = ''
               } else if (value2 === undefined) {
-                value2 = '';
+                value2 = ''
               } else {
-                match = JSON.stringify(value1) === JSON.stringify(value2);
+                match = JSON.stringify(value1) === JSON.stringify(value2)
               }
-              this.comparisonResults.push({ rowNumber, value1, value2, match });
+              this.comparisonResults.push({ rowNumber, value1, value2, match })
             }
-          };
-          reader.readAsArrayBuffer(this.file);
+          }
+          reader.readAsArrayBuffer(this.file)
         },
         uploadMetaData() {
-          const reader = new FileReader();
-          reader.onload = e => {
-            const data = new Uint8Array(e.target.result);
-            const workbook = XLSX.read(data, { type: "array" });
-            const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-            const uploadedJSON = XLSX.utils.sheet_to_json(worksheet);
+          const reader = new FileReader()
+          reader.onload = (e) => {
+            const data = new Uint8Array(e.target.result)
+            const workbook = XLSX.read(data, { type: "array" })
+            const worksheet = workbook.Sheets[workbook.SheetNames[0]]
+            const uploadedJSON = XLSX.utils.sheet_to_json(worksheet)
             fetch(`${this.backendUrl}/API/v1.9/${this.projectId}/subProject/${this.subProjectId}/${this.selected.type}/${this.selected.id}`, {
               method: 'PATCH',
               headers: { 'Authorization': 'Bearer ' + this.token, 'Content-Type': 'application/json' },
               body: JSON.stringify({ metaData: uploadedJSON })
             })
-            .then(response => response.json())
-            .then(data => {
+            .then((response) => response.json())
+            .then((data) => {
               this.message = `Stored ${this.selected.type} metadata on ${this.selected.id}`
               this.reset()
             })
-            .catch(error => {
-              console.error('Error:', error);
-            });
+            .catch((error) => {
+              console.error('Error:', error)
+            })
           }
-          reader.readAsArrayBuffer(this.file);
+          reader.readAsArrayBuffer(this.file)
         },
         filterMetadataKeys(mdArray) {
-          return mdArray.map(md => {
+          return mdArray.map((md) => {
             // metaDatumId is required to identify the metadata field definition
             // the value and option (unit for numerics) are the values that can be updated
             // the format of value depends on type
@@ -167,10 +167,10 @@
               value: md.value,
               option: md.option
             }
-          });
+          })
         }
       }
-    });
+    })
 
     const appReset = app.reset.bind(app)
 
@@ -196,12 +196,12 @@
             fetch(`${app.backendUrl}/API/v1.9/${app.projectId}/subProject/${app.subProjectId}/${app.selected.type}/${app.selected.id}`, {
               headers: { 'Authorization': 'Bearer ' + app.token }
             })
-            .then(response => response.json())
-            .then(data => {
+            .then((response) => response.json())
+            .then((data) => {
               app.metaData = app.filterMetadataKeys(data.metaData || [])
             })
-            .catch(error => {
-              console.error('Error:', error);
+            .catch((error) => {
+              console.error('Error:', error)
             })
             .finally(() => {
               app.loading = false
@@ -217,7 +217,7 @@
           break
       }
     }
-    window.addEventListener("message", onWindowMessage);
+    window.addEventListener("message", onWindowMessage)
   </script>
 </body>
 
