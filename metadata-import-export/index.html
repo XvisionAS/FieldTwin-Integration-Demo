@@ -273,17 +273,17 @@
           })
           return arr
         },
-        parseMetadataValue(strValue, type, definitionId) {
+        parseMetadataValue(excelValue, type, definitionId) {
           switch (type) {
             case 'choices':
-              return strValue ? this.createChoiceValue(strValue, definitionId) : null
+              return excelValue ? this.createChoiceValue(excelValue, definitionId) : null
             case 'boolean':
-              return strValue ? strValue === 'true' : null
+              return excelValue ? excelValue === 'true' : null
             case 'numerical':
             case 'slider':
-              return strValue ? parseFloat(strValue) : null
+              return excelValue || excelValue === 0 ? parseFloat(excelValue) : null
             default:
-              return strValue || null
+              return excelValue || null
           }
         },
         createChoiceValue(strValue, definitionId) {
