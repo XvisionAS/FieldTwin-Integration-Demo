@@ -58,6 +58,8 @@
             setIdle()
             break
         }
+      } else {
+        console.log(`Ignoring message from unexpected origin ${event.origin}`)
       }
     })
 
