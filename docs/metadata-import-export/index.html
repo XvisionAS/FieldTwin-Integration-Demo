@@ -278,7 +278,7 @@
             case 'choices':
               return excelValue ? this.createChoiceValue(excelValue, definitionId) : null
             case 'boolean':
-              return excelValue ? excelValue === 'true' : null
+              return excelValue ? ['true', '1', 'yes'].includes(String(excelValue).toLowerCase()) : null
             case 'numerical':
             case 'slider':
               return excelValue || excelValue === 0 ? parseFloat(excelValue) : null
