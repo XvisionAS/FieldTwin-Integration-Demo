@@ -16,8 +16,9 @@ export SUBPROJECT=<subproject id>
 
 The API token can be created by an administrator in FieldTwin Admin from the
 Account Settings / API section. It must be created for the same account that the
-project lives in. API tokens are powerful so once you are familiar with the API
-you might (depending on your use case) [change to use a JWT instead](#provide-a-jwt-instead-of-an-api-token).
+project lives in. API tokens are convenient for testing but they are unrestricted by default,
+so once you are familiar with the API you might (depending on your use case) choose to
+[use a JWT instead](#provide-a-jwt-instead-of-an-api-token).
 
 The IDs of the project and subproject (and objects below) can be found from the
 URL in your browser's address bar when the project is open in FieldTwin Design.
@@ -835,6 +836,5 @@ curl -H "Authorization: Bearer ${JWT}" \
      https://${BACKEND_HOST}/API/v1.9/${PROJECT}/subProject/${SUBPROJECT}
 ```
 
-For integration user interfaces and settings pages you should use the provided JWT
-whenever possible. API tokens are suitable for back-end tasks when there is no user
-session or when administration permission is required.
+* For integration user interfaces and settings pages you should use the provided JWT whenever possible
+* API tokens are suitable for back-end tasks when there is no user session or when administration permission is required
