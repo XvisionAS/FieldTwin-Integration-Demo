@@ -18,6 +18,7 @@
 | 12     | olivier | Added `requestInfo` and `replyInfo`                                                                             |
 | 13     | olivier | Added `getViewBox`                                                                                              |
 | 14     | matt    | Added `didClone`, documents, shapes, segments, parent attributes; updates for 7.2; removed activities and ports |
+| 15     | olivier | Added `toast`                                                                                                   |
 
 ## Introduction
 
@@ -141,17 +142,21 @@ that passes a new JWT, so if you handle this message you do not need to refresh 
 
 ## Generate a JWT using an API token
 
-It is possible to generate a JWT using an API token. For that you need to send a **POST** request to
-this endpoint: `https://backend.[name-of-instance].fieldtwin.com/token/generate`.
+It is possible to generate a JWT using an API token. In FieldTwin 7.2+ this needs to be an API token
+that is not restricted to a user role.
+
+Send a **POST** request to this endpoint: `https://backend.[name-of-instance].fieldtwin.com/token/generate`.
 You pass the API token the usual way (using header `token: [API Token]`).
 The body of the request must contain:
 
 - `userId` : ID of the user the JWT will be generated for.
-- `subProjectId` : ID of the sub project the JWT will be generated for.
+- optional `subProjectId` : ID of the sub project the JWT will be generated for. Usually required.
+  If blank, generates a JWT that can be used to call a limited number of account related API calls.
 - optional `customTabId` : integration ID to generate the token for.
   Integration ID can be looked up by an API call or in the account settings.
 
-On success, the query returns a JSON object that contains an attribute `token`.
+On success, the query returns a JSON object that contains an attribute `token` containing
+a JWT for the requested user.
 
 ## User rights management
 
@@ -289,6 +294,14 @@ project and tokens used to communicate with API. The argument will contain these
 | canEdit            | whether the user's role has 'edit' rights for the integration       |
 | projectWideAccess  | whether the JWT grants access to the whole project                  |
 | projectAllFromUser | whether the JWT grants access to all of the current user's projects |
+| selection          | what is currently selected. Array of object { type, id }            |
+| cssUrl             | main CSS url                                                        |
+| cssThemeUrl        | current theme CSS url                                               | 
+| cloudType          | azure, gcloud, s3, onpremise                                        |
+| superAdmin         | true is current user is super admin                                 |
+| projectorUrl       | FieldTwin projection service URL                                    |
+| designerUrl        | FieldTwin designer URL                                              |
+
 
 ### tokenRefresh
 
@@ -430,7 +443,7 @@ The result will contain these attributes:
 | data.project.subProjectName  | current sub-project name                  |
 | data.project.subProjectTags  | aggregation of all sub-project tags       |
 
-## requestInfo
+### requestInfo
 
 Requests information about project items from the integration. The number of items is limited to 100
 and multiple `requestInfo` may be sent. These requests are sent at initial loading and on selection.
@@ -446,7 +459,7 @@ The reply is expected to be sent using `replyInfo` (see below) and not as a retu
 | data.items.[].id   | id of the record the request is for     |
 | data.items.[].type | type of the record the request is for   |
 
-### Example of requestInfo
+#### Example of requestInfo
 
 ```javascript
 {
@@ -467,7 +480,7 @@ The reply is expected to be sent using `replyInfo` (see below) and not as a retu
 }
 ```
 
-## viewBox
+### viewBox
 
 The message is sent in response to an integration sending the `getViewBox` command.
 It contains the current view box of the application in project coordinates.
@@ -564,7 +577,7 @@ The event will contain these attributes:
 | subProject    | ID of the parent subproject when isForeign is true                                   |
 | stream        | ID of the parent subproject branch when isForeign is true in FieldTwin 7.2 and later |
 
-#### Example for an overlay updated through the user's client
+#### Example of an overlay updated through the user's client
 
 ```javascript
 {
@@ -604,7 +617,7 @@ The event will contain these attributes:
 }
 ```
 
-#### Example for a metaDataValue updated through the network
+#### Example of a metaDataValue updated through the network
 
 ```json
 {
@@ -654,7 +667,7 @@ The event will contain these attributes:
 | event         | is set to `didDelete` or `didDeleteFromNetwork`      |
 | <other>       | see the `didUpdate` event                            |
 
-#### Example for deletion of a custom-cost from Network
+#### Example for deletion of a custom-cost from network
 
 ```json
 {
@@ -1500,7 +1513,7 @@ Select and focus on one or multiple items.
 | event.data.items[].id   | ID of the item to select                                                                                                                          |
 | event.data.items[].type | type of the item to select (`stagedAsset`, `connection`, `connectionSegment`, `well`, `wellBore`, `wellBoreSegment`, `layer`, `overlay`, `shape`) |
 
-#### Example for selecting and focusing on a well
+#### Selecting and focusing on a well
 
 ```javascript
 {
@@ -1569,6 +1582,23 @@ message. For now it only sets one metric:
       type: "type_of_the_resource",
       documentCount: 3
     }]
+  }
+}
+```
+
+### toast
+
+Display a temporary pop-up notification ("toast" message) in the FieldTwin Design UI.
+
+* `type`: can be danger, warning, info or success
+* `message`: what to display in the notification
+
+```javascript
+{
+  event: "toast",
+  data: {
+    type: "success",
+    message: "Win win"
   }
 }
 ```
