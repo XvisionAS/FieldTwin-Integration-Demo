@@ -17,7 +17,7 @@
 | 11     | olivier | removed trafficManagerJWT                                                                                       |
 | 12     | olivier | Added `requestInfo` and `replyInfo`                                                                             |
 | 13     | olivier | Added `getViewBox`                                                                                              |
-| 14     | matt    | Added `didClone`, documents, shapes, segments, parent attributes; updates for 7.2; removed activities and ports |
+| 14     | matt    | Added `didClone`, documents, shapes, segments, parent attributes; updates for 8.0; removed activities and ports |
 | 15     | olivier | Added `toast`                                                                                                   |
 
 ## Introduction
@@ -64,7 +64,7 @@ This request will contain the following attributes:
 | `token`              | Security token (JWT) needed for making a FieldTwin API call                                                                                  |
 | `frontendUrl`        | URL of the window that contains the iframe. Also the link for viewing the subproject                                                         |
 | `backendUrl`         | URL of the FieldTwin backend. Use this as the base of the JWT public key URL and the API URL                                                 |
-| `stream`             | In FieldTwin 7.2 and later - the ID of the subproject branch                                                                                 |
+| `stream`             | In FieldTwin 8.0 and later - the ID of the subproject branch                                                                                 |
 | `subProject`         | The currently open sub project ID                                                                                                            |
 | `project`            | The currently open project ID                                                                                                                |
 | `account`            | The ID of the account that contains the project                                                                                              |
@@ -142,7 +142,7 @@ that passes a new JWT, so if you handle this message you do not need to refresh 
 
 ## Generate a JWT using an API token
 
-It is possible to generate a JWT using an API token. In FieldTwin 7.2+ this needs to be an API token
+It is possible to generate a JWT using an API token. In FieldTwin 8.0+ this needs to be an API token
 that is not restricted to a user role.
 
 Send a **POST** request to this endpoint: `https://backend.[name-of-instance].fieldtwin.com/token/generate`.
@@ -219,6 +219,9 @@ check them, this is the list of possible values:
 - Custom Costs
   - `canEditCustomCosts`
   - `canViewCustomCosts`
+- Documents
+  - `canViewDocuments`
+  - `canEditDocuments`
 - View Points
   - `canEditBookmarks`
   - `canViewBookmarks`
@@ -285,7 +288,7 @@ project and tokens used to communicate with API. The argument will contain these
 | :----------------- | :------------------------------------------------------------------ |
 | event              | is set to `loaded`                                                  |
 | subProject         | is set to subproject ID, if a sub project is loaded                 |
-| stream             | is set to the subproject branch ID in FieldTwin 7.2 and later       |
+| stream             | is set to the subproject branch ID in FieldTwin 8.0 and later       |
 | project            | is set to project ID, if a project is loaded                        |
 | account            | is set to account ID, if a project is loaded                        |
 | token              | is set to the JWT that the integration can use to query the API     |
@@ -353,7 +356,7 @@ The event will contain these attributes:
 | data.[].isForeign  | true if the selected item comes from a linked parent project                         |
 | data.[].project    | ID of the parent project when isForeign is true                                      |
 | data.[].subProject | ID of the parent subproject when isForeign is true                                   |
-| data.[].stream     | ID of the parent subproject branch when isForeign is true in FieldTwin 7.2 and later |
+| data.[].stream     | ID of the parent subproject branch when isForeign is true in FieldTwin 8.0 and later |
 
 #### Example of single selection
 
@@ -513,7 +516,7 @@ It contains the current view box of the application in project coordinates.
 
 ### didClone
 
-Sent when a project or subproject is cloned (_copied_ in 7.2).
+Sent when a project or subproject is cloned (_copied_ in 8.0).
 
 The event will contain these attributes:
 
@@ -575,7 +578,7 @@ The event will contain these attributes:
 | isForeign     | true if the updated item comes from a linked parent project                          |
 | project       | ID of the parent project when isForeign is true                                      |
 | subProject    | ID of the parent subproject when isForeign is true                                   |
-| stream        | ID of the parent subproject branch when isForeign is true in FieldTwin 7.2 and later |
+| stream        | ID of the parent subproject branch when isForeign is true in FieldTwin 8.0 and later |
 
 #### Example of an overlay updated through the user's client
 
