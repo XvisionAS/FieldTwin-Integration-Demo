@@ -846,9 +846,9 @@ curl -H "Authorization: Bearer ${JWT}" \
 
 ### 7.x to 8.0
 
-In the 8.0 release we introduced a new backend architecture that will in future allow projects to be
-branched and merged using `git` style workflows. In order to support multiple branches of one project
-we have introduced a new ID, named `streamId` in the API and in window messages and the JWT.
+In the 8.0 release we introduced a new backend architecture that allows projects to be branched
+and merged using `git` style workflows. In order to support multiple branches of one project
+we have introduced a new ID named `streamId` in the API and in window messages and the JWT.
 
 To keep the window messages and API `v1.9` compatible with this change, the subproject ID in 8.0 is
 now composed of 2 parts: `subProjectId:streamId`, however the API will continue to accept the older
@@ -863,9 +863,6 @@ Content of JWT in 7.1:
   "projectId": "-M-HHqMifhz6qskW2goc",
   "subProjectId": "-NlT9gazCfieinkJYsOv",
 }
-
-URL of project:
-/project/-M-HHqMifhz6qskW2goc/subProject/-NlT9gazCfieinkJYsOv
 ```
 
 Content of JWT in 8.0:
@@ -878,9 +875,6 @@ Content of JWT in 8.0:
   "subProjectId": "-NlT9gazCfieinkJYsOv:-NlT9gbQQVEiFVxlL2_U",
   "streamId": "-NlT9gbQQVEiFVxlL2_U",
 }
-
-URL of project:
-/project/-M-HHqMifhz6qskW2goc/subProject/-NlT9gazCfieinkJYsOv/stream/-NlT9gbQQVEiFVxlL2_U
 ```
 
 Since the API accepts either `subProjectId` or `subProjectId:streamId`, existing code that calls the
@@ -888,16 +882,12 @@ API using `jwt.subProjectId` or window message `message.subProject` should conti
 
 #### Compatibility concerns
 
-If you store FieldTwin IDs in your own database:
+If you use the subproject ID as a key to find other records you will need to make this change to
+convert the ID to the legacy value:
 
-* The new form of subProjectId has a longer length than the old,
-  which could require field lengths to be extended in your database schema
-* If you have data stored against the old form `subProjectId`, opening a subproject in 8.0
-  will provide the new longer form ID and the existing data will not be found
-    * You can maintain compatibility with both 7.x and 8.0 using this code snippet
-      (Javascript or Python):
-      ```
-      subProjectId = subProjectId.split(':')[0]
-      ```
-* From FieldTwin 8.1 and beyond, to store your data at the branch level use either
-  the full `subProjectId:streamId` ID, or incorporate the new `streamId` separately
+```
+subProjectId = subProjectId.split(':')[0]
+```
+
+In FieldTwin 8.1 and beyond, if it is appropriate to store your data at branch level, use the full
+`subProjectId:streamId` or incorporate the new `streamId` separately.
