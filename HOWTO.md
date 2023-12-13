@@ -878,16 +878,23 @@ Content of JWT in 8.0:
 ```
 
 Since the API accepts either `subProjectId` or `subProjectId:streamId`, existing code that calls the
-API using `jwt.subProjectId` or window message `message.subProject` should continue to work as-is.
+API using `jwt.subProjectId` or window message `message.subProject` should continue to work unchanged.
 
-#### Compatibility concerns
+#### Compatibility issues
 
-If you use the subproject ID as a key to find other records you will need to make this change to
-convert the ID to the legacy value:
+* If you use the subproject ID as a key to find other records you will need to make this change to
+  convert the ID to the legacy value:
 
 ```
 subProjectId = subProjectId.split(':')[0]
 ```
 
-In FieldTwin 8.1 and beyond, if it is appropriate to store your data at branch level, use the full
-`subProjectId:streamId` or incorporate the new `streamId` separately.
+* In FieldTwin 8.1 and beyond, if it is appropriate to store your data at branch level,
+  use the full `subProjectId:streamId` or incorporate the new `streamId` separately
+* API v1.8 and below has been removed
+* The JWT `userRights` now includes `canViewDocuments` and `canEditDocuments`
+  and the API now enforces them
+* Invalid layers (e.g. unsupported files) in a subproject used to be ignored. To avoid ambiguous
+  data, failure to load a layer now causes all API calls for that subproject to return an error.
+  * To fix this: open the subproject in Design, view the _Layers_ in the Project View tab,
+    find the layers that have a red warning triangle and delete them
