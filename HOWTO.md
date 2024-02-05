@@ -66,6 +66,87 @@ curl -H "token: ${TOKEN}" \
 <br>
 <hr>
 
+## Create a connection
+
+[docs link](https://api.fieldtwin.com/#api-Connections-AddConnection)
+
+### A draggable connection that follows the bathymetry in FieldTwin
+
+```
+curl -H "token: ${TOKEN}" \
+     -H "content-type: application/json" \
+     --request POST \
+     --data '{
+               "params": {
+                    "type": 2,
+                    "label": "API connection"
+               },
+               "from": "-M8RhZWomNyqNyVgDxpy",
+               "fromSocket": "a",
+               "to": "-M8RhZWomNyqNyVgDxpm",
+               "toSocket": "a",
+               "designType": "None",
+               "intermediaryPoints": [
+                    { "x": 650, "y": 160, "z": -100 },
+                    { "x": 795, "y": 20, "z": -100 }
+               ]
+             }' \
+     https://${BACKEND_HOST}/API/v1.9/${PROJECT}/subProject/${SUBPROJECT}/connection
+```
+
+* `params.type` of `2` is the connection type ID for _Oil Production_
+* `from` and `fromSocket` are the ID of an existing staged asset and the name of the socket to
+  start the connection at
+* `to` and `toSocket` indicate the staged asset and location to end the connection at
+  * The available socket names can be found from a staged asset's `sockets2d` attribute
+* `designType` of `None` indicates that the connection has no special geometry
+  (as opposed to a lazy wave riser or a spool for example)
+* `intermediaryPoints` defines 2 midpoints that the connection will pass through
+  * These will be shown as drag handles in FieldTwin that can be moved to adjust the connection
+* If `designType` is not specified it defaults to `Imported`, which creates a different kind
+  of connection (see next example)
+
+### A connection based on survey data
+
+```
+curl -H "token: ${TOKEN}" \
+     -H "content-type: application/json" \
+     --request POST \
+     --data '{
+               "params": {
+                    "type": 2,
+                    "label": "API connection"
+               },
+               "from": "-M8RhZWomNyqNyVgDxpy",
+               "fromSocket": "a",
+               "to": "-M8RhZWomNyqNyVgDxpm",
+               "toSocket": "a",
+               "designType": "Imported",
+               "intermediaryPoints": [
+                    { "x": 782, "y": 303, "z": -20 },
+                    { "x": 830, "y": 240, "z": -100 },
+                    { "x": 920, "y": 170, "z": -50 }
+               ],
+               "noHeightSampling": true,
+               "bendable": false,
+               "isLocked": true
+             }' \
+     https://${BACKEND_HOST}/API/v1.9/${PROJECT}/subProject/${SUBPROJECT}/connection
+```
+
+* The first few parameters are the same as described above
+* `designType` of `Imported` indicates that the `intermediaryPoints` are to be treated
+  as the complete 3D profile of the connection
+  * In reality the `intermediaryPoints` array will be much larger, with smaller changes between points
+  * The `xyz` points must be in the same Coordinate Reference System as the project
+  * FieldTwin does not show drag handles for `Imported` points
+* `noHeightSampling` instructs that the given `z` points should be preserved instead of
+  fitting the connection to the bathymetry in FieldTwin
+* `isLocked` as `true` prevents a user from accidentally adjusting the connection
+
+<br>
+<hr>
+
 ## Delete a staged asset
 
 [docs link](https://api.fieldtwin.com/#api-StagedAssets-DeleteStagedAsset)
@@ -115,6 +196,28 @@ curl -H "token: ${TOKEN}" \
 * The value of sample resolution can be `1` or more
 * Providing `simplify: true` removes the points that fall in a straight line which reduces the data size
 * The connection profile is returned in the `sampled` attribute
+* The profile points are given in the direction `from` to `to`
+
+<br>
+<hr>
+
+## Get the raw profile of an imported connection
+
+[docs link](https://api.fieldtwin.com/#api-Connections-GetConnection)
+
+```
+export CONNECTION=<connection id>
+
+curl -H "token: ${TOKEN}" \
+     https://${BACKEND_HOST}/API/v1.9/${PROJECT}/subProject/${SUBPROJECT}/connection/${CONNECTION}
+```
+
+* Imported connections (including those created with the API when no other `designType` is given)
+  have a `designType` of `Imported`
+* The raw profile points are made up from the `fromCoordinate` plus the `intermediaryPoints` plus the `toCoordinate`
+* For connections where `designType` is **not** `Imported`, the `intermediaryPoints` consist
+  of auto-generated points along the connection (when the point has attribute `added: true`)
+  and/or the locations of the connection's midpoints - shown as circular drag handles in FieldTwin
 
 <br>
 <hr>
