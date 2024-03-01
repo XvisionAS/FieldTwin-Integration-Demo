@@ -179,7 +179,7 @@ curl -H "token: ${TOKEN}" \
 <br>
 <hr>
 
-## Get the generated seabed profile for a connection
+## Get a generated seabed profile for a connection
 
 [docs link](https://api.fieldtwin.com/#api-Connections-GetConnection)
 
@@ -194,14 +194,14 @@ curl -H "token: ${TOKEN}" \
 ```
 
 * The value of sample resolution can be `1` or more
-* Providing `simplify: true` removes the points that fall in a straight line which reduces the data size
+* Providing `simplify: true` removes points that fall in a straight line to reduce the data size
 * The connection profile is returned in the `sampled` attribute
 * The profile points are given in the direction `from` to `to`
 
 <br>
 <hr>
 
-## Get the raw profile of an imported connection
+## Get the profile of an imported connection
 
 [docs link](https://api.fieldtwin.com/#api-Connections-GetConnection)
 
@@ -214,10 +214,14 @@ curl -H "token: ${TOKEN}" \
 
 * Imported connections (including those created with the API when no other `designType` is given)
   have a `designType` of `Imported`
-* The raw profile points are made up from the `fromCoordinate` plus the `intermediaryPoints` plus the `toCoordinate`
-* For connections where `designType` is **not** `Imported`, the `intermediaryPoints` consist
-  of auto-generated points along the connection (when the point has attribute `added: true`)
-  and/or the locations of the connection's midpoints - shown as circular drag handles in FieldTwin
+* The imported points are made up from the `fromCoordinate` plus the `intermediaryPoints` plus the `toCoordinate`
+* When `noHeightSampling` is true, the point `z` (depth) values are as they were at import time
+* When `noHeightSampling` is false, the point `z` (depth) values are sampled from the bathymetry layer
+  or else the project seabed depth setting
+
+Note: for connections where `designType` is **not** `Imported`, the `intermediaryPoints` consist
+of auto-generated points along the connection (when the point has attribute `added: true`)
+and/or the locations of the connection's midpoints - shown as circular drag handles in FieldTwin.
 
 <br>
 <hr>
