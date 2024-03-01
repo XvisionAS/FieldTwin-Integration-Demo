@@ -289,7 +289,7 @@ curl -H "token: ${TOKEN}" \
 }
 ```
 
-:warning: At the time of writing (FieldTwin 7.0), requesting a whole subproject will return
+:warning: At the time of writing (FieldTwin 7.x), requesting a whole subproject will return
 metadata values for the connections, staged assets and shapes but not for wells and layers - 
 metadata for these must be fetched with separate API calls.
 
@@ -495,7 +495,7 @@ PATCH object
 }]}
 ```
 
-:warning: At the time of writing (FieldTwin 7.0) the pre-installed connection types
+:warning: At the time of writing (FieldTwin 7.x) the pre-installed connection types
 have a numeric ID while custom connection types have a string ID.
 
 ### table
