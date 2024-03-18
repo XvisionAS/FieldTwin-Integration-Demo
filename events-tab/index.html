@@ -1,10 +1,10 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-    <title>Events Tab</title>
+    <title>Document</title>
     <style>
       body {
         background-color: #ffffff;
@@ -30,58 +30,91 @@
             <strong> Get Cost Query </strong>
           </button>
         </div>
+        <div>
+          <button onclick="sendToast()">
+            <strong> Toast </strong>
+          </button>
+        </div>
+        <div>
+          <button onclick="getResources()">
+            <strong> Get Resources </strong>
+          </button>
+        </div>
+        <div>
+          <button onclick="createResources()">
+            <strong> Create Resources </strong>
+          </button>
+          <button onclick="updateResources()">
+            <strong> Update Resources </strong>
+          </button>
+          <button onclick="deleteResources()">
+            <strong> Delete Resources </strong>
+          </button>
+        </div>
+        <div>
+          <label for="inputData">Enter data for create / update / delete (JSON Array)</label>
+        </div>
+        <div>
+          <textarea id="inputData" rows="4" cols="50"></textarea>
+        </div>
+        <div>
+          <input type="checkbox" id="sendDocumentCount" name="sendDocumentCount" checked />
+          <label for="sendDocumentCount">Send document count on selection</label>
+        </div>
+
         <div id="focusOn"></div>
         <h4>Token:</h4>
         <pre style="max-width: 100%; overflow-x: auto" id="token"></pre>
       </div>
       <div>
-        <h4>Event log:</h4>
+        <h4>Event log:
+          <button onclick="clearLog()">
+            <strong>Clear</strong>
+          </button>
+        </h4>
         <ol id="event_log" reversed></ol>
       </div>
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.19.1/moment.js"></script>
     <script>
-      function decodeJWT(jwt) {
-        try {
-          const parts = jwt.split('.')
-          const header = JSON.parse(atob(parts[0]))
-          const payload = JSON.parse(atob(parts[1]))
-          return { header, payload }
-        } catch (e) {
-          console.log('Invalid JWT', e)
-          return { header: {}, payload: {} }
-        }
-      }
-
+      let selectedResources = []
       function onMessage(message) {
         addTextNode(JSON.stringify(message.data, null, 2))
 
         switch (message.data.event) {
           case 'didDelete':
           case 'didDeleteFromNetwork':
+            break
           case 'unselect':
+            selectedResources = []
+            break
+          case 'select':
+            selectedResources = message.data.data.map( e => ({resourceType:e.type + 's', id:e.id}))
             break
           case 'requestInfo':
             {
-              const items = message.data.data.items
-              const reply = {
-                event: 'replyInfo',
-                data: {
-                  items: items.map((e) => {
-                    e.documentCount = Math.floor(Math.random() * 10)
-                    return e
-                  }),
-                },
+              const needSend = document.getElementById('sendDocumentCount')?.checked
+
+              if (needSend) {
+                const items = message.data.data.items
+                const reply = {
+                  event: 'replyInfo',
+                  data: {
+                    items: items.map((e) => {
+                      e.documentCount = Math.floor(Math.random() * 10)
+                      return e
+                    }),
+                  },
+                }
+                window.parent.postMessage(reply, '*')
               }
 
-              window.parent.postMessage(reply, '*')
             }
             break
           case 'loaded':
             {
-              const decoded = decodeJWT(message.data.token)
               const token = document.getElementById('token')
-              token.innerHTML = `${message.data.token}<br/><br/>Decoded:<br/>${JSON.stringify(decoded.payload, null, 2)}`
+              token.innerHTML = `${message.data.token}`
             }
             break
           default:
@@ -104,6 +137,29 @@
       }
 
       window.addEventListener('message', onMessage)
+
+      function sendToast() {
+        window.parent.postMessage(
+          {
+            event: 'toast',
+            data: {
+              type: 'success',
+              message: 'Hello from an integration',
+            },
+          },
+          '*'
+        )
+        window.parent.postMessage(
+          {
+            event: 'toast',
+            data: {
+              type: 'danger',
+              message: 'Danger from an integration',
+            },
+          },
+          '*'
+        )
+      }
 
       function getCostQuery() {
         const message = {
@@ -142,6 +198,49 @@
         window.parent.postMessage(message, '*')
       }
 
+      function getResources() {
+        const message = {
+          event: 'getResources',
+          data: {
+            resources:selectedResources.map( a => ({id:a.id, type:a.resourceType}))
+          }
+        }
+        window.parent.postMessage(message, '*')
+      }
+
+      function createResources() {
+        const data = document.getElementById('inputData').value
+        if (data) {
+          const message = {
+            event: 'createResources',
+            data: JSON.parse(data),
+          }
+          window.parent.postMessage(message, '*')
+        }
+      }
+
+      function updateResources() {
+        const data = document.getElementById('inputData').value
+        if (data) {
+          const message = {
+            event: 'updateResources',
+            data: JSON.parse(data),
+          }
+          window.parent.postMessage(message, '*')
+        }
+      }
+
+      function deleteResources() {
+        const data = document.getElementById('inputData').value
+        if (data) {
+          const message = {
+            event: 'deleteResources',
+            data: JSON.parse(data),
+          }
+          window.parent.postMessage(message, '*')
+        }
+      }
+
       function focusOn(type, id) {
         const message = {
           event: 'zoomOn',
@@ -155,10 +254,15 @@
 
       function addTextNode(text) {
         var newDiv = document.createElement('li')
-        newDiv.innerHTML = `[${moment().format('HH:MM:ss')}]<pre><code>${text}</code></pre>`
+        const date = moment().format('HH:MM:ss')
+        newDiv.innerHTML = `[${date}]<pre><code>${text}</code></pre>`
         event_log = document.getElementById('event_log')
         event_log.prepend(newDiv)
-        console.log(text)
+        console.log(`${date}: ${text}`)
+      }
+
+      function clearLog() {
+        document.getElementById('event_log').innerHTML = ''
       }
     </script>
   </body>
