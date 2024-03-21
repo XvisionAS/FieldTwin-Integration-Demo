@@ -795,6 +795,13 @@ metadata definitions into your Asset Library.
 When a staged asset is created from a smart model in FieldTwin, its "docking slots" will
 be made available as metadata values with `"type": "asset"`:
 
+### Legacy wind turbine smart models (2023 - 2024)
+
+Using the legacy Wind assets, the workflow for creation is:
+
+1. Create a wind turbine staged asset
+2. Set one of its available metadata values for _foundation x_ to the allowed foundation asset
+
 ```
 export STAGEDASSET=<staged asset id>
 
@@ -823,9 +830,9 @@ curl -H "token: ${TOKEN}" \
 }
 ```
 
-In the above example, there is no `value` attribute in the `metaData` object. The docking slot
-for `5MW MonoPile` is empty. To add a monopile component to the parent staged asset, set the
-`value` to the ID of an allowable asset from the asset library (note: use the ID of an asset
+Fetching the newly created wind turbine above, there is no `value` attribute in the `metaData` object.
+The docking slot for `5MW MonoPile` is empty. To add a monopile component to the parent staged asset,
+set the `value` to the ID of an allowable asset from the asset library (note: use the ID of an asset
 definition, not a staged asset):
 
 ```
@@ -919,6 +926,185 @@ In this example the allowable values for the `5MW MonoPile` docking slot in the
 parent staged asset are:
 
 * `-N4Rz5E2U88Qoq02TLF2` to create a `5MW MonoPile` in the slot, or
+* `null` to set the docking slot as empty
+
+### Modern wind turbine smart models (2024 onwards)
+
+Using the modern Wind assets, the workflow for creation is:
+
+1. Create a _WindTool Construction Base_ staged asset
+2. Set its metadata value for _turbine_ to one of the allowed turbine assets
+3. Set its metadata value for _foundation_ to one of the allowed foundation assets
+
+```
+export STAGEDASSET=<staged asset id>
+
+curl -H "token: ${TOKEN}" \
+     https://${BACKEND_HOST}/API/v1.9/${PROJECT}/subProject/${SUBPROJECT}/stagedAsset/${STAGEDASSET}
+-->
+{
+     "id": "-NtWdCF0msKLrkbwhSgN",
+     "name": "WindTool Construction Base #1",
+     "visible": true,
+     "virtual": false,
+     ...
+     "metaData": [
+          {
+               "metaDatumId": "-NtWDOfryzi8OEwdm7I9",
+               "definitionId": "WindPOC:5MWWT[asset]",
+               "name": "5MW WT",
+               "type": "asset",
+               "tags": [],
+               "cost": 0,
+               "metaDatumLinkId": "-NtWDrplqhtzDTrqM7Z4",
+               "id": "-NtWDrplqhtzDTrqM7Z4",
+               "subValue": []
+          },
+          {
+               "metaDatumId": "-Nky37U2lazdWHzMXQAs",
+               "definitionId": "WindPOC:5MWFoundations[asset]",
+               "name": "5MW Foundations",
+               "type": "asset",
+               "tags": [],
+               "cost": 0,
+               "metaDatumLinkId": "-NtWP2c3UY_EwEOP-Ymq",
+               "id": "-NtWP2c3UY_EwEOP-Ymq",
+               "subValue": []
+          }
+     ]
+}
+```
+
+Fetching the newly created _Construction Base_ above, two metadata objects are returned:
+one for the wind turbine (WT) and the other for the turbine foundation. Neither has a `value`
+attribute in the `metaData` object - the docking slots are empty. To set them we need to set
+the `value` to the ID of an allowable asset from the asset library (note: use the ID of an asset
+definition, not a staged asset):
+
+```
+curl -H "token: ${TOKEN}" \
+     -H "content-type: application/json" \
+     --request PATCH \
+     --data '{
+                "metaData": [{
+                    "metaDatumId": "-NtWDOfryzi8OEwdm7I9",
+                    "value": "-N4R5TPAOGih17IYVZm3"
+                }, {
+                    "metaDatumId": "-Nky37U2lazdWHzMXQAs",
+                    "value": "-N4RytdCUlxy8oJSdDIv"
+                }]
+            }' \
+     https://${BACKEND_HOST}/API/v1.9/${PROJECT}/subProject/${SUBPROJECT}/stagedAsset/${STAGEDASSET}
+```
+
+To find the allowable asset IDs for a docking slot, first request the metadata definition
+using the metadata definition ID in `metaDatumId`:
+
+```
+curl -H "token: ${TOKEN}" \
+     https://${BACKEND_HOST}/API/v1.9/metadatadefinitions/-Nky37U2lazdWHzMXQAs
+-->
+{
+     "id": "-Nky37U2lazdWHzMXQAs",
+     "name": "5MW Foundations",
+     "definitionId": "WindPOC:5MWFoundations[asset]",
+     "cost": 0,
+     "order": 200000,
+     "global": true,
+     "public": false,
+     "options": {
+          "unit": {},
+          "filter": {
+               "assetTypes": ["vessel"],
+               "assetSubTypes": ["WindTurbine"],
+               "assetCategories": ["Wind"],
+               "assetSubCategories": ["5MW Floater", "5MW Jacket", "5MW MonoPile"]
+          },
+          "docking": {}
+     },
+     "standard": true,
+     "clonedFroms": ["-Nky37U2lazdWHzMXQAs"],
+     "displayIfConditions": [],
+     "type": "asset"
+}
+```
+
+Then use the filters given in `options.filter` to find asset definitions in the asset
+library that match the filters:
+
+```
+curl -H "token: ${TOKEN}" \
+     https://${BACKEND_HOST}/API/v1.9/assets
+-->
+{
+     ...
+     "-N4R5mVs3w46MbHGqByC": {
+          "id": "-N4R5mVs3w46MbHGqByC",
+          "name": "5MW Floater",
+          "params": {...},
+          "shared": true,
+          "type": "vessel",                      // match on filter.assetTypes
+          "subType": "WindTurbine",              // match on filter.assetSubTypes
+          "category": "Wind",                    // match on filter.assetCategories
+          "subCategory": "5MW Floater",          // match on filter.assetSubCategories
+          "imageUrl": "...",
+          "sockets2d": [...],
+          "model3dUrl": "...",
+          "dockingMales": [],
+          "dockingFemale": {...},
+          "filename2D": "5MW_Floater.png - Tue, 20 Feb 2024 12:03:19 GMT",
+          "filename3D": "5MW_Floater180.glb - Tue, 20 Feb 2024 11:50:32 GMT",
+          "filenameSockets": "5MW_Floater180.sockets - Tue, 20 Feb 2024 11:55:09 GMT",
+          "hideInAssetLibrary": true
+     },
+     "-N4RytdCUlxy8oJSdDIv": {
+          "id": "-N4RytdCUlxy8oJSdDIv",
+          "name": "5MW Jacket",
+          "params": {...},
+          "shared": true,
+          "type": "vessel",                      // match on filter.assetTypes
+          "subType": "WindTurbine",              // match on filter.assetSubTypes
+          "category": "Wind",                    // match on filter.assetCategories
+          "subCategory": "5MW Jacket",           // match on filter.assetSubCategories
+          "imageUrl": "...",
+          "sockets2d": [],
+          "model3dUrl": "...",
+          "dockingMales": [],
+          "dockingFemale": {...},
+          "filename2D": "5MW_Jacket.png - Mon, 13 Jun 2022 12:10:47 GMT",
+          "filename3D": "5MW_Jacket.glb - Mon, 13 Jun 2022 12:01:57 GMT",
+          "filenameSockets": "5MW_Jacket.sockets - Mon, 13 Jun 2022 12:11:05 GMT",
+          "hideInAssetLibrary": true
+     },
+     "-N4Rz5E2U88Qoq02TLF2": {
+          "id": "-N4Rz5E2U88Qoq02TLF2",
+          "name": "5MW MonoPile",
+          "params": {...},
+          "shared": true,
+          "type": "vessel",                      // match on filter.assetTypes
+          "subType": "WindTurbine",              // match on filter.assetSubTypes
+          "category": "Wind",                    // match on filter.assetCategories
+          "subCategory": "5MW MonoPile",         // match on filter.assetSubCategories
+          "imageUrl": "...",
+          "sockets2d": [],
+          "model3dUrl": "...",
+          "dockingMales": [],
+          "dockingFemale": {...},
+          "filename2D": "5MW_MonoPile.png - Mon, 13 Jun 2022 12:09:44 GMT",
+          "filename3D": "5MW_MonoPile.glb - Wed, 22 Jun 2022 11:24:37 GMT",
+          "filenameSockets": "5MW_MonoPile.sockets - Wed, 22 Jun 2022 11:28:23 GMT",
+          "hideInAssetLibrary": true
+     },
+     ...
+}
+```
+
+In this example the allowable values for the `5MW Foundations` docking slot in the
+parent staged asset are:
+
+* `-N4R5mVs3w46MbHGqByC` to create a `5MW Floater` foundation in the slot, or
+* `-N4RytdCUlxy8oJSdDIv` to create a `5MW Jacket` foundation, or
+* `-N4Rz5E2U88Qoq02TLF2` to create a `5MW MonoPile` foundation, or
 * `null` to set the docking slot as empty
 
 <br>
