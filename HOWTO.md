@@ -21,8 +21,8 @@ project lives in. API tokens are convenient for testing but they are unrestricte
 so once you are familiar with the API you might (depending on your use case) choose to
 [use a JWT instead](#provide-a-jwt-instead-of-an-api-token).
 
-The IDs of the project and subproject (and objects below) can be found from the
-URL in your browser's address bar when the project is open in FieldTwin Design.
+The IDs of the project, subproject and stream (and objects below) can be found from
+the URL in your browser's address bar when the project is open in FieldTwin Design.
 They look like this: `-MeidQjcOmxpYWFIq5zp`.
 
 ![Hostname and IDs in the address bar](./docs/images/address-bar.png)
@@ -317,7 +317,7 @@ curl -H "token: ${TOKEN}" \
                          "value": []
                     }
                 ]
-            }' \
+             }' \
      https://${BACKEND_HOST}/API/v1.9/${PROJECT}/subProject/${SUBPROJECT}:${STREAM}/connection/${CONNECTION}
 ```
 
@@ -794,148 +794,18 @@ To use smart models, ask FutureOn to deploy the required smart assets and associ
 metadata definitions into your Asset Library.
 
 When a staged asset is created from a smart model in FieldTwin, its "docking slots" will
-be made available as metadata values with `"type": "asset"`:
+be made available as metadata values with `"type": "asset"`.
 
-### Legacy wind turbine smart models (2023 - 2024)
+### Wind turbine smart models (2024 onwards)
 
-Using the legacy Wind assets, the workflow for creation is:
-
-1. Create a wind turbine staged asset
-2. Set one of its available metadata values for _foundation x_ to the allowed foundation asset
-
-```
-export STAGEDASSET=<staged asset id>
-
-curl -H "token: ${TOKEN}" \
-     https://${BACKEND_HOST}/API/v1.9/${PROJECT}/subProject/${SUBPROJECT}:${STREAM}/stagedAsset/${STAGEDASSET}
--->
-{
-     "name": "5MW Wind Turbine #1",
-     "visible": true,
-     "virtual": false,
-     ...
-     "metaData": [{
-          "id": "-N5o5X-wuAK1D25k249p",
-          "metaDatumId": "-N5o5X-wuAK1D25k249e",
-          "metaDatumLinkId": "-N5o5X-wuAK1D25k249p",
-          "definitionId": "WindPOC:5MWMonoPile[asset]",
-          "name": "5MW MonoPile",
-          "type": "asset",
-          "tags": [],
-          "cost": 0,
-          "costPerLength": false,
-          "subValue": []
-     },
-     ...
-     ]
-}
-```
-
-Fetching the newly created wind turbine above, there is no `value` attribute in the `metaData` object.
-The docking slot for `5MW MonoPile` is empty. To add a monopile component to the parent staged asset,
-set the `value` to the ID of an allowable asset from the asset library (note: use the ID of an asset
-definition, not a staged asset):
-
-```
-curl -H "token: ${TOKEN}" \
-     -H "content-type: application/json" \
-     --request PATCH \
-     --data '{
-                "metaData": [{
-                    "metaDatumId": "-N5o5X-wuAK1D25k249e",
-                    "value": "-N4Rz5E2U88Qoq02TLF2"
-                }]
-            }' \
-     https://${BACKEND_HOST}/API/v1.9/${PROJECT}/subProject/${SUBPROJECT}:${STREAM}/stagedAsset/${STAGEDASSET}
-```
-
-To find the allowable asset IDs for a docking slot, first request the metadata definition
-using the metadata definition ID in `metaDatumId`:
-
-```
-curl -H "token: ${TOKEN}" \
-     https://${BACKEND_HOST}/API/v1.9/metadatadefinitions/-N5o5X-wuAK1D25k249e
--->
-{
-     "name": "5MW MonoPile",
-     "definitionId": "WindPOC:5MWMonoPile[asset]",
-     "vendorAttributes": {},
-     "shouldFilterChoices": false,
-     "options": {
-          "unit": {},
-          "filter": {
-               "assetSubCategories": ["5MW WT MP F"],
-               "assetCategories": ["Wind"],
-               "assetTypes": ["vessel"],
-               "assetSubTypes": ["WindTurbine"]
-          }
-     },
-     "cost": 0,
-     "costPerLength": false,
-     "order": 280000,
-     "public": false,
-     "tags": [],
-     "clonedFroms": [],
-     "hideInInfoPanel": false,
-     "global": false,
-     "id": "-N5o5X-wuAK1D25k249e",
-     "displayIfConditions": [],
-     "type": "asset",
-     "account": "-MY45O6R7qkBUXnN1uTb"
-}
-```
-
-Then use the filters given in `options.filter` to find asset definitions in the asset
-library that match the filters:
-
-```
-curl -H "token: ${TOKEN}" \
-     https://${BACKEND_HOST}/API/v1.9/assets
--->
-{
-     ...
-     "-N4Rz5E2U88Qoq02TLF2": {
-          "name": "5MW MonoPile",
-          "description": "",
-          "category": "Wind",                          // match on filter.assetCategories
-          "subCategory": "5MW WT MP F",                // match on filter.assetSubCategories
-          "type": "vessel",                            // match on filter.assetTypes
-          "subType": "WindTurbine",                    // match on filter.assetSubTypes
-          "imageUrl": "https://...",
-          "model3dUrl": "https://...",
-          "sockets2d": [],
-          "dockingMales": [],
-          "dockingFemale": { ... },
-          "params": {
-               "isGLTF": true,
-               "width": 8.557730674743652,
-               "height": 8.557730831003877,
-               "left": -4.278812885284424,
-               "top": -4.27881488333273
-          },
-          "shared": true,
-          "filename3D": "5MW_MonoPile.glb - Wed, 22 Jun 2022 11:24:30 GMT",
-          "filename2D": "5MW_MonoPile.png - Mon, 13 Jun 2022 12:09:54 GMT",
-          "filenameSockets": "5MW_MonoPile.sockets - Wed, 22 Jun 2022 11:28:23 GMT",
-          "hideInAssetLibrary": true
-     },
-     ...
-}
-```
-
-In this example the allowable values for the `5MW MonoPile` docking slot in the
-parent staged asset are:
-
-* `-N4Rz5E2U88Qoq02TLF2` to create a `5MW MonoPile` in the slot, or
-* `null` to set the docking slot as empty
-
-### Modern wind turbine smart models (2024 onwards)
-
-Using the modern Wind assets, the workflow for creation is:
+Configurable Wind smart models are included in FutureOn's standard asset library as of 2024.
+The workflow for creation of a turbine is:
 
 1. Create a _WindTool Construction Base_ staged asset
 2. Set its metadata value for _turbine_ to one of the allowed turbine assets
 3. Set its metadata value for _foundation_ to one of the allowed foundation assets
+
+Following step 1 the resulting data can be retrieved as follows:
 
 ```
 export STAGEDASSET=<staged asset id>
@@ -972,15 +842,16 @@ curl -H "token: ${TOKEN}" \
                "id": "-NtWP2c3UY_EwEOP-Ymq",
                "subValue": []
           }
-     ]
+     ],
+     "sockets2d": []
 }
 ```
 
-Fetching the newly created _Construction Base_ above, two metadata objects are returned:
+After fetching the newly created _Construction Base_, two metadata objects are returned:
 one for the wind turbine (WT) and the other for the turbine foundation. Neither has a `value`
 attribute in the `metaData` object - the docking slots are empty. To set them we need to set
 the `value` to the ID of an allowable asset from the asset library (note: use the ID of an asset
-definition, not a staged asset):
+definition, not a staged asset in the project):
 
 ```
 curl -H "token: ${TOKEN}" \
@@ -997,6 +868,8 @@ curl -H "token: ${TOKEN}" \
             }' \
      https://${BACKEND_HOST}/API/v1.9/${PROJECT}/subProject/${SUBPROJECT}:${STREAM}/stagedAsset/${STAGEDASSET}
 ```
+
+The above call will set both a turbine body and a foundation in the base's docking slots.
 
 To find the allowable asset IDs for a docking slot, first request the metadata definition
 using the metadata definition ID in `metaDatumId`:
@@ -1107,6 +980,113 @@ parent staged asset are:
 * `-N4RytdCUlxy8oJSdDIv` to create a `5MW Jacket` foundation, or
 * `-N4Rz5E2U88Qoq02TLF2` to create a `5MW MonoPile` foundation, or
 * `null` to set the docking slot as empty
+
+### Connecting a connection to a docking slot
+
+Most assets in FutureOn's asset library define one or more "sockets" that allow a connection
+to be connected to it. Assets that make up the swappable components of a smart model may also
+define sockets.
+
+In the example of how to [create a connection](#create-a-connection) you can see that
+a connection is attached **to** a regular staged asset by settings these attributes:
+
+```
+{
+  "to": "<id of a staged asset>",
+  "toSocket": "<name of a socket in stagedAsset.sockets2d>"
+}
+```
+
+However the item in a docking slot of a smart model is not a staged asset, it exists
+only as a metadata value. To connect a connection to an item in a docking slot we have
+to set the connection's `to` and `toSocket` differently.
+
+In the previous smart model example, after creating the _Construction Base_ and assigning
+a wind turbine body in its docking slot, the staged asset is the _Construction Base_ and
+its data is as follows:
+
+```
+export STAGEDASSET=<staged asset id>
+
+curl -H "token: ${TOKEN}" \
+     https://${BACKEND_HOST}/API/v1.9/${PROJECT}/subProject/${SUBPROJECT}:${STREAM}/stagedAsset/${STAGEDASSET}
+-->
+{
+     "id": "-NtWdCF0msKLrkbwhSgN",
+     "name": "WindTool Construction Base #1",
+     "visible": true,
+     "virtual": false,
+     ...
+     "metaData": [
+          {
+               "metaDatumId": "-NtWDOfryzi8OEwdm7I9",
+               "definitionId": "WindPOC:5MWWT[asset]",
+               "name": "5MW WT",
+               "type": "asset",
+               "tags": [],
+               "cost": 0,
+               "value": "-N4R5TPAOGih17IYVZm3",
+               "metaDatumLinkId": "-NtWDrplqhtzDTrqM7Z4",
+               "id": "-NtWDrplqhtzDTrqM7Z4",
+               "subType": "WindTurbine",
+               "category": "Wind",
+               "subCategory": "5MW WT",
+               "subValue": [
+                    ... nested metadata for the wind turbine ...
+               ]
+          },
+          {
+               ... metadata that sets the foundation ...
+          }
+     ],
+     "sockets2d": [
+          {
+               "x": 1.958685174628093,
+               "y": 1.1513813644766508,
+               "z": -3.017566015066542,
+               "name": "-NuZOI2drjETshKe6zQw:001",
+               "generated": true,
+               "assetId": "-N4R5TPAOGih17IYVZm3",
+               "radius": 0.25,
+               "metaData": []
+          },
+          {
+               "x": -1.974785545371426,
+               "y": 1.1513827399763774,
+               "z": -3.017567390566267,
+               "name": "-NuZOI2drjETshKe6zQw:002",
+               "generated": true,
+               "assetId": "-N4R5TPAOGih17IYVZm3",
+               "radius": 0.25,
+               "metaData": []
+          }
+     ]
+}
+```
+
+Since `5MW WT` was assigned in the `metaData` the base staged asset has gained 2 entries
+in its `sockets2d` attribute, both marked as `"generated": true`. These 2 sockets are defined
+on the turbine body asset (indicated by `"assetId": "-N4R5TPAOGih17IYVZm3"`) and they have
+now been inherited by the parent staged asset and given a generated name.
+
+To connect an existing mooring line to the turbine body in the docking slot, update the
+mooring line, setting `to` as the base staged asset's ID and `toSocket` as one of the
+generated socket names.
+
+```
+export CONNECTION=<mooring line id>
+
+curl -H "token: ${TOKEN}" \
+     -H "content-type: application/json" \
+     --request PATCH \
+     --data '{
+                 "to": "-NtWdCF0msKLrkbwhSgN",
+                 "toSocket": "-NuZOI2drjETshKe6zQw:001"
+             }' \
+     https://${BACKEND_HOST}/API/v1.9/${PROJECT}/subProject/${SUBPROJECT}:${STREAM}/connection/${CONNECTION}
+```
+
+To connect the connection in the opposite direction, set `from` and `fromSocket`.
 
 <br>
 <hr>
