@@ -4,21 +4,25 @@
 
 | Number | Author  | Description                                                                                                     |
 | :----- | :------ | :-------------------------------------------------------------------------------------------------------------- |
-| 1      | olivier | Initial release                                                                                                 |
-| 2      | olivier | Added `canEdit` and list of user rights                                                                         |
-| 3      | olivier | Added custom message                                                                                            |
-| 4      | olivier | Added `loaded` event description                                                                                |
-| 5      | olivier | Added information about project wide access                                                                     |
-| 6      | olivier | Added information about all project access                                                                      |
-| 7      | olivier | Added didUpdate/didCreate/didDelete details                                                                     |
-| 8      | olivier | Added `tokenRefresh` event description                                                                          |
-| 9      | olivier | Added modification to didUpdate message for meta datum value                                                    |
+|  1     | olivier | Initial release                                                                                                 |
+|  2     | olivier | Added `canEdit` and list of user rights                                                                         |
+|  3     | olivier | Added custom message                                                                                            |
+|  4     | olivier | Added `loaded` event description                                                                                |
+|  5     | olivier | Added information about project wide access                                                                     |
+|  6     | olivier | Added information about all project access                                                                      |
+|  7     | olivier | Added didUpdate/didCreate/didDelete details                                                                     |
+|  8     | olivier | Added `tokenRefresh` event description                                                                          |
+|  9     | olivier | Added modification to didUpdate message for meta datum value                                                    |
 | 10     | olivier | Added `clearSelection` message                                                                                  |
 | 11     | olivier | removed trafficManagerJWT                                                                                       |
 | 12     | olivier | Added `requestInfo` and `replyInfo`                                                                             |
 | 13     | olivier | Added `getViewBox`                                                                                              |
 | 14     | matt    | Added `didClone`, documents, shapes, segments, parent attributes; updates for 8.0; removed activities and ports |
 | 15     | olivier | Added `toast`                                                                                                   |
+| 16     | olivier | Added `getResources`                                                                                            |
+| 17     | matt    | Described `integrationId` on `replyInfo`, updated `projectData` content                                         |
+| 18     | peter | Added `createResources` `updateResources` `deleteResources`  |    
+| 19     | christian| added `APIServerIsReady` and `APIVersion` to `loaded` event |
 
 ## Introduction
 
@@ -304,6 +308,8 @@ project and tokens used to communicate with API. The argument will contain these
 | superAdmin         | true is current user is super admin                                 |
 | projectorUrl       | FieldTwin projection service URL                                    |
 | designerUrl        | FieldTwin designer URL                                              |
+| APIServerIsReady   | if set to true, the API server is ready to receive requests         |
+| APIVersion         | the version of the API server in the form "vx.y" e.g. "v1.10"       |
 
 
 ### tokenRefresh
@@ -425,26 +431,63 @@ The event will contain these attributes:
 This message is sent after the integration posted a message `getProjectData`.
 The result will contain these attributes:
 
-| Attribute                    | Description                               |
-| :--------------------------- | :---------------------------------------- |
-| event                        | is set to `projectData`                   |
-| isFrameActive                | true if the frame is currently selected   |
-| data                         | contains data about the event             |
-| data.assets                  | arrays of information about staged asset  |
-| data.assets.[].name          | name of staged asset                      |
-| data.assets.[].tags          | tags of staged asset                      |
-| data.assets.[].metaData      | meta data of staged asset                 |
-| data.connections             | arrays of information about staged asset  |
-| data.connections.[].name     | name of connection                        |
-| data.connections.[].tags     | tags of connection                        |
-| data.connections.[].metaData | meta data of connection                   |
-| data.wells                   | arrays of information about staged asset  |
-| data.wells.[].name           | name of well                              |
-| data.wells.[].tags           | tags of well                              |
-| data.wells.[].metaData       | meta data of well                         |
-| data.project                 | information about the current project     |
-| data.project.subProjectName  | current sub-project name                  |
-| data.project.subProjectTags  | aggregation of all sub-project tags       |
+| Attribute                               | Description                                    |
+| :-------------------------------------- | :--------------------------------------------- |
+| event                                   | is set to `projectData`                        |
+| data                                    | contains data about the event                  |
+| data.project                            | information about the current project          |
+| data.project.subProjectName             | current sub-project name                       |
+| data.project.subProjectTags             | aggregation of all sub-project tags            |
+| data.project.developmentLocation        | country defined in the project                 |
+| data.project.toSeabed                   | seabed depth defined in the project            |
+| data.stagedAssets                       | array of information about staged assets       |
+| data.stagedAssets.[].id                 | id of staged asset                             |
+| data.stagedAssets.[].name               | name of staged asset                           |
+| data.stagedAssets.[].tags               | tags of staged asset                           |
+| data.stagedAssets.[].metaData           | meta data of staged asset                      |
+| data.stagedAssets.[].type               | asset type of staged asset                     |
+| data.connectionSegments                 | array of information about connections         |
+| data.connections.[].id                  | id of connection                               |
+| data.connections.[].name                | name of connection                             |
+| data.connections.[].tags                | tags of connection                             |
+| data.connections.[].metaData            | meta data of connection                        |
+| data.connection.[].length               | length of connection                           |
+| data.connectionSegments                 | array of information about connection segments |
+| data.connectionSegments.[].id           | id of segment                                  |
+| data.connectionSegments.[].connectionId | id of parent connection                        |
+| data.connectionSegments.[].name         | name of segment                                |
+| data.connectionSegments.[].tags         | tags of segment                                |
+| data.connectionSegments.[].metaData     | meta data of segment                           |
+| data.connectionSegments.[].length       | length of segment                              |
+| data.layers                             | array of information about layers              |
+| data.layers.[].id                       | id of layer                                    |
+| data.layers.[].name                     | name of layer                                  |
+| data.layers.[].tags                     | tags of layer                                  |
+| data.layers.[].metaData                 | meta data of layer                             |
+| data.shapes                             | array of information about shapes              |
+| data.shapes.[].id                       | id of shape                                    |
+| data.shapes.[].name                     | name of shape                                  |
+| data.shapes.[].tags                     | tags of shape                                  |
+| data.shapes.[].metaData                 | meta data of shape                             |
+| data.wells                              | array of information about wells               |
+| data.wells.[].id                        | id of well                                     |
+| data.wells.[].name                      | name of well                                   |
+| data.wells.[].tags                      | tags of well                                   |
+| data.wells.[].metaData                  | meta data of well                              |
+| data.wellBores                          | array of information about well bores          |
+| data.wellBores.[].id                    | id of bore                                     |
+| data.wellBores.[].wellId                | id of parent well                              |
+| data.wellBores.[].name                  | name of bore                                   |
+| data.wellBores.[].tags                  | tags of bore                                   |
+| data.wellBores.[].metaData              | meta data of bore                              |
+| data.wellBores.[].length                | length of bore                                 |
+| data.wellBoreSegments                   | array of information about well bore segments  |
+| data.wellBoreSegments.[].id             | id of segment                                  |
+| data.wellBoreSegments.[].wellBoreId     | id of parent well bore                         |
+| data.wellBoreSegments.[].name           | name of segment                                |
+| data.wellBoreSegments.[].tags           | tags of segment                                |
+| data.wellBoreSegments.[].metaData       | meta data of segment                           |
+| data.wellBoreSegments.[].length         | length of segment                              |
 
 ### requestInfo
 
@@ -513,6 +556,18 @@ It contains the current view box of the application in project coordinates.
   }
 }
 ```
+
+### resources
+
+This message is sent in response to an integration sending `getResources` command.
+It contains an array of resources, as defined in `didUpdate / didCreate / didDelete attributes` section.
+
+| Attribute          | Description                                                          |
+| :----------------- | :--------------------------------------------------------------------|
+| event              | is set to `resources`                                                |
+| data               | contains the raw data of requested items                             |
+| data.resources     | array of resources                                                   |
+| data.queryId       | same value defined in getResources query                             |
 
 ### didClone
 
@@ -1256,7 +1311,6 @@ The event will contain these attributes:
 | :--------------------- | :--------------------------------------------------------------------- |
 | backgroundColor        | Background color of the project                                        |
 | clonedFroms            | Array of ids that describe the parents this element was cloned from    |
-| condenserProgress      | Condensing progress (deprecated)                                       |
 | connectionAngleVisible | Global setting, indicate if angle between connection point are visible |
 | created                | Creation date                                                          |
 | creator                | Creator email                                                          |
@@ -1264,8 +1318,6 @@ The event will contain these attributes:
 | globalDepthScale       | Depth scale                                                            |
 | gridColor              | Color of the grid                                                      |
 | gridNotVisible         | If `true`, do not render the grid                                      |
-| importerError          | Cloning error, if any                                                  |
-| importerProgress       | Cloning progress                                                       |
 | locked                 | if `true`, sub project is locked and user cannot make any modification |
 | lockedBy               | email of the user who locked the sub project                           |
 | name                   | Name of the sub project                                                |
@@ -1435,7 +1487,10 @@ The results, if any, will then be sent from **FieldTwin** via another `postMessa
 Allows you to get some information about a project without calling the API.
 Set these attributes:
 
-- attribute `event` set to `getProjectData`
+| Attribute | Description                |
+| :-------- | :------------------------- |
+| event     | is set to `getProjectData` |
+
 
 The result format is defined in the `projectData` message section.
 
@@ -1574,11 +1629,19 @@ This message is sent from the integration to provide information about particula
 be sent whenever the integration decides, but typically it is in response to an earlier `requestInfo`
 message. For now it only sets one metric:
 
-* `documentCount` : number of documents held for a given resource
+| Attribute                   | Description                                               |
+| :-------------------------- | :-------------------------------------------------------- |
+| event                       | is set to `replyInfo`                                     |
+| data.items                  | array of object                                           |
+| data.items.[].id            | id of the resource for which to update document count     |
+| data.items.[].type          | resource's type for which to update document count        |
+| data.items.[].documentCount | number of documents held for a given resource             |
+| integrationId               | optional integration ID (e.g. the `customTabId` from JWT) |
 
 ```javascript
 {
   event: "replyInfo",
+  integrationId: "my-document-search",
   data: {
     items: [{
       id: "id_of_the_resource",
@@ -1589,12 +1652,20 @@ message. For now it only sets one metric:
 }
 ```
 
+If `integrationId` is not provided, 2 different integrations that send `replyInfo` for the same
+object will overwrite each other's metrics. Providing a unique value for your integration in `integrationId`
+ensures that your `documentCount` is counted separately instead of being replaced.
+
 ### toast
 
 Display a temporary pop-up notification ("toast" message) in the FieldTwin Design UI.
 
-* `type`: can be danger, warning, info or success
-* `message`: what to display in the notification
+
+| Attribute                   | Description                                           |
+| :-------------------------- | :---------------------------------------------------- |
+| event                       | is set to `toast`                                     |
+| data.type                   | message type, can be danger, warning, info or success |
+| data.message                | message to display                                    |
 
 ```javascript
 {
@@ -1603,6 +1674,204 @@ Display a temporary pop-up notification ("toast" message) in the FieldTwin Desig
     type: "success",
     message: "Win win"
   }
+}
+```
+
+### getResources
+
+Allow integration to request informations from a list of resources using their ids and type. The response will be returned to the integration through message `resources`.
+
+| Attribute                   | Description                                           |
+| :-------------------------- | :---------------------------------------------------- |
+| event                       | is set to `getResources`                              |
+| data.items                  | array of object                                       |
+| data.items.[].id            | id of the resource for which to get informations      |
+| data.items.[].type          | resource's type for which to get informations         |
+| data.items.[].resourceType  | alias for type                                        |
+| data.queryId                | id that will be sent back with the reply              |
+
+
+
+```javascript
+{
+  event:"getResources",
+  data: {
+    items: [
+      {
+        id: "id_of_the_resource",
+        resourceType: "type_of_the_resource",
+      }
+    ],
+    queryId:"id_of_the_query"
+  }
+}
+
+```
+
+### createResource
+
+Allow the integration to create a resource in FieldTwin Design.
+When the optional `volatile` flag is `true` the resource is temporary and will not be saved.
+This can be used to create display-only features that are controlled by the integration.
+
+On success a `didCreate` message will follow containing the created resource object.
+
+| Attribute                   | Description                                            |
+| :-------------------------- | :----------------------------------------------------- |
+| event                       | is set to `createResource`                             |
+| data                        | object                                                 |
+| data.volatile               | optional: do not save the resource in the database     |
+| data.resourceType           | resource type string                                   |
+| data.attributes             | object containing data attributes for the new resource |
+
+```javascript
+{
+  event: "createResource",
+  data: {
+    volatile: true,
+    resourceType: "type_of_resource",
+    attributes: { <object_attributes> },
+  },
+}
+```
+
+### createResources
+
+Allow the integration to create a list of resources in FieldTwin Design.
+When the optional `volatile` flag is `true` the resource is temporary and will not be saved.
+This can be used to create display-only features that are controlled by the integration.
+
+On success `didCreate` messages will follow containing the created resource objects.
+
+| Attribute                   | Description                                            |
+| :-------------------------- | :----------------------------------------------------- |
+| event                       | is set to `createResources`                            |
+| data                        | array of objects                                       |
+| data.[].volatile            | optional: do not save the resource in the database     |
+| data.[].resourceType        | resource type string                                   |
+| data.[].attributes          | object containing data attributes for the new resource |
+
+```javascript
+{
+  event: "createResources",
+  data: [
+    {
+      resourceType: "type_of_resource",
+      attributes: { <object_attributes> },
+    },
+    {
+      resourceType: "type_of_resource",
+      attributes: { <object_attributes> },
+    },
+    ...
+  ]
+}
+```
+
+### updateResource
+
+Allow the integration to update a resource in FieldTwin Design.
+On success a `didUpdate` message will follow containing the updated resource object.
+
+| Attribute                   | Description                                           |
+| :-------------------------- | :---------------------------------------------------- |
+| event                       | is set to `updateResource`                            |
+| data                        | object                                                |
+| data.resourceType           | resource type string                                  |
+| data.resourceId             | the id of the resource to be updated                  |
+| data.attributes             | object containing updated attributes for the resource |
+
+```javascript
+{
+  event: "updateResource",
+  data: {
+    resourceType: "type_of_resource",
+    resourceId: "id_of_resource",
+    attributes: { <object_attributes> },
+  },
+}
+```
+
+### updateResources
+
+Allow the integration to update a list of resource in FieldTwin Design.
+On success `didUpdate` messages will follow containing the updated resource objects.
+
+| Attribute                   | Description                                           |
+| :-------------------------- | :---------------------------------------------------- |
+| event                       | is set to `updateResources`                           |
+| data                        | array of objects                                      |
+| data.[].resourceType        | resource type string                                  |
+| data.[].resourceId          | the id of the resource to be updated                  |
+| data.[].attributes          | object containing updated attributes for the resource |
+
+```javascript
+{
+  event: "updateResources",
+  data: [
+    {
+      resourceType: "type_of_resource",
+      resourceId: "id_of_resource",
+      attributes: { <object_attributes> },
+    },
+    {
+      resourceType: "type_of_resource",
+      resourceId: "id_of_resource",
+      attributes: { <object_attributes> },
+    },
+    ...
+  ],
+}
+```
+
+### deleteResource
+
+Allow the integration to delete a resource from FieldTwin Design.
+On success a `didDelete` message will follow containing the deleted resource object.
+
+| Attribute                   | Description                                           |
+| :-------------------------- | :---------------------------------------------------- |
+| event                       | is set to `deleteResource`                            |
+| data                        | object                                                |
+| data.resourceType           | resource type string                                  |
+| data.resourceId             | the id of the resource to be deleted                  |
+
+```javascript
+{
+  event: "deleteResource",
+  data: {
+    resourceType: "type_of_resource",
+    resourceId: "id_of_resource",
+  },
+}
+```
+
+### deleteResources
+
+Allow the integration to delete a list of resources from FieldTwin Design.
+On success `didDelete` messages will follow containing the deleted resource objects.
+
+| Attribute                   | Description                                           |
+| :-------------------------- | :---------------------------------------------------- |
+| event                       | is set to `deleteResources`                           |
+| data                        | array of objects                                      |
+| data.[].resourceType        | resource type string                                  |
+| data.[].resourceId          | the id of the resource to be deleted                  |
+
+```javascript
+{
+  event: "deleteResources",
+  data: [
+    {
+      resourceType: "type_of_resource",
+      resourceId: "id_of_resource",
+    },
+    {
+      resourceType: "type_of_resource",
+      resourceId: "id_of_resource",
+    },
+    ...
+  ],
 }
 ```
 
