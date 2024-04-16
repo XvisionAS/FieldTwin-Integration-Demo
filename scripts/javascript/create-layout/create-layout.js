@@ -95,6 +95,10 @@ const main = async () => {
     payload.initialState.lastSelectedWell = payload.well?.id ? mapIds[payload.well?.id] : undefined
     delete payload.lastSelectedWell
     delete payload.well
+    // 8.0 does not allow sockets unless havePerAssetSockets is true
+    if (!payload.havePerAssetSockets) {
+      delete payload.sockets2d
+    }
     // connections do not exist yet
     delete payload.connectionsAsFrom
     delete payload.connectionsAsTo
