@@ -17,6 +17,7 @@ testem.log
 
 env.*.bat
 .envrc
+.envrc.*
 .divshot-cache
 .DS_Store
 .nvmrc
