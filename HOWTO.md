@@ -1091,6 +1091,131 @@ To connect the connection in the opposite direction, set `from` and `fromSocket`
 <br>
 <hr>
 
+## Create a metadata definition with variable choices
+
+Sometimes a metadata attribute defined as a 'list of choices' needs to present different options
+depending on context:
+
+```
+- Choice A (always relevant)
+- Choice B (relevant only for some use cases)
+- Choice C (relevant only for different use cases)
+- ...
+```
+
+One way to achieve this is to create 2 or more definitions, each with a different list of choices.
+Metadata conditions can then be defined to show or hide the appropriate definition so that only one
+is visible at a time. This is appropriate if it is correct for the definition ID and selected choice
+to be separate for each use case.
+
+If what is needed is a single definition, common to all use cases, we instead need to vary the list
+of allowed choices at runtime. This can be set up in FieldTwin Admin as long as the context can be
+determined from another metadata attribute.
+
+Firstly a metadata definition is needed to provide the context or use case. It needs to be of type
+`choices`. This example will determine whether a pipe is `Rigid` or `Flexible`:
+
+![Metadata definition providing the context](./docs/images/variable-choices-1.png)
+
+Then when defining a list of choices elsewhere we can use that context to determine which choices
+are made available to the user:
+
+![Metadata definition with variable choices](./docs/images/variable-choices-2.png)
+
+The same configuration can be created with the API.
+
+From the "context" definition the data required are its `id` and the `id` of its choices
+(found in `options.items.list[].id`).
+
+```
+export CONTEXT_METADATA_DEFINITION_ID=<metadatum id>
+
+curl -H "token: ${TOKEN}" \
+     https://${BACKEND_HOST}/API/v1.10/metadatadefinitions/${CONTEXT_METADATA_DEFINITION_ID}
+-->
+     {
+          "id": "-MESBTJyZFpm2VLXdK-z",
+          "account": "-MIyPbG_cjUjO7E3ZgzZ",
+          "name": "Pipe Type",
+          "type": "choices",
+          "tags": [],
+          "global": false,
+          "public": false,
+          "shouldFilterChoices": false,
+          "options": {
+               "items": {
+                    "list": [
+                         { "id": "-NwxOrTr5fTh95O5vQl5", "name": "Flexible", "filterValue": [] },
+                         { "id": "-NwxOtAL47e_Q52uFnWU", "name": "Rigid",    "filterValue": [] }
+                    ],
+                    "default": { "id": "-NwxOrTr5fTh95O5vQl5", "name": "Flexible", "filterValue": [] }
+               }
+          },
+          "vendorId": "pipe.flex",
+          "definitionId": "IntegrationsTeam:Pipe.Flex[choices]"
+     }
+```
+
+The variable list of choices is created using the API as follows:
+
+```
+curl -H "token: ${TOKEN}" \
+     -H "content-type: application/json" \
+     --request POST \
+     --data '{
+               "name": "Pipe Insulation",
+               "type": "choices",
+               "global": false,
+               "public": false,
+               "vendorId": "pipe.insulation",
+               "shouldFilterChoices": true,
+               "filterIf": "-MESBTJyZFpm2VLXdK-z",
+               "options": {
+                    "items": {
+                         "list": [
+                              {
+                                   "name": "None",
+                                   "filterValue": []
+                              },
+                              {
+                                   "name": "Common insulation",
+                                   "filterValue": []
+                              },
+                              {
+                                   "name": "Flexible insulation",
+                                   "filterValue": [{ "id": "-NwxOrTr5fTh95O5vQl5" }]
+                              },
+                              {
+                                   "name": "Rigid insulation 1",
+                                   "filterValue": [{ "id": "-NwxOtAL47e_Q52uFnWU" }]
+                              },
+                              {
+                                   "name": "Rigid insulation 2",
+                                   "filterValue": [{ "id": "-NwxOtAL47e_Q52uFnWU" }]
+                              }
+                         ]
+                    }
+               }
+            }' \
+     https://${BACKEND_HOST}/API/v1.10/metadatadefinitions
+```
+
+* `shouldFilterChoices` is set as `true`
+* The ID of the "context" definition is set in `filterIf`
+* Each choice has a filterValue that takes zero or more objects
+  * The object provides the `id` of one of the choices to match from the "context" definition
+    * For example, `-NwxOtAL47e_Q52uFnWU` is the ID of `Rigid`
+  * An empty `filterValue` array means that choice is always allowed (it is not filtered)
+  * With one value in `filterValue`, that choice will only be allowed for the one matching context
+  * With multiple values in `filterValue`, that choice will be allowed for any of the matching contexts
+
+The result in FieldTwin Design:
+
+![The resulting filtered choice list](./docs/images/variable-choices-3.png)
+
+<br>
+<hr>
+
 ## Provide a JWT instead of an API token
 
 A JWT is passed to an integration in the [`loaded` window message](./INTEGRATIONS.md#loaded)
