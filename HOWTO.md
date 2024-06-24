@@ -198,6 +198,8 @@ curl -H "token: ${TOKEN}" \
 * Providing `simplify: true` removes points that fall in a straight line to reduce the data size
 * The connection profile is returned in the `sampled` attribute
 * The profile points are given in the direction `from` to `to`
+* You can also use the [profile-tools](https://github.com/XvisionAS/fieldtwin-open-libraries/tree/main/profile-tools)
+  package to extract connection profiles
 
 <br>
 <hr>
@@ -219,6 +221,8 @@ curl -H "token: ${TOKEN}" \
 * When `noHeightSampling` is true, the point `z` (depth) values are as they were at import time
 * When `noHeightSampling` is false, the point `z` (depth) values are sampled from the bathymetry layer
   or else the project seabed depth setting
+* You can also use the [profile-tools](https://github.com/XvisionAS/fieldtwin-open-libraries/tree/main/profile-tools)
+  package to extract connection profiles
 
 Note: for connections where `designType` is **not** `Imported`, the `intermediaryPoints` consist
 of auto-generated points along the connection (when the point has attribute `added: true`)
