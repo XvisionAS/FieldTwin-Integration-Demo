@@ -13,6 +13,7 @@ You will find the following resources helpful:
   * Reference for the window messages that can be sent to and from an integration
 * [API Reference](https://api.fieldtwin.com/)
 * [Example API calls](./HOWTO.md)
+* [FieldTwin open source libraries](https://github.com/XvisionAS/fieldtwin-open-libraries)
 
 ## List of samples
 
