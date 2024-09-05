@@ -2,27 +2,31 @@
 
 ## Revision
 
-| Number | Author  | Description                                                                                                     |
-| :----- | :------ | :-------------------------------------------------------------------------------------------------------------- |
-|  1     | olivier | Initial release                                                                                                 |
-|  2     | olivier | Added `canEdit` and list of user rights                                                                         |
-|  3     | olivier | Added custom message                                                                                            |
-|  4     | olivier | Added `loaded` event description                                                                                |
-|  5     | olivier | Added information about project wide access                                                                     |
-|  6     | olivier | Added information about all project access                                                                      |
-|  7     | olivier | Added didUpdate/didCreate/didDelete details                                                                     |
-|  8     | olivier | Added `tokenRefresh` event description                                                                          |
-|  9     | olivier | Added modification to didUpdate message for meta datum value                                                    |
-| 10     | olivier | Added `clearSelection` message                                                                                  |
-| 11     | olivier | removed trafficManagerJWT                                                                                       |
-| 12     | olivier | Added `requestInfo` and `replyInfo`                                                                             |
-| 13     | olivier | Added `getViewBox`                                                                                              |
-| 14     | matt    | Added `didClone`, documents, shapes, segments, parent attributes; updates for 8.0; removed activities and ports |
-| 15     | olivier | Added `toast`                                                                                                   |
-| 16     | olivier | Added `getResources`                                                                                            |
-| 17     | matt    | Described `integrationId` on `replyInfo`, updated `projectData` content                                         |
-| 18     | peter | Added `createResources` `updateResources` `deleteResources`  |    
-| 19     | christian| added `APIServerIsReady` and `APIVersion` to `loaded` event |
+| Number | Author    | Description                                                                                                     |
+| :----- | :-------- | :-------------------------------------------------------------------------------------------------------------- |
+| 1      | olivier   | Initial release                                                                                                 |
+| 2      | olivier   | Added `canEdit` and list of user rights                                                                         |
+| 3      | olivier   | Added custom message                                                                                            |
+| 4      | olivier   | Added `loaded` event description                                                                                |
+| 5      | olivier   | Added information about project wide access                                                                     |
+| 6      | olivier   | Added information about all project access                                                                      |
+| 7      | olivier   | Added didUpdate/didCreate/didDelete details                                                                     |
+| 8      | olivier   | Added `tokenRefresh` event description                                                                          |
+| 9      | olivier   | Added modification to didUpdate message for meta datum value                                                    |
+| 10     | olivier   | Added `clearSelection` message                                                                                  |
+| 11     | olivier   | removed trafficManagerJWT                                                                                       |
+| 12     | olivier   | Added `requestInfo` and `replyInfo`                                                                             |
+| 13     | olivier   | Added `getViewBox`                                                                                              |
+| 14     | matt      | Added `didClone`, documents, shapes, segments, parent attributes; updates for 8.0; removed activities and ports |
+| 15     | olivier   | Added `toast`                                                                                                   |
+| 16     | olivier   | Added `getResources`                                                                                            |
+| 17     | matt      | Described `integrationId` on `replyInfo`, updated `projectData` content                                         |
+| 18     | peter     | Added `createResources` `updateResources` `deleteResources`                                                     |
+| 19     | christian | added `APIServerIsReady` and `APIVersion` to `loaded` event                                                     |
+| 20     | olivier   | Added `exportToGLTF`                                                                                            |
+| 21     | olivier   | added `getVisibleResources` query and `visibleResources` reply                                                  |
+| 22     | olivier   | added `tags` attribute to `replyInfo`                                                                           |
+| 23     | christian | added `project.CRS` to `projectData`                                                                            |
 
 ## Introduction
 
@@ -47,7 +51,7 @@ Link: [FieldTwin Online Documentation](https://admin.fieldtwin.com/Integrations/
 
 > By default, and for security reasons, an integration receives a JWT that only gives access to the
 > sub project the user is currently editing. Through the administration panel, you can also:
-> 
+>
 > - Give access to the whole project, all of its sub projects
 > - Give access to all the projects a user can access across the account
 
@@ -63,22 +67,22 @@ This request will contain the following attributes:
 - As query parameters for _GET_
 - As the request body for _POST_
 
-| attribute            | description                                                                                                                                  |
-| :------------------- | :------------------------------------------------------------------------------------------------------------------------------------------- |
-| `token`              | Security token (JWT) needed for making a FieldTwin API call                                                                                  |
-| `frontendUrl`        | URL of the window that contains the iframe. Also the link for viewing the subproject                                                         |
-| `backendUrl`         | URL of the FieldTwin backend. Use this as the base of the JWT public key URL and the API URL                                                 |
-| `stream`             | In FieldTwin 8.0 and later - the ID of the subproject branch                                                                                 |
-| `subProject`         | The currently open sub project ID                                                                                                            |
-| `project`            | The currently open project ID                                                                                                                |
-| `account`            | The ID of the account that contains the project                                                                                              |
-| `canEdit`            | Whether the user's role enables 'edit' rights for the integration. To be handled by the integration itself, FieldTwin does not enforce this  |
-| `projectWideAccess`  | Whether the integration is granted access to the whole project (not just the current sub project)                                            |
-| `projectAllFromUser` | Whether the integration is granted access to all of the current user's projects in the account                                               |
+| attribute            | description                                                                                                                                 |
+| :------------------- | :------------------------------------------------------------------------------------------------------------------------------------------ |
+| `token`              | Security token (JWT) needed for making a FieldTwin API call                                                                                 |
+| `frontendUrl`        | URL of the window that contains the iframe. Also the link for viewing the subproject                                                        |
+| `backendUrl`         | URL of the FieldTwin backend. Use this as the base of the JWT public key URL and the API URL                                                |
+| `stream`             | In FieldTwin 8.0 and later - the ID of the subproject branch                                                                                |
+| `subProject`         | The currently open sub project ID                                                                                                           |
+| `project`            | The currently open project ID                                                                                                               |
+| `account`            | The ID of the account that contains the project                                                                                             |
+| `canEdit`            | Whether the user's role enables 'edit' rights for the integration. To be handled by the integration itself, FieldTwin does not enforce this |
+| `projectWideAccess`  | Whether the integration is granted access to the whole project (not just the current sub project)                                           |
+| `projectAllFromUser` | Whether the integration is granted access to all of the current user's projects in the account                                              |
 
 `token` is a [JWT](https://jwt.io/) and contains information about the user and user rights.
 You can parse it with any _JWT_ library but to be secure you must ensure that the token has been
-signed by FieldTwin. The public key to validate this can be found at: 
+signed by FieldTwin. The public key to validate this can be found at:
 `https://backend.[name-of-instance].fieldtwin.com/token/publicKey`.
 
 The FieldTwin API can be accessed using `https://backend.[name-of-instance].fieldtwin.com`
@@ -136,7 +140,7 @@ token sent by **FieldTwin**.
 
 ## Refreshing the JWT
 
-By default the JWT has an expiration time of one (1) hour after it was created. You can refresh the 
+By default the JWT has an expiration time of one (1) hour after it was created. You can refresh the
 token by calling this endpoint: `https://backend.[name-of-instance].fieldtwin.com/token/refresh`.
 You pass the JWT the usual way (using header `Authentication: Bearer ${JWT}`) and you receive
 back a JSON object with the new JWT inside the attribute `token`.
@@ -250,7 +254,11 @@ Here's how an integration can receive these messages from **FieldTwin** :
 window.addEventListener('message', function (event) {
   // IMPORTANT: Check the origin of the data!
   if (~event.origin.indexOf('https://backend.app.fieldtwin.com')) {
-    console.log(JSON.stringify(event.data, null, 2))
+    if (event.data instanceof Blob) {
+      // this is only use by `exportToGLTF`
+    } else {
+      console.log(JSON.stringify(event.data, null, 2))
+    }
   } else {
     // Not coming from correct origin
     return
@@ -283,7 +291,24 @@ Definition of the different element _type_ that can be sent:
 
 Definition of the different attributes for types can be found in [API docs](https://api.fieldtwin.com)
 
-### loaded
+### If `event.data` is an instance of Blob
+
+This was introduced to handle `exportToGLTF` message, which export the whole field to GLTF.
+In this case, the function return a blob which contains the GLTF data.
+Example :
+
+```javascript
+async function onMessage(message) {
+  if (message.data instanceof Blob) {
+    // use library "saveAs" to save the blob to a file
+    saveAs(message.data, `export.gltf`)
+  } else {
+    // handle message as JSON
+  }
+}
+```
+
+#### Example of receiving a blob
 
 This event is sent when an integration iframe is fully loaded. It contains information about subProject,
 project and tokens used to communicate with API. The argument will contain these attributes:
@@ -303,14 +328,13 @@ project and tokens used to communicate with API. The argument will contain these
 | projectAllFromUser | whether the JWT grants access to all of the current user's projects |
 | selection          | what is currently selected. Array of object { type, id }            |
 | cssUrl             | main CSS url                                                        |
-| cssThemeUrl        | current theme CSS url                                               | 
+| cssThemeUrl        | current theme CSS url                                               |
 | cloudType          | azure, gcloud, s3, onpremise                                        |
 | superAdmin         | true is current user is super admin                                 |
 | projectorUrl       | FieldTwin projection service URL                                    |
 | designerUrl        | FieldTwin designer URL                                              |
 | APIServerIsReady   | if set to true, the API server is ready to receive requests         |
 | APIVersion         | the version of the API server in the form "vx.y" e.g. "v1.10"       |
-
 
 ### tokenRefresh
 
@@ -332,16 +356,16 @@ integration can use to communicate with FieldTwin backend.
 This message is sent after the integration posted a message `getCostQuery`.
 The result will contain these attributes:
 
-| Attribute       | Decription                                                                                                                                |
-| :-------------- | :---------------------------------------------------------------------------------------------------------------------------------------- |
-| event           | is set to `costQuery`                                                                                                                     |
-| isFrameActive   | true if the frame is currently selected and active in the UI                                                                              |
-| data            | is an object that contains:                                                                                                               |
-| queryId         | is the value that you can pass when calling `getCostQuery`. It allows you to identify a query when posting `getCostQuery` multiple times  |
-| removeEmptyItem | do not include items that have no meta data defined                                                                                       |
-| query           | is the actual query and is composed of :                                                                                                  |
-| stagedAssets    | contains an array of assets and their meta data                                                                                           |
-| connections     | contains an array of connections and their meta data                                                                                      |
+| Attribute       | Decription                                                                                                                               |
+| :-------------- | :--------------------------------------------------------------------------------------------------------------------------------------- |
+| event           | is set to `costQuery`                                                                                                                    |
+| isFrameActive   | true if the frame is currently selected and active in the UI                                                                             |
+| data            | is an object that contains:                                                                                                              |
+| queryId         | is the value that you can pass when calling `getCostQuery`. It allows you to identify a query when posting `getCostQuery` multiple times |
+| removeEmptyItem | do not include items that have no meta data defined                                                                                      |
+| query           | is the actual query and is composed of :                                                                                                 |
+| stagedAssets    | contains an array of assets and their meta data                                                                                          |
+| connections     | contains an array of connections and their meta data                                                                                     |
 
 ### select
 
@@ -440,6 +464,7 @@ The result will contain these attributes:
 | data.project.subProjectTags             | aggregation of all sub-project tags            |
 | data.project.developmentLocation        | country defined in the project                 |
 | data.project.toSeabed                   | seabed depth defined in the project            |
+| data.project.CRS                        | CRS used in the project                         |
 | data.stagedAssets                       | array of information about staged assets       |
 | data.stagedAssets.[].id                 | id of staged asset                             |
 | data.stagedAssets.[].name               | name of staged asset                           |
@@ -531,16 +556,16 @@ The reply is expected to be sent using `replyInfo` (see below) and not as a retu
 The message is sent in response to an integration sending the `getViewBox` command.
 It contains the current view box of the application in project coordinates.
 
-| Attribute          | Description                              |
-| :----------------- | :--------------------------------------- |
-| event              | is set to `viewBox`                      |
-| isFrameActive      | true if the frame is currently selected  |
-| data               | contains data about the event            |
-| data.viewBox       | viewBox object                           |
-| data.viewBox.x1    | start x in project coordinate of viewbox |
-| data.viewBox.y1    | start y in project coordinate of viewbox |
-| data.viewBox.x2    | end x in project coordinate of viewbox   |
-| data.viewBox.y2    | end y in project coordinate of viewbox   |
+| Attribute       | Description                              |
+| :-------------- | :--------------------------------------- |
+| event           | is set to `viewBox`                      |
+| isFrameActive   | true if the frame is currently selected  |
+| data            | contains data about the event            |
+| data.viewBox    | viewBox object                           |
+| data.viewBox.x1 | start x in project coordinate of viewbox |
+| data.viewBox.y1 | start y in project coordinate of viewbox |
+| data.viewBox.x2 | end x in project coordinate of viewbox   |
+| data.viewBox.y2 | end y in project coordinate of viewbox   |
 
 ```javascript
 {
@@ -557,17 +582,38 @@ It contains the current view box of the application in project coordinates.
 }
 ```
 
+### visibleResources
+
+This message is sent in response to an integration sending `getVisibleResources` command.
+It contains an array of resources ( with minimum information) that are visible at the current camera position.
+
+| Attribute                   | Description                                                                          |
+| :-------------------------- | :----------------------------------------------------------------------------------- |
+| event                       | is set to `visibleResources`                                                         |
+| data.resources              | array of resources                                                                   |
+| data.resources[].type       | contains the type of the selected item                                               |
+| data.resources[].id         | unique id of the selected item                                                       |
+| data.resources[].name       | display name of selected item                                                        |
+| data.resources[].isForeign  | true if the selected item comes from a linked parent project                         |
+| data.resources[].project    | ID of the parent project when isForeign is true                                      |
+| data.resources[].subProject | ID of the parent subproject when isForeign is true                                   |
+| data.resources[].stream     | ID of the parent subproject branch when isForeign is true in FieldTwin 8.0 and later |
+| data.resources[].well       | ID of parent well if resource is a well bore                                         |
+| data.resources[].connection | ID of parent connection if resource is a connection segment                          |
+| data.resources[].wellBore   | ID of parent well bore if resource is a well bore segment                            |
+| data.queryId                | same value defined in getResources query                                             |
+
 ### resources
 
 This message is sent in response to an integration sending `getResources` command.
 It contains an array of resources, as defined in `didUpdate / didCreate / didDelete attributes` section.
 
-| Attribute          | Description                                                          |
-| :----------------- | :--------------------------------------------------------------------|
-| event              | is set to `resources`                                                |
-| data               | contains the raw data of requested items                             |
-| data.resources     | array of resources                                                   |
-| data.queryId       | same value defined in getResources query                             |
+| Attribute      | Description                              |
+| :------------- | :--------------------------------------- |
+| event          | is set to `resources`                    |
+| data           | contains the raw data of requested items |
+| data.resources | array of resources                       |
+| data.queryId   | same value defined in getResources query |
 
 ### didClone
 
@@ -576,7 +622,7 @@ Sent when a project or subproject is cloned (_copied_ in 8.0).
 The event will contain these attributes:
 
 | Attribute          | Description                                                          |
-| :----------------- | :--------------------------------------------------------------------|
+| :----------------- | :------------------------------------------------------------------- |
 | event              | is set to `didClone`                                                 |
 | type               | type of the cloned item (`project` or `subProject`)                  |
 | id                 | unique ID of the newly created item                                  |
@@ -607,10 +653,10 @@ Contains the same data as `didUpdate`, except it does not have `previousData` or
 
 The event will contain these attributes:
 
-| Attribute     | Description                                     |
-| :------------ | :---------------------------------------------- |
-| event         | is set to `didCreate` or `didCreateFromNetwork` |
-| <other>       | see the `didUpdate` event                       |
+| Attribute | Description                                     |
+| :-------- | :---------------------------------------------- |
+| event     | is set to `didCreate` or `didCreateFromNetwork` |
+| <other>   | see the `didUpdate` event                       |
 
 ### didUpdate and didUpdateFromNetwork
 
@@ -720,10 +766,10 @@ of the relationships might be set to `null`. In this case, you will find this in
 
 The event will contain these attributes:
 
-| Attribute     | Description                                          |
-| :------------ | :--------------------------------------------------- |
-| event         | is set to `didDelete` or `didDeleteFromNetwork`      |
-| <other>       | see the `didUpdate` event                            |
+| Attribute | Description                                     |
+| :-------- | :---------------------------------------------- |
+| event     | is set to `didDelete` or `didDeleteFromNetwork` |
+| <other>   | see the `didUpdate` event                       |
 
 #### Example for deletion of a custom-cost from network
 
@@ -923,7 +969,7 @@ The event will contain these attributes:
 > `event.type` is set to `connectionSegment`.
 
 | Attribute     | Description                                                                                    |
-| :------------ | :----------------------------------------------------------------------------------------------|
+| :------------ | :--------------------------------------------------------------------------------------------- |
 | connection    | ID of parent connection                                                                        |
 | subProject    | ID of subproject containing this item                                                          |
 | name          | Name of the segment (label)                                                                    |
@@ -979,15 +1025,15 @@ The event will contain these attributes:
 
 > `event.type` is set to `documentRevision`.
 
-| Attribute          | Description                                                                   |
-| :----------------- | :---------------------------------------------------------------------------- |
-| document           | ID of the parent document record                                              |
-| subProject         | ID of the sub project that contains this revision                             |
-| creator            | Email address of user that uploaded the file                                  |
-| created            | Timestamp of the upload                                                       |
-| url                | URL to access or download the file (signed and time limited with expiry)      |
-| description        | User's description                                                            |
-| documentRevisionId | A group ID linking all revisions that refer to the same file revision         |
+| Attribute          | Description                                                              |
+| :----------------- | :----------------------------------------------------------------------- |
+| document           | ID of the parent document record                                         |
+| subProject         | ID of the sub project that contains this revision                        |
+| creator            | Email address of user that uploaded the file                             |
+| created            | Timestamp of the upload                                                  |
+| url                | URL to access or download the file (signed and time limited with expiry) |
+| description        | User's description                                                       |
+| documentRevisionId | A group ID linking all revisions that refer to the same file revision    |
 
 ### Layer
 
@@ -1160,7 +1206,7 @@ The event will contain these attributes:
 > `event.type` is set to `shape`.
 
 | Attribute                          | Description                                                                                                    |
-| :--------------------------------- | :--------------------------------------------------------------------------------------------------------------|
+| :--------------------------------- | :------------------------------------------------------------------------------------------------------------- |
 | subProject                         | ID of subproject containing this item                                                                          |
 | name                               | Name of the shape (label)                                                                                      |
 | shapeType                          | One value from: Box, Sphere, Triangle, Circle, Rectangle, Cone, Cylinder, Ring, Torus, Polygon, FlatTube, Tube |
@@ -1448,7 +1494,7 @@ The event will contain these attributes:
 > `event.type` is set to `wellBoreSegment`.
 
 | Attribute     | Description                                                                                    |
-| :------------ | :----------------------------------------------------------------------------------------------|
+| :------------ | :--------------------------------------------------------------------------------------------- |
 | wellBore      | ID of parent well bore                                                                         |
 | subProject    | ID of subproject containing this item                                                          |
 | name          | Name of the segment (label)                                                                    |
@@ -1464,7 +1510,6 @@ The event will contain these attributes:
 | labelOffsetY  | Label Y offset                                                                                 |
 | metaDataValue | An array of IDs of attached metadata values                                                    |
 
-
 ## Communication from integration to FieldTwin
 
 Integrations are able to call functions in **FieldTwin** using the `postMessage` mechanism.
@@ -1474,7 +1519,7 @@ To do this, use `postMessage` on the `window.parent` object within the integrati
 ```javascript
 window.parent.postMessage(
   {
-    event: 'getProjectData'
+    event: 'getProjectData',
   },
   '*'
 )
@@ -1490,7 +1535,6 @@ Set these attributes:
 | Attribute | Description                |
 | :-------- | :------------------------- |
 | event     | is set to `getProjectData` |
-
 
 The result format is defined in the `projectData` message section.
 
@@ -1520,12 +1564,12 @@ Focus the view on a given point. Z position will be height sampled, and the prov
 point will be added to it. This means that if you set `z` as 100, the camera will be at position
 `100 + height sampled z`.
 
-| Attribute          | Description                                                                      |
-| :----------------- | :------------------------------------------------------------------------------- |
-| event              | is set to `zoomAt`                                                               |
-| event.data.point.x | X position of the center of the camera lookat                                    |
-| event.data.point.y | Y position of the center of the camera lookat                                    |
-| event.data.point.z | indicate the height distance from the center where the eye of the camera will be |
+| Attribute    | Description                                                                      |
+| :----------- | :------------------------------------------------------------------------------- |
+| event        | is set to `zoomAt`                                                               |
+| event.data.x | X position of the center of the camera lookat                                    |
+| event.data.y | Y position of the center of the camera lookat                                    |
+| event.data.z | indicate the height distance from the center where the eye of the camera will be |
 
 #### Focusing on a point
 
@@ -1533,7 +1577,9 @@ point will be added to it. This means that if you set `z` as 100, the camera wil
 {
   event: "zoomAt",
   data: {
-    point: { x: 15300, y: 113105, z: 300 }
+    x: 15300,
+    y: 113105,
+    z: 300
   }
 }
 ```
@@ -1636,6 +1682,7 @@ message. For now it only sets one metric:
 | data.items.[].id            | id of the resource for which to update document count     |
 | data.items.[].type          | resource's type for which to update document count        |
 | data.items.[].documentCount | number of documents held for a given resource             |
+| data.tags                   | array of tags that will be use by the subprojects         |
 | integrationId               | optional integration ID (e.g. the `customTabId` from JWT) |
 
 ```javascript
@@ -1660,12 +1707,11 @@ ensures that your `documentCount` is counted separately instead of being replace
 
 Display a temporary pop-up notification ("toast" message) in the FieldTwin Design UI.
 
-
-| Attribute                   | Description                                           |
-| :-------------------------- | :---------------------------------------------------- |
-| event                       | is set to `toast`                                     |
-| data.type                   | message type, can be danger, warning, info or success |
-| data.message                | message to display                                    |
+| Attribute    | Description                                           |
+| :----------- | :---------------------------------------------------- |
+| event        | is set to `toast`                                     |
+| data.type    | message type, can be danger, warning, info or success |
+| data.message | message to display                                    |
 
 ```javascript
 {
@@ -1677,20 +1723,31 @@ Display a temporary pop-up notification ("toast" message) in the FieldTwin Desig
 }
 ```
 
+### exportToGLTF
+
+Ask the host software to export the whole design as GLTF. The reply is sent as a blob through postMessage and needs special handling.
+
+```javascript
+{
+  event:"exportToGLTF",
+  data: {
+    queryId: `[query_id_not_used_for_now]`,
+  },
+}
+```
+
 ### getResources
 
 Allow integration to request informations from a list of resources using their ids and type. The response will be returned to the integration through message `resources`.
 
-| Attribute                   | Description                                           |
-| :-------------------------- | :---------------------------------------------------- |
-| event                       | is set to `getResources`                              |
-| data.items                  | array of object                                       |
-| data.items.[].id            | id of the resource for which to get informations      |
-| data.items.[].type          | resource's type for which to get informations         |
-| data.items.[].resourceType  | alias for type                                        |
-| data.queryId                | id that will be sent back with the reply              |
-
-
+| Attribute                  | Description                                      |
+| :------------------------- | :----------------------------------------------- |
+| event                      | is set to `getResources`                         |
+| data.items                 | array of object                                  |
+| data.items.[].id           | id of the resource for which to get informations |
+| data.items.[].type         | resource's type for which to get informations    |
+| data.items.[].resourceType | alias for type                                   |
+| data.queryId               | id that will be sent back with the reply         |
 
 ```javascript
 {
@@ -1716,13 +1773,13 @@ This can be used to create display-only features that are controlled by the inte
 
 On success a `didCreate` message will follow containing the created resource object.
 
-| Attribute                   | Description                                            |
-| :-------------------------- | :----------------------------------------------------- |
-| event                       | is set to `createResource`                             |
-| data                        | object                                                 |
-| data.volatile               | optional: do not save the resource in the database     |
-| data.resourceType           | resource type string                                   |
-| data.attributes             | object containing data attributes for the new resource |
+| Attribute         | Description                                            |
+| :---------------- | :----------------------------------------------------- |
+| event             | is set to `createResource`                             |
+| data              | object                                                 |
+| data.volatile     | optional: do not save the resource in the database     |
+| data.resourceType | resource type string                                   |
+| data.attributes   | object containing data attributes for the new resource |
 
 ```javascript
 {
@@ -1743,13 +1800,13 @@ This can be used to create display-only features that are controlled by the inte
 
 On success `didCreate` messages will follow containing the created resource objects.
 
-| Attribute                   | Description                                            |
-| :-------------------------- | :----------------------------------------------------- |
-| event                       | is set to `createResources`                            |
-| data                        | array of objects                                       |
-| data.[].volatile            | optional: do not save the resource in the database     |
-| data.[].resourceType        | resource type string                                   |
-| data.[].attributes          | object containing data attributes for the new resource |
+| Attribute            | Description                                            |
+| :------------------- | :----------------------------------------------------- |
+| event                | is set to `createResources`                            |
+| data                 | array of objects                                       |
+| data.[].volatile     | optional: do not save the resource in the database     |
+| data.[].resourceType | resource type string                                   |
+| data.[].attributes   | object containing data attributes for the new resource |
 
 ```javascript
 {
@@ -1773,13 +1830,13 @@ On success `didCreate` messages will follow containing the created resource obje
 Allow the integration to update a resource in FieldTwin Design.
 On success a `didUpdate` message will follow containing the updated resource object.
 
-| Attribute                   | Description                                           |
-| :-------------------------- | :---------------------------------------------------- |
-| event                       | is set to `updateResource`                            |
-| data                        | object                                                |
-| data.resourceType           | resource type string                                  |
-| data.resourceId             | the id of the resource to be updated                  |
-| data.attributes             | object containing updated attributes for the resource |
+| Attribute         | Description                                           |
+| :---------------- | :---------------------------------------------------- |
+| event             | is set to `updateResource`                            |
+| data              | object                                                |
+| data.resourceType | resource type string                                  |
+| data.resourceId   | the id of the resource to be updated                  |
+| data.attributes   | object containing updated attributes for the resource |
 
 ```javascript
 {
@@ -1797,13 +1854,13 @@ On success a `didUpdate` message will follow containing the updated resource obj
 Allow the integration to update a list of resource in FieldTwin Design.
 On success `didUpdate` messages will follow containing the updated resource objects.
 
-| Attribute                   | Description                                           |
-| :-------------------------- | :---------------------------------------------------- |
-| event                       | is set to `updateResources`                           |
-| data                        | array of objects                                      |
-| data.[].resourceType        | resource type string                                  |
-| data.[].resourceId          | the id of the resource to be updated                  |
-| data.[].attributes          | object containing updated attributes for the resource |
+| Attribute            | Description                                           |
+| :------------------- | :---------------------------------------------------- |
+| event                | is set to `updateResources`                           |
+| data                 | array of objects                                      |
+| data.[].resourceType | resource type string                                  |
+| data.[].resourceId   | the id of the resource to be updated                  |
+| data.[].attributes   | object containing updated attributes for the resource |
 
 ```javascript
 {
@@ -1829,12 +1886,12 @@ On success `didUpdate` messages will follow containing the updated resource obje
 Allow the integration to delete a resource from FieldTwin Design.
 On success a `didDelete` message will follow containing the deleted resource object.
 
-| Attribute                   | Description                                           |
-| :-------------------------- | :---------------------------------------------------- |
-| event                       | is set to `deleteResource`                            |
-| data                        | object                                                |
-| data.resourceType           | resource type string                                  |
-| data.resourceId             | the id of the resource to be deleted                  |
+| Attribute         | Description                          |
+| :---------------- | :----------------------------------- |
+| event             | is set to `deleteResource`           |
+| data              | object                               |
+| data.resourceType | resource type string                 |
+| data.resourceId   | the id of the resource to be deleted |
 
 ```javascript
 {
@@ -1851,12 +1908,12 @@ On success a `didDelete` message will follow containing the deleted resource obj
 Allow the integration to delete a list of resources from FieldTwin Design.
 On success `didDelete` messages will follow containing the deleted resource objects.
 
-| Attribute                   | Description                                           |
-| :-------------------------- | :---------------------------------------------------- |
-| event                       | is set to `deleteResources`                           |
-| data                        | array of objects                                      |
-| data.[].resourceType        | resource type string                                  |
-| data.[].resourceId          | the id of the resource to be deleted                  |
+| Attribute            | Description                          |
+| :------------------- | :----------------------------------- |
+| event                | is set to `deleteResources`          |
+| data                 | array of objects                     |
+| data.[].resourceType | resource type string                 |
+| data.[].resourceId   | the id of the resource to be deleted |
 
 ```javascript
 {
