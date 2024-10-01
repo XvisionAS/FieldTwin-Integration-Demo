@@ -31,18 +31,34 @@ The simplest way to run the demo notebooks is to use Google Colab.
 Google Colab provides a free environment for storing and running Python Jupyter notebooks.
 This can be accessed at https://colab.research.google.com/.
 
-In the Colab web page:
+First, download a copy of the `.ipynb` file from this repository.    
+In the Colab web page: Select File -> Upload notebook    
+Upload the `.ipynb` file    
 
-1. Select File -> Open notebook
-2. Select the Github tab
-3. Paste in the Github URL for this page
-
-![](./docs/open-colab.png)
-
-This will create a link to the notebook which can then be opened in Colab.
+This will open the notebook in Colab.
 
 ![](./docs/run-notebook.png)
 
 ![](./docs/generate-profile.png)
 
 ![](./docs/re-run-code.png)
+
+
+
+## Run in Jupyter Notebook
+
+Alternatively the demos can be run using a local Jupyter Notebook environment.    
+See: https://jupyter.org/install
+
+To run the notebook, enter the following commands in a terminal:
+
+```
+  cd <folder containing the notebook files>
+  jupyter notebook
+```
+
+The Jupyter Notebbok application opens in a web browser.   
+It displays a list of the notebook files.     
+Select the notebook to open.    
+Follow the same steps as described above for running in colab.   
+
