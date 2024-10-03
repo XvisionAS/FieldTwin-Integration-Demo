@@ -29,7 +29,7 @@ This tool will copy all meta data from one type to the other. It works on all ty
 
 #### Mandatory
 
-- `--backend [value]` From which backend definitions will be pulled from. For example `https://backend.qa.fieldap.com`.
+- `--backend [value]` From which backend definitions will be pulled from. For example `https://backend.qa.fieldtwin.com`.
 - `--token [value]` API token used to authenticate with the backend. Can be obtain in Account settings/API tab. You need to be an administrator.
 - `--source-type [value]` One of `well`, `layer`, `connection`, `asset`, `connector`.
 - `--source-id [value]` Uniq ID of the source item ( corresponding to the source type). Can be obtain by goind to Account settings, on the correconding type tab, and selecting the item you want to copy. ID will be the first item displayed after selection.
@@ -46,12 +46,12 @@ This tool will copy all meta data from one type to the other. It works on all ty
 ### Copy from one connection type to the other
 
 ```sh
-  node index.js --backend "https://backend.qa.fieldap.com" --token [APItoken] --source-id 1 --source-type connection --target-id 2
+  node index.js --backend "https://backend.qa.fieldtwin.com" --token [APItoken] --source-id 1 --source-type connection --target-id 2
 ```
 
 ### Copy from one connection type to the other on a different backend
 
 ```sh
-  node index.js --backend "https://backend.qa.fieldap.com" --token "[APItoken]" --target-backend "https://backend.app.fieldap.com" --target-token "[APIToken]" --source-id 1 --source-type connection --target-id 2
+  node index.js --backend "https://backend.qa.fieldtwin.com" --token "[APItoken]" --target-backend "https://backend.app.fieldtwin.com" --target-token "[APIToken]" --source-id 1 --source-type connection --target-id 2
 ```
 

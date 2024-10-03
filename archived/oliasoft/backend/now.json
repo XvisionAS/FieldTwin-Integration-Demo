@@ -1,8 +1,8 @@
 {
   "version": 1,
-  "alias": "oliasoft.fieldap.com",
+  "alias": "oliasoft.fieldtwin.com",
   "env": {
-    "LEGACY_HOST":"legacyapi.app.fieldap.com",
+    "LEGACY_HOST":"legacyapi.app.fieldtwin.com",
     "OLIASOFT_TOKEN": "@token"
   }
 }

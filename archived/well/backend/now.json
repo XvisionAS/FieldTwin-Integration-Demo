@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "alias": "well.fieldap.com",
+  "alias": "well.fieldtwin.com",
   "env": {
     "AUTH_CLIENT_ID":
     "AUTH_CLIENT_SECRET":
