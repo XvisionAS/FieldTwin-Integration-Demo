@@ -55,7 +55,7 @@ app.get("/API/v1/:projectId/subProject/:subProjectId/connection/:connectionId",
 
 
 
-		const backendServer = request.headers.backendurl || "http://qa.backend.fieldap.com"
+		const backendServer = request.headers.backendurl || "http://qa.backend.fieldtwin.com"
 		
 		const options = {}
 		options.headers = {}

@@ -139,8 +139,8 @@ export default Vue.extend({
 
       if (event.origin.includes('webapp')) {
           event.data.backendurl = event.origin.replace('webapp', 'jsonapi')
-        } else if (event.origin.includes('fieldap.com')) {
-        event.data.backendurl = event.origin.replace('fieldap.com', 'backend.fieldap.com')
+        } else if (event.origin.includes('fieldtwin.com')) {
+        event.data.backendurl = event.origin.replace('fieldtwin.com', 'backend.fieldtwin.com')
       } else {
         event.data.backendurl = 'http://localhost:3000'
       }

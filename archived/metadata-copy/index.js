@@ -12,11 +12,11 @@ const fetch = require('node-fetch')
 const yargs = require('yargs')
 
 const argv  = yargs.option('backend', {
-  description:'Source Backend address https://backend.qa.fieldap.com'
+  description:'Source Backend address https://backend.qa.fieldtwin.com'
 }).option('token', {
   description:'Source API token'
 }).option('target-backend', {
-  description:'Target Backend address https://backend.qa.fieldap.com, default to `backend` if not specified'
+  description:'Target Backend address https://backend.qa.fieldtwin.com, default to `backend` if not specified'
 }).option('target-token', {
   description:'Target API token, default to `token` if not specified'
 }).option('source-type', {
@@ -62,7 +62,7 @@ const getAccount = async (options) => {
 
 /*
   Retrieve all meta data definition for a given type and id
-  See : https://apidocs.fieldap.com/#api-MetadataDefinitions-GetMetaDataDefinitions
+  See : https://apidocs.fieldtwin.com/#api-MetadataDefinitions-GetMetaDataDefinitions
 */
 const getMetaDataDefinitions = async (options, relateToType, relateToId) => {
   const { backend, token } = options
@@ -82,7 +82,7 @@ const getMetaDataDefinitions = async (options, relateToType, relateToId) => {
 
 /*
   Create a new definition
-  See : https://apidocs.fieldap.com/#api-MetadataDefinitions-AddMetaDataDefinitions
+  See : https://apidocs.fieldtwin.com/#api-MetadataDefinitions-AddMetaDataDefinitions
 */
 const postMetaDataDefinition = async (options, item) => {
   const { backend, token } = options
@@ -101,7 +101,7 @@ const postMetaDataDefinition = async (options, item) => {
 
 /*
   Update an definition
-  See : https://apidocs.fieldap.com/#api-MetadataDefinitions-PatchMetaDataDefinitions
+  See : https://apidocs.fieldtwin.com/#api-MetadataDefinitions-PatchMetaDataDefinitions
 */
 const patchMetaDataDefinition = async (options, key, item) => {
   const { backend, token } = options
