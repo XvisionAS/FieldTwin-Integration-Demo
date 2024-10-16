@@ -50,11 +50,11 @@ curl -H "token: ${TOKEN}" \
                 },
                 "metaData": []
             }' \
-     https://${BACKEND_HOST}/API/v1.9/${PROJECT}/subProject/${SUBPROJECT}:${STREAM}/stagedAsset
+     https://${BACKEND_HOST}/API/v1.10/${PROJECT}/subProject/${SUBPROJECT}:${STREAM}/stagedAsset
 ```
 
 * Asset ID `-K5uq-URmQV-aH0-uBpF` equates to a Manifold in FutureOn's standard asset library
-  * The list of available assets can be found by calling `/API/v1.9/assets`
+  * The list of available assets can be found by calling `/API/v1.10/assets`
 * Coordinate values are provided inside the bounds and in the unit of the
   [Coordinate Reference System](https://design.fieldtwin.com/dashboard/#project-settings)
   defined for the project
@@ -92,7 +92,7 @@ curl -H "token: ${TOKEN}" \
                     { "x": 795, "y": 20, "z": -100 }
                ]
              }' \
-     https://${BACKEND_HOST}/API/v1.9/${PROJECT}/subProject/${SUBPROJECT}:${STREAM}/connection
+     https://${BACKEND_HOST}/API/v1.10/${PROJECT}/subProject/${SUBPROJECT}:${STREAM}/connection
 ```
 
 * `params.type` of `2` is the connection type ID for _Oil Production_
@@ -132,7 +132,7 @@ curl -H "token: ${TOKEN}" \
                "bendable": false,
                "isLocked": true
              }' \
-     https://${BACKEND_HOST}/API/v1.9/${PROJECT}/subProject/${SUBPROJECT}:${STREAM}/connection
+     https://${BACKEND_HOST}/API/v1.10/${PROJECT}/subProject/${SUBPROJECT}:${STREAM}/connection
 ```
 
 * The first few parameters are the same as described above
@@ -157,7 +157,7 @@ export STAGEDASSET=<staged asset id>
 
 curl -H "token: ${TOKEN}" \
      --request DELETE \
-     https://${BACKEND_HOST}/API/v1.9/${PROJECT}/subProject/${SUBPROJECT}:${STREAM}/stagedAsset/${STAGEDASSET}
+     https://${BACKEND_HOST}/API/v1.10/${PROJECT}/subProject/${SUBPROJECT}:${STREAM}/stagedAsset/${STAGEDASSET}
 ```
 
 <br>
@@ -171,11 +171,12 @@ curl -H "token: ${TOKEN}" \
 export WELL=<well id>
 
 curl -H "token: ${TOKEN}" \
-     https://${BACKEND_HOST}/API/v1.9/${PROJECT}/subProject/${SUBPROJECT}:${STREAM}/well/${WELL}
+     https://${BACKEND_HOST}/API/v1.10/${PROJECT}/subProject/${SUBPROJECT}:${STREAM}/well/${WELL}
 ```
 
 * The bore profile is returned in the `wellBores[0 .. n].path` attribute
-* The bore path is empty by default, it can be set or imported from FieldTwin Design
+* The bore path is empty by default, it can be set or imported from FieldTwin Design,
+  or generated with the [Well Assist integration](https://appdocs.fieldtwin.com/wellassist/)
 
 <br>
 <hr>
@@ -191,7 +192,7 @@ export CONNECTION=<connection id>
 curl -H "token: ${TOKEN}" \
      -H "sample-every: ${SAMPLE_RESOLUTION}" \
      -H "simplify: true" \
-     https://${BACKEND_HOST}/API/v1.9/${PROJECT}/subProject/${SUBPROJECT}:${STREAM}/connection/${CONNECTION}
+     https://${BACKEND_HOST}/API/v1.10/${PROJECT}/subProject/${SUBPROJECT}:${STREAM}/connection/${CONNECTION}
 ```
 
 * The value of sample resolution can be `1` or more
@@ -212,11 +213,11 @@ curl -H "token: ${TOKEN}" \
 export CONNECTION=<connection id>
 
 curl -H "token: ${TOKEN}" \
-     https://${BACKEND_HOST}/API/v1.9/${PROJECT}/subProject/${SUBPROJECT}:${STREAM}/connection/${CONNECTION}
+     https://${BACKEND_HOST}/API/v1.10/${PROJECT}/subProject/${SUBPROJECT}:${STREAM}/connection/${CONNECTION}
 ```
 
 * Imported connections (including those created with the API when no other `designType` is given)
-  have a `designType` of `Imported`
+  generally have a `designType` of `Imported`
 * The imported points are made up from the `fromCoordinate` plus the `intermediaryPoints` plus the `toCoordinate`
 * When `noHeightSampling` is true, the point `z` (depth) values are as they were at import time
 * When `noHeightSampling` is false, the point `z` (depth) values are sampled from the bathymetry layer
@@ -224,8 +225,8 @@ curl -H "token: ${TOKEN}" \
 * You can also use the [profile-tools](https://github.com/XvisionAS/fieldtwin-open-libraries/tree/main/profile-tools)
   package to extract connection profiles
 
-Note: for connections where `designType` is **not** `Imported`, the `intermediaryPoints` consist
-of auto-generated points along the connection (when the point has attribute `added: true`)
+Note: for connections manually created (not imported) in FieldTwin Design, the `intermediaryPoints`
+consist of auto-generated points along the connection (when the point has attribute `added: true`)
 and/or the locations of the connection's midpoints - shown as circular drag handles in FieldTwin.
 
 <br>
@@ -240,7 +241,7 @@ You can see the general data structure by requesting a single connection / stage
 export CONNECTION=<connection id>
 
 curl -H "token: ${TOKEN}" \
-     https://${BACKEND_HOST}/API/v1.9/${PROJECT}/subProject/${SUBPROJECT}:${STREAM}/connection/${CONNECTION}
+     https://${BACKEND_HOST}/API/v1.10/${PROJECT}/subProject/${SUBPROJECT}:${STREAM}/connection/${CONNECTION}
 -->
 {
      "visible": true,
@@ -322,7 +323,7 @@ curl -H "token: ${TOKEN}" \
                     }
                 ]
              }' \
-     https://${BACKEND_HOST}/API/v1.9/${PROJECT}/subProject/${SUBPROJECT}:${STREAM}/connection/${CONNECTION}
+     https://${BACKEND_HOST}/API/v1.10/${PROJECT}/subProject/${SUBPROJECT}:${STREAM}/connection/${CONNECTION}
 ```
 
 :warning: When a metadatum value has been cleared or has not been set, the `value` attribute
@@ -568,7 +569,7 @@ curl -H "token: ${TOKEN}" \
                 },
                 "showCustomResults": true
             }' \
-     https://${BACKEND_HOST}/API/v1.9/${PROJECT}/subProject/${SUBPROJECT}:${STREAM}/stagedAsset/${STAGEDASSET}
+     https://${BACKEND_HOST}/API/v1.10/${PROJECT}/subProject/${SUBPROJECT}:${STREAM}/stagedAsset/${STAGEDASSET}
 ```
 
 ![Showing custom data for a staged asset](./docs/images/custom-data.png)
@@ -580,7 +581,7 @@ curl -H "token: ${TOKEN}" \
      -H "content-type: application/json" \
      --request PATCH \
      --data '{ "showCustomResults": false }' \
-     https://${BACKEND_HOST}/API/v1.9/${PROJECT}/subProject/${SUBPROJECT}:${STREAM}/stagedAsset/${STAGEDASSET}
+     https://${BACKEND_HOST}/API/v1.10/${PROJECT}/subProject/${SUBPROJECT}:${STREAM}/stagedAsset/${STAGEDASSET}
 ```
 
 <br>
@@ -616,7 +617,7 @@ curl -H "token: ${TOKEN}" \
                 }],
                 "visibleVisualisationMapId": "connection-1-custom-temp"
             }' \
-     https://${BACKEND_HOST}/API/v1.9/${PROJECT}/subProject/${SUBPROJECT}:${STREAM}/connection/${CONNECTION}
+     https://${BACKEND_HOST}/API/v1.10/${PROJECT}/subProject/${SUBPROJECT}:${STREAM}/connection/${CONNECTION}
 ```
 
 * The visualisation data is provided as an array of key points `kp` as a distance
@@ -641,7 +642,7 @@ curl -H "token: ${TOKEN}" \
      -H "content-type: application/json" \
      --request PATCH \
      --data '{ "visibleVisualisationMapId": null }' \
-     https://${BACKEND_HOST}/API/v1.9/${PROJECT}/subProject/${SUBPROJECT}:${STREAM}/connection/${CONNECTION}
+     https://${BACKEND_HOST}/API/v1.10/${PROJECT}/subProject/${SUBPROJECT}:${STREAM}/connection/${CONNECTION}
 ```
 
 <br>
@@ -666,7 +667,7 @@ curl -H "token: ${TOKEN}" \
      -H "content-type: application/json" \
      --request PATCH \
      --data '{ "vendorAttributes": { "myIntegration": { "foo": "bar" } } }' \
-     https://${BACKEND_HOST}/API/v1.9/${PROJECT}
+     https://${BACKEND_HOST}/API/v1.10/${PROJECT}
 ```
 
 Example of data separation using keys:
@@ -676,16 +677,16 @@ curl -H "token: ${TOKEN}" \
      -H "content-type: application/json" \
      --request PATCH \
      --data '{ "vendorAttributes": { "drillPro": { "settings": { "name": "Drill Pro v1" } } } }' \
-     https://${BACKEND_HOST}/API/v1.9/${PROJECT}
+     https://${BACKEND_HOST}/API/v1.10/${PROJECT}
 
 curl -H "token: ${TOKEN}" \
      -H "content-type: application/json" \
      --request PATCH \
      --data '{ "vendorAttributes": { "heatCalc": { "scenario": "Base Case", "autoCalc": true, "pipes": ["c-1", "c-2", "c-3"] } } }' \
-     https://${BACKEND_HOST}/API/v1.9/${PROJECT}
+     https://${BACKEND_HOST}/API/v1.10/${PROJECT}
 
 curl -H "token: ${TOKEN}" \
-     https://${BACKEND_HOST}/API/v1.9/${PROJECT}/vendorAttributes
+     https://${BACKEND_HOST}/API/v1.10/${PROJECT}/vendorAttributes
 -->
      {
           "drillPro": {
@@ -720,7 +721,7 @@ have a different `subProject` value and are given additional attributes in the J
 
 ```
 curl -H "token: ${TOKEN}" \
-     https://${BACKEND_HOST}/API/v1.9/${PROJECT}/subProject/${SUBPROJECT}:${STREAM}
+     https://${BACKEND_HOST}/API/v1.10/${PROJECT}/subProject/${SUBPROJECT}:${STREAM}
 -->
 {
      "id": "-MjF6TYxJ-mkAzWnnsfa",
@@ -737,8 +738,8 @@ curl -H "token: ${TOKEN}" \
                "subProject": "-MjF3wciX_dTQzLL4aOu",
                "project": "-MjF3L9vJdSXSOiYZiMQ",
                "isForeign": true,
-               "getFromSubProject": "https://example.fieldtwin.com/API/v1.9/-MjF3L9vJdSXSOiYZiMQ/subProject/-MjF3wciX_dTQzLL4aOu",
-               "getFrom": "https://example.fieldtwin.com/API/v1.9/-MjF3L9vJdSXSOiYZiMQ/subProject/-MjF3wciX_dTQzLL4aOu/stagedAsset/-MjF4vtXQ574Bid3Zbs2"
+               "getFromSubProject": "https://example.fieldtwin.com/API/v1.10/-MjF3L9vJdSXSOiYZiMQ/subProject/-MjF3wciX_dTQzLL4aOu",
+               "getFrom": "https://example.fieldtwin.com/API/v1.10/-MjF3L9vJdSXSOiYZiMQ/subProject/-MjF3wciX_dTQzLL4aOu/stagedAsset/-MjF4vtXQ574Bid3Zbs2"
           }
      }
 }
@@ -751,7 +752,7 @@ in a separate list of `foreignSubProjects`.
 ```
 curl -H "token: ${TOKEN}" \
      -H "merge-foreign: false" \
-     https://${BACKEND_HOST}/API/v1.9/${PROJECT}/subProject/${SUBPROJECT}:${STREAM}
+     https://${BACKEND_HOST}/API/v1.10/${PROJECT}/subProject/${SUBPROJECT}:${STREAM}
 -->
 {
      "id": "-MjF6TYxJ-mkAzWnnsfa",
@@ -815,7 +816,7 @@ Following step 1 the resulting data can be retrieved as follows:
 export STAGEDASSET=<staged asset id>
 
 curl -H "token: ${TOKEN}" \
-     https://${BACKEND_HOST}/API/v1.9/${PROJECT}/subProject/${SUBPROJECT}:${STREAM}/stagedAsset/${STAGEDASSET}
+     https://${BACKEND_HOST}/API/v1.10/${PROJECT}/subProject/${SUBPROJECT}:${STREAM}/stagedAsset/${STAGEDASSET}
 -->
 {
      "id": "-NtWdCF0msKLrkbwhSgN",
@@ -870,7 +871,7 @@ curl -H "token: ${TOKEN}" \
                     "value": "-N4RytdCUlxy8oJSdDIv"
                 }]
             }' \
-     https://${BACKEND_HOST}/API/v1.9/${PROJECT}/subProject/${SUBPROJECT}:${STREAM}/stagedAsset/${STAGEDASSET}
+     https://${BACKEND_HOST}/API/v1.10/${PROJECT}/subProject/${SUBPROJECT}:${STREAM}/stagedAsset/${STAGEDASSET}
 ```
 
 The above call will set both a turbine body and a foundation in the base's docking slots.
@@ -880,7 +881,7 @@ using the metadata definition ID in `metaDatumId`:
 
 ```
 curl -H "token: ${TOKEN}" \
-     https://${BACKEND_HOST}/API/v1.9/metadatadefinitions/-Nky37U2lazdWHzMXQAs
+     https://${BACKEND_HOST}/API/v1.10/metadatadefinitions/-Nky37U2lazdWHzMXQAs
 -->
 {
      "id": "-Nky37U2lazdWHzMXQAs",
@@ -912,7 +913,7 @@ library that match the filters:
 
 ```
 curl -H "token: ${TOKEN}" \
-     https://${BACKEND_HOST}/API/v1.9/assets
+     https://${BACKEND_HOST}/API/v1.10/assets
 -->
 {
      ...
@@ -1013,7 +1014,7 @@ its data is as follows:
 export STAGEDASSET=<staged asset id>
 
 curl -H "token: ${TOKEN}" \
-     https://${BACKEND_HOST}/API/v1.9/${PROJECT}/subProject/${SUBPROJECT}:${STREAM}/stagedAsset/${STAGEDASSET}
+     https://${BACKEND_HOST}/API/v1.10/${PROJECT}/subProject/${SUBPROJECT}:${STREAM}/stagedAsset/${STAGEDASSET}
 -->
 {
      "id": "-NtWdCF0msKLrkbwhSgN",
@@ -1087,7 +1088,7 @@ curl -H "token: ${TOKEN}" \
                  "to": "-NtWdCF0msKLrkbwhSgN",
                  "toSocket": "-NuZOI2drjETshKe6zQw:001"
              }' \
-     https://${BACKEND_HOST}/API/v1.9/${PROJECT}/subProject/${SUBPROJECT}:${STREAM}/connection/${CONNECTION}
+     https://${BACKEND_HOST}/API/v1.10/${PROJECT}/subProject/${SUBPROJECT}:${STREAM}/connection/${CONNECTION}
 ```
 
 To connect the connection in the opposite direction, set `from` and `fromSocket`.
@@ -1236,7 +1237,7 @@ You should replace the `Token` header with an `Authorization` header; do not pro
 export JWT=<jwt value>
 
 curl -H "Authorization: Bearer ${JWT}" \
-     https://${BACKEND_HOST}/API/v1.9/${PROJECT}/subProject/${SUBPROJECT}:${STREAM}
+     https://${BACKEND_HOST}/API/v1.10/${PROJECT}/subProject/${SUBPROJECT}:${STREAM}
 ```
 
 * For integration user interfaces and settings pages you should use the provided JWT whenever possible
