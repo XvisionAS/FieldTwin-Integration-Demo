@@ -37,7 +37,7 @@
         </div>
         <div>
           <button onclick="getResources()">
-            <strong> Get Resources </strong>
+            <strong> Get Selected Resources </strong>
           </button>
         </div>
         <div>
@@ -80,7 +80,12 @@
         <div id="focusOn"></div>
         <h4>Token:</h4>
         <pre style="max-width: 100%; overflow-x: auto" id="token"></pre>
-      </div>
+        <div>
+          <button onclick="copyToken()">
+            <strong> Copy </strong>
+          </button>
+        </div>
+    </div>
       <div>
         <h4>
           Event log:
@@ -261,7 +266,8 @@
         const message = {
           event: 'getResources',
           data: {
-            resources: selectedResources.map((a) => ({ id: a.id, type: a.resourceType })),
+            items: selectedResources.map((a) => ({ id: a.id, type: a.resourceType })),
+            queryId: `getResources_${Math.random()}`,
           },
         }
         window.parent.postMessage(message, '*')
@@ -318,6 +324,15 @@
         event_log = document.getElementById('event_log')
         event_log.prepend(newDiv)
         console.log(`${date}: ${text}`)
+      }
+
+      async function copyToken() {
+        try {
+          const token = document.getElementById('token')
+          await navigator.clipboard.writeText(token.innerText)
+        } catch (error) {
+          console.error('Clipboard unavailable', error.message)
+        }
       }
 
       function clearLog() {

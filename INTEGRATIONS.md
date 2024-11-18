@@ -308,7 +308,7 @@ async function onMessage(message) {
 }
 ```
 
-#### Example of receiving a blob
+### loaded
 
 This event is sent when an integration iframe is fully loaded. It contains information about subProject,
 project and tokens used to communicate with API. The argument will contain these attributes:
