@@ -52,6 +52,21 @@
           </button>
         </div>
         <div>
+          <button onclick="getVisibleResources()">
+            <strong> Get Visible Resources </strong>
+          </button>
+        </div>
+        <div>
+          <button onclick="exportToGLTF()">
+            <strong> Export to GLTF </strong>
+          </button>
+        </div>
+        <div>
+          <button onclick="clearSelection()">
+            <strong> Clear Selection </strong>
+          </button>
+        </div>
+        <div>
           <label for="inputData">Enter data for create / update / delete (JSON Array)</label>
         </div>
         <div>
@@ -67,7 +82,8 @@
         <pre style="max-width: 100%; overflow-x: auto" id="token"></pre>
       </div>
       <div>
-        <h4>Event log:
+        <h4>
+          Event log:
           <button onclick="clearLog()">
             <strong>Clear</strong>
           </button>
@@ -75,64 +91,89 @@
         <ol id="event_log" reversed></ol>
       </div>
     </div>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.19.1/moment.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.30.1/moment.min.js"></script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.0/FileSaver.min.js"
+      integrity="sha512-csNcFYJniKjJxRWRV1R7fvnXrycHP6qDR21mgz1ZP55xY5d+aHLfo9/FcGDQLfn2IfngbAHd8LdfsagcCqgTcQ=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    ></script>
+
     <script>
       let selectedResources = []
-      function onMessage(message) {
-        addTextNode(JSON.stringify(message.data, null, 2))
 
-        switch (message.data.event) {
-          case 'didDelete':
-          case 'didDeleteFromNetwork':
-            break
-          case 'unselect':
-            selectedResources = []
-            break
-          case 'select':
-            selectedResources = message.data.data.map( e => ({resourceType:e.type + 's', id:e.id}))
-            break
-          case 'requestInfo':
-            {
-              const needSend = document.getElementById('sendDocumentCount')?.checked
+      async function onMessage(message) {
+        if (message.data instanceof Blob) {
+          saveAs(message.data, `export.gltf`)
+        } else {
+          addTextNode(JSON.stringify(message.data, null, 2))
 
-              if (needSend) {
-                const items = message.data.data.items
-                const reply = {
-                  event: 'replyInfo',
-                  data: {
-                    items: items.map((e) => {
-                      e.documentCount = Math.floor(Math.random() * 10)
-                      return e
-                    }),
-                  },
+          switch (message.data.event) {
+            case 'didDelete':
+            case 'didDeleteFromNetwork':
+              break
+            case 'unselect':
+              selectedResources = []
+              break
+            case 'select':
+              selectedResources = message.data.data.map((e) => ({
+                resourceType: e.type + 's',
+                id: e.id,
+              }))
+              break
+            case 'requestInfo':
+              {
+                const needSend = document.getElementById('sendDocumentCount')?.checked
+
+                if (needSend) {
+                  const items = message.data.data.items
+                  const reply = {
+                    event: 'replyInfo',
+                    data: {
+                      items: items.map((e) => {
+                        e.documentCount = Math.floor(Math.random() * 10)
+                        return e
+                      }),
+                    },
+                  }
+                  window.parent.postMessage(reply, '*')
                 }
-                window.parent.postMessage(reply, '*')
               }
+              break
+            case 'loaded':
+              {
+                const token = document.getElementById('token')
+                token.innerHTML = `${message.data.token}`
+              }
+              break
+            // case 'exportToGLTF':
+            //   {
+            //     const queryId = message.data.data.queryId
+            //     const url = message.data.data.url
 
-            }
-            break
-          case 'loaded':
-            {
-              const token = document.getElementById('token')
-              token.innerHTML = `${message.data.token}`
-            }
-            break
-          default:
-            if (message.data.type) {
-              const focusOn = document.getElementById('focusOn')
-              focusOn.innerHTML = `
-            <button onclick="focusOn('${message.data.type}', '${message.data.id}')">
-              <strong>
-                Focus on ${message.data.type} with id ${message.data.id}
-              </strong>
-            </button>
-            <button onclick="getCostQueryForItem('${message.data.type}', '${message.data.id}')">
-              <strong>
-                Get Cost Query For id ${message.data.id}
-              </strong>
-            </button>
-            `
-            }
+            //     const blob = await fetch(url).then((r) => r.blob())
+
+            //     saveAs(blob, `${queryId}.gltf`)
+            //   }
+            //   break
+            default:
+              if (message.data.type) {
+                const focusOn = document.getElementById('focusOn')
+                focusOn.innerHTML = `
+    <button onclick="focusOn('${message.data.type}', '${message.data.id}')">
+      <strong>
+        Focus on ${message.data.type} with id ${message.data.id}
+      </strong>
+    </button>
+    <button onclick="getCostQueryForItem('${message.data.type}', '${message.data.id}')">
+      <strong>
+        Get Cost Query For id ${message.data.id}
+      </strong>
+    </button>
+    `
+              }
+          }
         }
       }
 
@@ -198,12 +239,30 @@
         window.parent.postMessage(message, '*')
       }
 
+      function clearSelection() {
+        window.parent.postMessage(
+          {
+            event: 'clearSelection',
+          },
+          '*'
+        )
+      }
+      function getVisibleResources() {
+        const message = {
+          event: 'getVisibleResources',
+          data: {
+            queryId: `getVisibleResources_${Math.random()}`,
+          },
+        }
+        window.parent.postMessage(message, '*')
+      }
+
       function getResources() {
         const message = {
           event: 'getResources',
           data: {
-            resources:selectedResources.map( a => ({id:a.id, type:a.resourceType}))
-          }
+            resources: selectedResources.map((a) => ({ id: a.id, type: a.resourceType })),
+          },
         }
         window.parent.postMessage(message, '*')
       }
@@ -263,6 +322,17 @@
 
       function clearLog() {
         document.getElementById('event_log').innerHTML = ''
+      }
+
+      let exportToGLTFQueryID = 0
+      function exportToGLTF() {
+        const message = {
+          event: 'exportToGLTF',
+          data: {
+            queryId: `${++exportToGLTFQueryID}`,
+          },
+        }
+        window.parent.postMessage(message, '*')
       }
     </script>
   </body>
