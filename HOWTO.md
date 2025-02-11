@@ -1221,6 +1221,72 @@ The result in FieldTwin Design:
 <br>
 <hr>
 
+## Upload a document and link it to multiple objects
+
+[docs link](https://api.fieldtwin.com/#api-Documents-PostDocument)
+
+Typically when uploading a document it will be attached to an object in a subproject by providing a
+value for `relateToType` and `relateToId`. It is possible to attach one document to multiple objects
+in the subproject by making a series of API calls and providing the same `documentGroupId`. This
+requires the use of the lower level POST documents endpoint that deals with separately uploaded files.
+
+```
+export CREATOR=you@yourcompany.com
+export FILENAME=somefile.pdf
+export FILETYPE=application/pdf
+export STAGEDASSET1=<staged asset id 1>
+export STAGEDASSET2=<staged asset id 2>
+export GROUPID=group1
+
+curl -H "token: ${TOKEN}" \
+     --request PUT \
+     --form creator=${CREATOR} \
+     --form file=@${FILENAME} \
+     --form relateToType=stagedAssets \
+     --form relateToId=${STAGEDASSET1} \
+     --form documentGroupId=${GROUPID} \
+     https://${BACKEND_HOST}/API/v1.10/${PROJECT}/subProject/${SUBPROJECT}:${STREAM}/documents
+-->
+{"urls":{"somefile.pdf":"https://storage.googleapis.com/ft-bucket/documents/generic/04f58292e449ff/somefile.pdf?GoogleAccessId=..."},
+"documentIds":{"somefile.pdf":"-OIpYO4Du1dclRwVl_gF"},"revisionIds":{"somefile.pdf":"-OIpYO53hP_8vJCSMRBM"}}
+
+FILEURL="https://storage.googleapis.com/ft-bucket/documents/generic/04f58292e449ff/somefile.pdf?GoogleAccessId=..."
+
+POSTDATA=$(cat <<EOF
+{
+     "creator": "${CREATOR}",
+     "fileName": "${FILENAME}",
+     "fileType": "${FILETYPE}",
+     "url": "${FILEURL}",
+     "relateToType": "stagedAssets",
+     "relateToId": "${STAGEDASSET2}",
+     "documentGroupId": "${GROUPID}"
+}
+EOF
+)
+
+curl -H "token: ${TOKEN}" \
+     -H "content-type: application/json" \
+     --request POST \
+     --data "${POSTDATA}" \
+     https://${BACKEND_HOST}/API/v1.10/${PROJECT}/subProject/${SUBPROJECT}:${STREAM}/documents
+-->
+{"urls":{"somefile.pdf":"https://storage.googleapis.com/ft-bucket/documents/generic/04f58292e449ff/somefile.pdf?GoogleAccessId=..."},
+"documentIds":{"somefile.pdf":"-OIps0wZM3a0xLeFF_ci"},"revisionIds":{"somefile.pdf":"-OIps0wZM3a0xLeFF_cj"}}
+```
+
+* The initial file upload is a PUT request containing form data that must be sent with `multipart/form-data`
+  encoding and includes the file name and file content
+* The second API call is a POST request with a regular JSON payload that creates a new document record
+  for the existing file
+  * This can be repeated to attach the same file to further objects
+  * The `documentGroupId` remains the same
+* It is possible to query all the documents in a document group (for example to delete one or all of them)
+  via the API call `GET /API/v1.10/${PROJECT}/subProject/${SUBPROJECT}:${STREAM}/documents?documentGroupId=${GROUPID}`
+
+<br>
+<hr>
+
 ## Provide a JWT instead of an API token
 
 A JWT is passed to an integration in the [`loaded` window message](./INTEGRATIONS.md#loaded)
