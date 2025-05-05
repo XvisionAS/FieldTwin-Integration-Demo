@@ -276,7 +276,7 @@
         parseMetadataValue(excelValue, type, definitionId) {
           switch (type) {
             case 'choices':
-              return excelValue ? this.createChoiceValue(excelValue, definitionId) : null
+              return excelValue ? this.createChoiceValue("" + excelValue, definitionId) : null
             case 'boolean':
               return excelValue ? ['true', '1', 'yes'].includes(String(excelValue).toLowerCase()) : null
             case 'numerical':
