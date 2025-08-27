@@ -127,8 +127,8 @@ const main = async function () {
     token:argv.token
   }
 
-  const assets    = await getAssets(options) 
-  const promises  = []
+  const assets = await getAssets(options) 
+  const promises = []
 
   for (key in assets) {
     const asset = assets[key]
@@ -142,28 +142,33 @@ const main = async function () {
 
   for (const asset of promises) {
     if (asset && asset.scene) {
-      const exporter     = new THREE.ColladaExporter();
-      const collada      = exporter.parse(asset.scene)
-      const fileOutput   = getFileOutput(asset)
-
       try {
-        await mkdirp(fileOutput.path)
-      } catch (e) {
-        console.error(`failed to create export directory: ${e}`)
-        continue
-      }
-      console.log (`exporting ${asset.name}`)
-      const fileName = path.join(fileOutput.path, `${fileOutput.name}.dae`)
-      await writeFile(fileName, collada.data)
-      if (Array.isArray(collada.textures)) {
-        for (let i = 0; i < collada.textures.length; ++i) {
-          const texture = collada.textures[i]
-          await writeFile(path.join(fileOutput.path, texture.directory, texture.name), texture.data, 'binary')
+        console.log (`exporting ${asset.name}`)
+
+        const exporter = new THREE.ColladaExporter()
+        const collada = exporter.parse(asset.scene)
+        const fileOutput = getFileOutput(asset)
+
+        try {
+          await mkdirp(fileOutput.path)
+        } catch (e) {
+          console.error(`failed to create export directory: ${e}`)
+          continue
         }
+
+        const fileName = path.join(fileOutput.path, `${fileOutput.name}.dae`)
+        await writeFile(fileName, collada.data)
+        if (Array.isArray(collada.textures)) {
+          for (let i = 0; i < collada.textures.length; ++i) {
+            const texture = collada.textures[i]
+            await writeFile(path.join(fileOutput.path, texture.directory, texture.name), texture.data, 'binary')
+          }
+        }
+      } catch (e) {
+        console.error(`failed to export ${asset.name}: ${e}`)
       }
     }
   }
-
 }
 
 main()

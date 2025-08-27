@@ -28,6 +28,12 @@ Run the tool from the Command Prompt:
 node index.js --backend https://backend.example.fieldtwin.com --token abc123
 ```
 
+To export large assets you may need to increase Node's default memory limit:
+
+```
+node --max-old-space-size=8192 index.js --backend https://backend.example.fieldtwin.com --token abc123
+```
+
 ### Command Line Switches
 
 - `--backend [value]` URL of which backend the definitions will be pulled from,
