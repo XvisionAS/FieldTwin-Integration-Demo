@@ -6,7 +6,7 @@ const TOKEN           = process.env.TOKEN
 const PORT            = process.env.PORT || ''
 const BACKEND_HOST    = process.env.BACKEND_HOST
 const HOST_URL        = `https://${BACKEND_HOST}${PORT ? ':' : ''}${PORT}`
-const API_VERSION     = 'v1.9'
+const API_VERSION     = 'v1.10'
 
 const argv            = parseArgs(process.argv.slice(2))
 const PROJECT_ID      = argv['project']

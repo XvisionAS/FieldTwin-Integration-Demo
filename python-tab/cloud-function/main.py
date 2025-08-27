@@ -16,7 +16,7 @@ def api_get_project(request):
   jwt = request['token']
   # retrieve the FieldTwin project data using the API
   response = requests.get(
-    f'{api_url}/API/v1.9/{project_id}/basic',
+    f'{api_url}/API/v1.10/{project_id}/basic',
     headers={
       'authorization': f'bearer {jwt}',
     }
@@ -40,7 +40,7 @@ def api_get_connection(request):
   jwt = request['token']
   # retrieve the connection data using the FieldTwin API
   response = requests.get(
-    f'{api_url}/API/v1.9/{project_id}/subProject/{subproject_id}/connection/{connection_id}',
+    f'{api_url}/API/v1.10/{project_id}/subProject/{subproject_id}/connection/{connection_id}',
     headers={
       'authorization': f'bearer {jwt}',
       # request that the connection is sampled every 1 unit 

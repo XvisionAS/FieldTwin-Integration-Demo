@@ -114,7 +114,7 @@
         },
         fetchMetadataDefinitions() {
           this.metaDataDefinitions = {}
-          fetch(`${this.backendUrl}/API/v1.9/metadatadefinitions`, {
+          fetch(`${this.backendUrl}/API/v1.10/metadatadefinitions`, {
             headers: { 'Authorization': 'Bearer ' + this.token }
           })
             .then((response) => response.json())
@@ -131,7 +131,7 @@
           this.selected = { id, name, type }
           this.metaData = []
           this.loading = true
-          fetch(`${this.backendUrl}/API/v1.9/${this.projectId}/subProject/${this.subProjectId}/${this.selected.type}/${this.selected.id}`, {
+          fetch(`${this.backendUrl}/API/v1.10/${this.projectId}/subProject/${this.subProjectId}/${this.selected.type}/${this.selected.id}`, {
             headers: { 'Authorization': 'Bearer ' + this.token }
           })
             .then((response) => response.json())
@@ -199,7 +199,7 @@
             const uploadedList = XLSX.utils.sheet_to_json(worksheet)
 
             try {
-              fetch(`${this.backendUrl}/API/v1.9/${this.projectId}/subProject/${this.subProjectId}/${this.selected.type}/${this.selected.id}`, {
+              fetch(`${this.backendUrl}/API/v1.10/${this.projectId}/subProject/${this.subProjectId}/${this.selected.type}/${this.selected.id}`, {
                 method: 'PATCH',
                 headers: { 'Authorization': 'Bearer ' + this.token, 'Content-Type': 'application/json' },
                 body: JSON.stringify({

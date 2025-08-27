@@ -20,6 +20,7 @@
 
     // !! Change this if your FieldTwin domain is not fieldtwin.com !!
     const domain = '.fieldtwin.com'
+    const devDomain = '.lvh.me'
 
     let token
     let ftApiUrl
@@ -29,7 +30,7 @@
 
     // Subscribe to window messages
     window.addEventListener('message', function(event) {
-      if (event.origin.endsWith(domain)) {
+      if (event.origin.endsWith(domain) || event.origin.endsWith(devDomain)) {
 
         // Check whether this tab is the active (visible) tab
         const activeTab = event.data.isFrameActive
