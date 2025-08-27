@@ -608,7 +608,16 @@ THREE.ColladaExporter.prototype = {
 
 		dae += `<library_materials>${ libraryMaterials.join( '' ) }</library_materials>`;
 
-		dae += `<library_geometries>${ libraryGeometries.join( '' ) }</library_geometries>`;
+		try {
+		  dae += `<library_geometries>${ libraryGeometries.join( '' ) }</library_geometries>`;
+		} catch ( e ) {
+			if (e.toString().includes('string length')) {
+				let total = 0;
+				libraryGeometries.forEach((s) => total += s.length);
+				console.error(`error: cannot create string of size ${total}`);
+			}
+			throw e;
+		}
 
 		dae += `<library_visual_scenes><visual_scene id="Scene" name="scene">${ libraryVisualScenes }</visual_scene></library_visual_scenes>`;
 
