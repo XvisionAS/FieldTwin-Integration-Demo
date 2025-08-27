@@ -44,7 +44,7 @@ const DracoLoader = new THREE.DRACOLoader()
 // https://api.fieldtwin.com/#api-Assets-GetAssets
 const getAssets = async (options) => {
   const { backend, token } = options
-  const url = new URL('/API/v1.9/assets', backend)
+  const url = new URL('/API/v1.10/assets', backend)
 
   const data = await fetch(url.href, {
     headers:{

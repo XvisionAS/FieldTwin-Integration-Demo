@@ -9,7 +9,7 @@ const BACKEND_HOST = `${
     : 'http://futureon-backend.lvh.me'
 }`
 const HOST_URL = `${BACKEND_HOST}${PORT ? ':' : ''}${PORT}`
-const API_VERSION = 'v1.9'
+const API_VERSION = 'v1.10'
 
 const argv = parseArgs(process.argv.slice(''))
 const PROJECT_ID = argv['project']

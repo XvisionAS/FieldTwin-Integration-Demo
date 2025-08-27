@@ -18,6 +18,7 @@
 
     // !! Change this if your FieldTwin domain is not fieldtwin.com !!
     const domain = '.fieldtwin.com'
+    const devDomain = '.lvh.me'
 
     let token
     let backendUrl
@@ -27,7 +28,7 @@
 
     // Subscribe to window messages
     window.addEventListener('message', function(event) {
-      if (event.origin.endsWith(domain)) {
+      if (event.origin.endsWith(domain) || event.origin.endsWith(devDomain)) {
 
         // Check whether this tab is the active (visible) tab
         const activeTab = event.data.isFrameActive
@@ -77,7 +78,7 @@
         }
       }
       const url = (
-        `${backendUrl}/API/v1.9/${projectId}/subProject/${subProjectId}/documents` +
+        `${backendUrl}/API/v1.10/${projectId}/subProject/${subProjectId}/documents` +
         `?relateToType=${objectType + 's'}&relateToId=${objectId}`
       )
 

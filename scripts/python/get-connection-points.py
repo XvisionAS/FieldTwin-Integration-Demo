@@ -24,7 +24,7 @@ HOST_URL = 'https://{}{}{}'.format(
     ':' if PORT else '',
     PORT
 )
-API_VERSION = 'v1.9'
+API_VERSION = 'v1.10'
 
 url = f'{HOST_URL}/API/{API_VERSION}/{PROJECT_ID}/subProject/{SUBPROJECT_ID}/connection/{CONNECTION_ID}'
 headers= {
