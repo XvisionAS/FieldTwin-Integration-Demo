@@ -1,12 +1,9 @@
 const THREE     = require('three')
 const fs        = require('fs');
 const path      = require('path');
-const util      = require('util');
 const mkdirp    = require('mkdirp')
 const fetch     = require('node-fetch')
 const yargs     = require('yargs')
-
-const writeFile = util.promisify(fs.writeFile);
 
 const getFileOutput = function (asset) {
   const name         = asset.name.replace('/', '_')
@@ -32,16 +29,9 @@ const argv  = yargs.option('backend', {
   'token'
 ).argv
 
-
-///////////////////////////////////////////////////////////////////////////////
-// global draco decompressor
-///////////////////////////////////////////////////////////////////////////////
 const DracoLoader = new THREE.DRACOLoader()
 
-
-///////////////////////////////////////////////////////////////////////////////
-// retrieve all asset definitions using LegacyAPI
-// https://api.fieldtwin.com/#api-Assets-GetAssets
+// Get the account assets using the FieldTwin API
 const getAssets = async (options) => {
   const { backend, token } = options
   const url = new URL('/API/v1.10/assets', backend)
@@ -54,8 +44,6 @@ const getAssets = async (options) => {
   return await data.json()
 }
 
-
-///////////////////////////////////////////////////////////////////////////////
 // Load asset in Three JSON format 1.0
 // this was use in version of fieldap < 5.0
 // and in the process of being deprecated.
@@ -90,35 +78,22 @@ const loadLegacyJSONAsset = async (asset) => {
   return asset
 }
 
-///////////////////////////////////////////////////////////////////////////////
-// Load asset in GLTF, binary blob, probably using Draco Compression
-const loadGLTFAsset = async (asset) => {
-  const loader = new THREE.GLTFLoader()
-  loader.setDRACOLoader(DracoLoader)
-
+const exportGLTFAsset = async (asset) => {
   const data        = await fetch(asset.model3dUrl)
   const buffer      = await data.buffer()
   const fileOutput  = getFileOutput(asset)
-  const texturePath = path.join(fileOutput.path, fileOutput.name)
 
-  const gltf = await new Promise( 
-    (accept, reject) => {
-      loader.parse(buffer, texturePath, accept, reject)
-    }
-  )
-  asset.scene = gltf.scene
+  try {
+    await mkdirp(fileOutput.path)
+  } catch (e) {
+    console.error(`failed to create export directory: ${e}`)
+    throw(e)
+  }
 
-  return asset
+  const outputFile = path.join(fileOutput.path, `${fileOutput.name}.glb`)
+  console.log('Saving file', outputFile)
+  fs.writeFileSync(outputFile, buffer);
 }
-
-const loadAsset = async (asset) => {
-  const isGLTF = asset.params && asset.params.isGLTF
-  if (isGLTF) {
-    return loadGLTFAsset(asset)
-  } 
-  return loadLegacyJSONAsset(asset)
-}
-
 
 const main = async function () {
 
@@ -128,44 +103,22 @@ const main = async function () {
   }
 
   const assets = await getAssets(options) 
-  const promises = []
 
   for (key in assets) {
     const asset = assets[key]
     if (asset.type !== 'virtual') {
-      console.log (`loading ${asset.name}`)
-      const scene = await loadAsset(asset)
-      promises.push(scene)
-    }
-  }
-  await Promise.all(promises)
-
-  for (const asset of promises) {
-    if (asset && asset.scene) {
+      const isGLTF = asset.params && asset.params.isGLTF
       try {
-        console.log (`exporting ${asset.name}`)
-
-        const exporter = new THREE.ColladaExporter()
-        const collada = exporter.parse(asset.scene)
-        const fileOutput = getFileOutput(asset)
-
-        try {
-          await mkdirp(fileOutput.path)
-        } catch (e) {
-          console.error(`failed to create export directory: ${e}`)
+        if (isGLTF) {
+          console.log (`Exporting GLTF asset ${asset.name}`)
+          await exportGLTFAsset(asset)
+        } else {
+          console.log('Skipping non GLTF legacy asset', asset.name)
+          // TODO convert legacy assets to GLTF
           continue
         }
-
-        const fileName = path.join(fileOutput.path, `${fileOutput.name}.dae`)
-        await writeFile(fileName, collada.data)
-        if (Array.isArray(collada.textures)) {
-          for (let i = 0; i < collada.textures.length; ++i) {
-            const texture = collada.textures[i]
-            await writeFile(path.join(fileOutput.path, texture.directory, texture.name), texture.data, 'binary')
-          }
-        }
       } catch (e) {
-        console.error(`failed to export ${asset.name}: ${e}`)
+        console.log('Failed to export asset:', asset.name)
       }
     }
   }
