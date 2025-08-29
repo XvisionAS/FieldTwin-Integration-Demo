@@ -2,9 +2,7 @@
 
 ## Description
 
-This tool will download all assets from a FieldTwin account and convert them to Collada.
-The export format can be easily changed by using one of the
-[THREEjs exporters](https://github.com/mrdoob/three.js/tree/dev/examples/jsm/exporters).
+This tool will download all assets from a FieldTwin account and convert them to GLTF.
 
 ## Installation
 
@@ -26,12 +24,6 @@ Run the tool from the Command Prompt:
 
 ```
 node index.js --backend https://backend.example.fieldtwin.com --token abc123
-```
-
-To export large assets you may need to increase Node's default memory limit:
-
-```
-node --max-old-space-size=8192 index.js --backend https://backend.example.fieldtwin.com --token abc123
 ```
 
 ### Command Line Switches
