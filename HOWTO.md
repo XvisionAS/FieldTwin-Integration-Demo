@@ -32,7 +32,7 @@ They look like this: `-MeidQjcOmxpYWFIq5zp`.
 
 ## Create a manifold
 
-[docs link](https://api.fieldtwin.com/#api-StagedAssets-AddStagedAsset)
+[docs link](https://api.fieldtwin.com/#api-StagedAssets-CreateStagedAsset)
 
 ```
 curl -H "token: ${TOKEN}" \
@@ -545,7 +545,7 @@ It does not have a `value` and setting one has no effect.
 
 ## Visualise custom data for a staged asset
 
-[docs link](https://api.fieldtwin.com/#api-StagedAssets-SetStagedAsset)
+[docs link](https://api.fieldtwin.com/#api-StagedAssets-PatchStagedAsset)
 
 Custom results are names and values displayed in a box next to the staged asset in
 FieldTwin Design. They can be used for displaying simulation results or operational
@@ -589,7 +589,7 @@ curl -H "token: ${TOKEN}" \
 
 ## Visualise custom data along a connection
 
-[docs link](https://api.fieldtwin.com/#api-Connections-SetConnection)
+[docs link](https://api.fieldtwin.com/#api-Connections-PatchConnection)
 
 Connection visualisation data is displayed at key points on or alongside a connection
 in FieldTwin Design. This can be used for displaying simulation results, survey results
