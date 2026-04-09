@@ -2,31 +2,53 @@
 
 ## Revision
 
-| Number | Author    | Description                                                                                                     |
-| :----- | :-------- | :-------------------------------------------------------------------------------------------------------------- |
-| 1      | olivier   | Initial release                                                                                                 |
-| 2      | olivier   | Added `canEdit` and list of user rights                                                                         |
-| 3      | olivier   | Added custom message                                                                                            |
-| 4      | olivier   | Added `loaded` event description                                                                                |
-| 5      | olivier   | Added information about project wide access                                                                     |
-| 6      | olivier   | Added information about all project access                                                                      |
-| 7      | olivier   | Added didUpdate/didCreate/didDelete details                                                                     |
-| 8      | olivier   | Added `tokenRefresh` event description                                                                          |
-| 9      | olivier   | Added modification to didUpdate message for meta datum value                                                    |
-| 10     | olivier   | Added `clearSelection` message                                                                                  |
-| 11     | olivier   | removed trafficManagerJWT                                                                                       |
-| 12     | olivier   | Added `requestInfo` and `replyInfo`                                                                             |
-| 13     | olivier   | Added `getViewBox`                                                                                              |
-| 14     | matt      | Added `didClone`, documents, shapes, segments, parent attributes; updates for 8.0; removed activities and ports |
-| 15     | olivier   | Added `toast`                                                                                                   |
-| 16     | olivier   | Added `getResources`                                                                                            |
-| 17     | matt      | Described `integrationId` on `replyInfo`, updated `projectData` content                                         |
-| 18     | peter     | Added `createResources` `updateResources` `deleteResources`                                                     |
-| 19     | christian | added `APIServerIsReady` and `APIVersion` to `loaded` event                                                     |
-| 20     | olivier   | Added `exportToGLTF`                                                                                            |
-| 21     | olivier   | added `getVisibleResources` query and `visibleResources` reply                                                  |
-| 22     | olivier   | added `tags` attribute to `replyInfo`                                                                           |
-| 23     | christian | added `project.CRS` to `projectData`                                                                            |
+| Number | Author | Description |
+| :-- | :-- | :-- |
+| 1 | olivier | Initial release |
+| 2 | olivier | Added `canEdit` and list of user rights |
+| 3 | olivier | Added custom message |
+| 4 | olivier | Added `loaded` event description |
+| 5 | olivier | Added information about project wide access |
+| 6 | olivier | Added information about all project access |
+| 7 | olivier | Added didUpdate/didCreate/didDelete details |
+| 8 | olivier | Added `tokenRefresh` event description |
+| 9 | olivier | Added modification to didUpdate message for meta datum value |
+| 10 | olivier | Added `clearSelection` message |
+| 11 | olivier | removed trafficManagerJWT |
+| 12 | olivier | Added `requestInfo` and `replyInfo` |
+| 13 | olivier | Added `getViewBox` |
+| 14 | matt | Added `didClone`, documents, shapes, segments, parent attributes; updates for 8.0; removed activities and ports |
+| 15 | olivier | Added `toast` |
+| 16 | olivier | Added `getResources` |
+| 17 | matt | Described `integrationId` on `replyInfo`, updated `projectData` content |
+| 18 | peter | Added `createResources` `updateResources` `deleteResources` |
+| 19 | christian | added `APIServerIsReady` and `APIVersion` to `loaded` event |
+| 20 | olivier | Added `exportToGLTF` |
+| 21 | olivier | added `getVisibleResources` query and `visibleResources` reply |
+| 22 | olivier | added `tags` attribute to `replyInfo` |
+| 23 | christian | added `project.CRS` to `projectData` |
+| 24 | olivier | added `dashboardUrl`, `frontendUrl` and FT version to loading event |
+| 25 | olivier | added `didDrag` |
+| 26 | olivier | Added `exportToGeoJSON` |
+| 27 | olivier | Added missing attributes to `loaded` event and documented API pod readiness events |
+| 28 | olivier | Added `selectByTag` message |
+| 29 | olivier | Added `displayDocument` message for opening documents in file viewer |
+| 30 | olivier | Added `createChart` message for creating Chart.js graphs in 3D view |
+| 31 | olivier | Added `deleteChart` message and close button for chart billboards |
+| 32 | olivier | Added `requestTagsInfos` message |
+| 33 | olviier | Added `updateTagStyles` |
+| 34 | olivier | Added Dynamic Pages documentation |
+| 35 | olivier | Added `getResourcesByTags` message |
+| 36 | olivier | Added `updateTagsAnnotation` and `clearTagsAnnotation` messages |
+| 37 | olivier | Added Operation Search documentation |
+| 38 | olivier | Added `openOperationPanel` message documentation |
+| 39 | olivier | Added Integration Manifest documentation |
+| 40 | olivier | Added `timeSeriesInfo`, `getTimeSeriesData` and `timeSeriesData` messages for time-series viewer |
+| 41 | olivier | Added `displayTimeSeries` message to open the time-series panel in the operation HUD |
+| 42 | olivier | Added `contextMenuUpdate` and `contextMenuAction` documentation for integration-defined context menu entries |
+| 43 | olivier | Added dynamic page placement and operation visibility fallback rules to manifest and integration docs |
+| 44 | olivier | Added designer visibility configuration with `showInDesigner` for integrations and dynamic pages |
+| 45 | olivier | Clarified background loading, toolbar dialog placement, and dynamic-page parent behavior |
 
 ## Introduction
 
@@ -55,6 +77,203 @@ Link: [FieldTwin Online Documentation](https://admin.fieldtwin.com/Integrations/
 > - Give access to the whole project, all of its sub projects
 > - Give access to all the projects a user can access across the account
 
+## Integration Manifest
+
+An integration can provide a manifest endpoint to allow administrators to quickly import its configuration. This endpoint should return a JSON object describing the integration's properties.
+
+### Manifest Endpoint Requirements
+
+1. **Method**: `GET`
+2. **Response Format**: `application/json`
+
+### Example Manifest
+
+```json
+{
+  "name": "Asset Inspector",
+  "url": "https://asset-inspector.example.com",
+  "logo": "https://asset-inspector.example.com/logo.png",
+  "tabPosition": "property-panel",
+  "showInDesigner": true,
+  "showInOperation": true,
+  "resourceTypes": ["stagedAssets"],
+  "projectWideAccess": true,
+  "allowAccessToClipboard": true
+}
+```
+
+### Manifest Properties
+
+| Property | Type | Description |
+| :-- | :-- | :-- |
+| `name` | `string` | **Required**. The display name of the integration. |
+| `url` | `string` | The main entry point URL for the integration. Required unless `dynamicPagesUrl` is used instead. If `runInBackground` is enabled and `backgroundUrl` is omitted, FieldTwin uses this URL for the hidden background instance as well. |
+| `logo` | `string` | URL to an image to be used as the integration's logo. |
+| `tabPosition` | `string` | Where the integration appears (`bottom`, `property-panel`, `hidden`, `global`, `main-toolbar-dialog`). `main-toolbar-dialog` integrations open from the main toolbar rather than being added from the Layout menu. |
+| `showInDesigner` | `boolean` | Whether the integration is available outside operation mode, including designer and presenter. Defaults to `true`. |
+| `showInOperation` | `boolean` | Whether the integration is available in operation mode. Defaults to `true`. |
+| `dynamicPagesUrl` | `string` | URL to fetch dynamic pages from (see [Dynamic Pages](#dynamic-pages) section). The returned pages control the visible tabs, while the parent integration can still be loaded in the background when `runInBackground`, `backgroundUrl`, `hidden`, or `global` behavior is configured. |
+| `projectWideAccess` | `boolean` | If true, the JWT gives access to the entire project (all sub-projects). |
+| `projectAllFromUser` | `boolean` | If true, the JWT gives access to all projects the user can access in the account. |
+| `proxy` | `boolean` | If true, FieldTwin will proxy requests to the integration (useful for HTTP or CORS issues). |
+| `useGET` | `boolean` | Use GET instead of POST when loading the iframe. |
+| `noURLParams` | `boolean` | If true and `useGET` is true, don't pass parameters in the URL; use window messages instead. |
+| `resourceTypes` | `array` | List of resource types (`stagedAssets`, `connections`) this integration applies to (for `property-panel`). |
+| `width` / `height` | `string` | CSS dimensions for the dialog (for `main-toolbar-dialog`). |
+| `allowAccessToClipboard` | `boolean` | If true, the iframe is allowed access to the system clipboard. |
+| `doNotUseSubprojectApiEndpoints` | `boolean` | If true, indicates the integration doesn't need to wait for sub-project API pods to be ready. |
+| `runInBackground` | `boolean` | If true, FieldTwin also loads an additional hidden copy of the parent integration for background work. |
+| `backgroundUrl` | `string` | Optional URL used by the hidden background copy. When omitted, the background copy falls back to `url`. |
+| `projectSettingsUrl` | `string` | URL for an optional settings page in the Project settings. |
+| `accountSettingsUrl` | `string` | URL for an optional settings page in the Account settings. |
+| `compatibleWithChildAccount` | `boolean` | If true, indicates compatibility with child accounts in multi-account setups. |
+
+## Dynamic Pages
+
+Dynamic Pages allow an integration to provide multiple pages/tabs that are dynamically fetched from an external endpoint. Instead of defining a static `url` for the integration, you can configure a `dynamicPagesUrl` endpoint that returns a list of available pages.
+
+When dynamic pages are enabled, each page can override where it appears and whether it is available in designer or operation mode. If a page omits one of these fields, FieldTwin falls back to the integration-level configuration. If the integration also omits it, FieldTwin uses the default value.
+
+### Placement and visibility resolution
+
+For each resolved dynamic page, FieldTwin uses the following fallback rules:
+
+1. `page.tabPosition` → `integration.tabPosition` → `bottom`
+2. `page.showInDesigner` → `integration.showInDesigner` → `true`
+3. `page.showInOperation` → `integration.showInOperation` → `true`
+
+Supported `tabPosition` values are `bottom`, `property-panel`, `hidden`, `global`, and `main-toolbar-dialog`.
+
+`main-toolbar-dialog` pages are opened from the main toolbar. They are not added through the Layout menu.
+
+### Configuration
+
+In the integration settings, set the `dynamicPagesUrl` field to your endpoint URL instead of using the static `url` field for visible tabs.
+
+When dynamic pages are returned, the visible default tab from `url` is replaced by the resolved dynamic pages. However, the parent integration definition is still used for headless/background behavior. In practice this means:
+
+- if `runInBackground` is `true`, FieldTwin still loads a hidden parent integration in the background
+- if `backgroundUrl` is set, that URL is used for the hidden background copy
+- if `backgroundUrl` is omitted, the hidden background copy falls back to `url`
+- hidden or global parent integrations continue to behave as headless/background integrations even when they also provide dynamic pages
+
+### Endpoint Requirements
+
+Your endpoint must:
+
+1. Accept **POST** requests
+2. Accept the `Authorization` header containing the user's JWT token (`Bearer <token>`)
+3. Return a JSON array of page definitions
+
+### Request Format
+
+FieldTwin will send a POST request to your `dynamicPagesUrl` endpoint:
+
+```http
+POST /your-dynamic-pages-endpoint HTTP/1.1
+Content-Type: application/json
+Authorization: Bearer <user-jwt-token>
+Accept: application/json
+
+{}
+```
+
+The request body is currently an empty JSON object `{}` but is reserved for future use.
+
+### Response Format
+
+Your endpoint should return a JSON array of page objects:
+
+```json
+[
+  {
+    "title": "Dashboard",
+    "iframeUrl": "https://your-server.com/dashboard",
+    "path": "dashboard",
+    "tabPosition": "bottom",
+    "showInDesigner": true,
+    "showInOperation": true
+  },
+  {
+    "title": "Reports",
+    "iframeUrl": "https://your-server.com/reports",
+    "path": "reports"
+  },
+  {
+    "title": "Settings",
+    "iframeUrl": "https://your-server.com/settings",
+    "path": "settings"
+  }
+]
+```
+
+### Page Object Properties
+
+| Property | Required | Description |
+| :-- | :-- | :-- |
+| `title` | Yes | Display name shown in the tab |
+| `iframeUrl` | Yes | Full URL to load in the iframe for this page |
+| `path` | No | Unique identifier for the page (used internally). If omitted, FieldTwin generates a stable fallback path using the page order (`page-1`, `page-2`, ...). |
+| `tabPosition` | No | Overrides the integration `tabPosition` for this page. Falls back to the integration setting, then `bottom`. |
+| `showInDesigner` | No | Overrides whether this page is available outside operation mode, including designer and presenter. Falls back to the integration setting, then `true`. |
+| `showInOperation` | No | Overrides whether this page is available in operation mode. Falls back to the integration setting, then `true`. |
+
+### Caching
+
+Dynamic pages are cached for 5 minutes by default. After the cache expires, FieldTwin will fetch the list again on the next request.
+
+### Example Server Implementation (Node.js + Express)
+
+```javascript
+const express = require('express')
+const jwt = require('jsonwebtoken')
+
+const app = express()
+app.use(express.json())
+
+app.post('/dynamic-pages', (req, res) => {
+  // Extract and verify the JWT from Authorization header
+  const authHeader = req.headers.authorization
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Missing authorization' })
+  }
+
+  const token = authHeader.split(' ')[1]
+
+  // Decode the JWT to get user information
+  // Note: In production, verify the token signature using FieldTwin's public key
+  const decoded = jwt.decode(token)
+  const userId = decoded?.userId
+
+  // Return pages based on user permissions or other logic
+  const pages = [
+    {
+      title: 'My Dashboard',
+      iframeUrl: `https://your-server.com/dashboard?user=${userId}`,
+      path: 'dashboard',
+    },
+    {
+      title: 'Analytics',
+      iframeUrl: 'https://your-server.com/analytics',
+      path: 'analytics',
+    },
+  ]
+
+  res.json(pages)
+})
+
+app.listen(3000)
+```
+
+### Use Cases
+
+Dynamic Pages are useful when:
+
+- You need to show different pages based on user permissions
+- The available pages change based on external data or configuration
+- You want to provide a personalized set of tools per user
+- The integration serves multiple distinct features that should appear as separate tabs
+
 ## How to serve an integration for use in FieldTwin
 
 Depending on how the integration was setup, **FieldTwin** will create an iFrame that either generates
@@ -67,18 +286,21 @@ This request will contain the following attributes:
 - As query parameters for _GET_
 - As the request body for _POST_
 
-| attribute            | description                                                                                                                                 |
-| :------------------- | :------------------------------------------------------------------------------------------------------------------------------------------ |
-| `token`              | Security token (JWT) needed for making a FieldTwin API call                                                                                 |
-| `frontendUrl`        | URL of the window that contains the iframe. Also the link for viewing the subproject                                                        |
-| `backendUrl`         | URL of the FieldTwin backend. Use this as the base of the JWT public key URL and the API URL                                                |
-| `stream`             | In FieldTwin 8.0 and later - the ID of the subproject branch                                                                                |
-| `subProject`         | The currently open sub project ID                                                                                                           |
-| `project`            | The currently open project ID                                                                                                               |
-| `account`            | The ID of the account that contains the project                                                                                             |
-| `canEdit`            | Whether the user's role enables 'edit' rights for the integration. To be handled by the integration itself, FieldTwin does not enforce this |
-| `projectWideAccess`  | Whether the integration is granted access to the whole project (not just the current sub project)                                           |
-| `projectAllFromUser` | Whether the integration is granted access to all of the current user's projects in the account                                              |
+| attribute            | FT version | description                                                                                                                                 |
+| :------------------- | :--------- | :------------------------------------------------------------------------------------------------------------------------------------------ |
+| `token`              |            | Security token (JWT) needed for making a FieldTwin API call                                                                                 |
+| `frontendUrl`        |            | URL of the window that contains the iframe. Also the link for viewing the subproject                                                        |
+| `backendUrl`         |            | URL of FieldTwin backend. Use this as the base of the JWT public key URL and the API URL                                                    |
+| `designerUrl`        | 8.1        | URL of FieldTwin designer.                                                                                                                  |
+| `dashboardUrl`       | 8.1        | URL of FieldTwin dashboard.                                                                                                                 |
+| `frontendUrl`        | 8.1        | URL of the frontends that host the integration                                                                                              |
+| `stream`             | 8.0        | In FieldTwin 8.0 and later - the ID of the subproject branch                                                                                |
+| `subProject`         |            | The currently open sub project ID                                                                                                           |
+| `project`            |            | The currently open project ID                                                                                                               |
+| `account`            |            | The ID of the account that contains the project                                                                                             |
+| `canEdit`            |            | Whether the user's role enables 'edit' rights for the integration. To be handled by the integration itself, FieldTwin does not enforce this |
+| `projectWideAccess`  |            | Whether the integration is granted access to the whole project (not just the current sub project)                                           |
+| `projectAllFromUser` |            | Whether the integration is granted access to all of the current user's projects in the account                                              |
 
 `token` is a [JWT](https://jwt.io/) and contains information about the user and user rights.
 You can parse it with any _JWT_ library but to be secure you must ensure that the token has been
@@ -135,7 +357,7 @@ token sent by **FieldTwin**.
 > Note that this reference implementation depends on `npm install express`
 
 > If you do not have access to a nodejs backend, and just want to have a one page integration,
-> you can receive these same attributes by listening for the window message `loaded`.  
+> you can receive these same attributes by listening for the window message `loaded`.
 > Example: https://github.com/XvisionAS/FieldTwin-Integration-Demo/blob/75fb43e1b31014753354789078f646d325075eae/doc-tab/index.html#L37-L42
 
 ## Refreshing the JWT
@@ -234,7 +456,7 @@ check them, this is the list of possible values:
   - `canEditBookmarks`
   - `canViewBookmarks`
 
-> Not all attributes will be present in `userRights`.  
+> Not all attributes will be present in `userRights`.
 > If `canEdit` is true for the project, you can assume that all `canViewThing` and `canEditThing` are true.
 > If `canAdmin` is true for the project, all `canView` and `canEdit` and `canCreate` are true.
 > If `canAdminAccount` is true, all other permissions are true.
@@ -247,6 +469,8 @@ Follow this link : [GitHub Repository](https://github.com/XvisionAS/FieldTwin-In
 
 The main interface of **FieldTwin** can send and receive messages from the integration using
 [postMessage](https://developer.mozilla.org/en-US/docs/Web/API/Window/postMessage).
+
+FieldTwin identifies each integration via its `customTabId` (provided in the `loaded` event). All messages sent from the integration to the host are automatically tagged with this ID by the host. This ID is used by the host to group search results, manage progress indicators, and isolate visual filters for each integration instance.
 
 Here's how an integration can receive these messages from **FieldTwin** :
 
@@ -313,26 +537,32 @@ async function onMessage(message) {
 This event is sent when an integration iframe is fully loaded. It contains information about subProject,
 project and tokens used to communicate with API. The argument will contain these attributes:
 
-| Attribute          | Decription                                                          |
+| Attribute          | Description                                                         |
 | :----------------- | :------------------------------------------------------------------ |
 | event              | is set to `loaded`                                                  |
 | subProject         | is set to subproject ID, if a sub project is loaded                 |
+| subProjectDocument | is set to subproject document ID                                    |
 | stream             | is set to the subproject branch ID in FieldTwin 8.0 and later       |
 | project            | is set to project ID, if a project is loaded                        |
 | account            | is set to account ID, if a project is loaded                        |
 | token              | is set to the JWT that the integration can use to query the API     |
 | backendUrl         | the FieldTwin backend URL (JWT public key and API)                  |
 | frontendUrl        | the URL hosting the iframe (URL to view the subproject)             |
+| designerUrl        | FieldTwin designer URL                                              |
+| dashboardUrl       | FieldTwin dashboard URL                                             |
+| projectorUrl       | FieldTwin projection service URL                                    |
 | canEdit            | whether the user's role has 'edit' rights for the integration       |
 | projectWideAccess  | whether the JWT grants access to the whole project                  |
 | projectAllFromUser | whether the JWT grants access to all of the current user's projects |
+| customTabId        | unique identifier for this integration tab instance                 |
 | selection          | what is currently selected. Array of object { type, id }            |
 | cssUrl             | main CSS url                                                        |
 | cssThemeUrl        | current theme CSS url                                               |
 | cloudType          | azure, gcloud, s3, onpremise                                        |
-| superAdmin         | true is current user is super admin                                 |
-| projectorUrl       | FieldTwin projection service URL                                    |
-| designerUrl        | FieldTwin designer URL                                              |
+| superAdmin         | true if current user is super admin                                 |
+| sessionId          | unique session identifier for this integration instance             |
+| userId             | current user's ID                                                   |
+| userMail           | current user's email address                                        |
 | APIServerIsReady   | if set to true, the API server is ready to receive requests         |
 | APIVersion         | the version of the API server in the form "vx.y" e.g. "v1.10"       |
 
@@ -350,6 +580,31 @@ integration can use to communicate with FieldTwin backend.
 | token         | is set to the JWT that the integration can use to query the API |
 | backendUrl    | is set to the address of the backend the JWT is refering to     |
 | isFrameActive | true if the frame is currently selected and active in the UI    |
+
+### apiPodIsReady / apiPodIsNotReady
+
+These events are sent periodically to inform the integration about the status of the API server pod.
+The API server uses dynamic pods that may need to warm up or may become unavailable.
+
+| Attribute      | Description                                                       |
+| :------------- | :---------------------------------------------------------------- |
+| event          | is set to `apiPodIsReady` or `apiPodIsNotReady`                   |
+| subProject     | is set to subProject ID                                           |
+| APIServerReady | boolean indicating if the API server is ready to receive requests |
+| APIVersion     | the version of the API server in the form "vx.y" e.g. "v1.10"     |
+
+### siblingApiPodIsReady / siblingApiPodIsNotReady
+
+These events are sent when an integration has project-wide access. They inform about the readiness
+status of API pods for sibling subProjects (other subProjects in the same project).
+
+| Attribute               | Description                                                   |
+| :---------------------- | :------------------------------------------------------------ |
+| event                   | is set to `siblingApiPodIsReady` or `siblingApiPodIsNotReady` |
+| subProject              | is set to the sibling subProject ID                           |
+| sibling                 | always true to indicate this is a sibling pod status          |
+| siblingAPIServerIsReady | boolean indicating if the sibling API server is ready         |
+| APIVersion              | the version of the API server in the form "vx.y" e.g. "v1.10" |
 
 ### costQuery
 
@@ -372,21 +627,25 @@ The result will contain these attributes:
 When one or more objects are selected in Design, a `select` event is sent.
 The event will contain these attributes:
 
-| Attribute          | Description                                                                          |
-| :----------------- | :----------------------------------------------------------------------------------- |
-| event              | is set to `select`                                                                   |
-| isFrameActive      | true if the frame is currently selected and active in the UI                         |
-| id                 | ( obsolete ) unique id of the first selected item                                    |
-| type               | ( obsolete ) type of the first selected item                                         |
-| cursorPosition     | {x,y,z} value of cursor where selection happened (values in project space)           |
-| data               | contains an array of selected items                                                  |
-| data.[].type       | contains the type of the selected item                                               |
-| data.[].id         | unique id of the selected item                                                       |
-| data.[].name       | display name of selected item                                                        |
-| data.[].isForeign  | true if the selected item comes from a linked parent project                         |
-| data.[].project    | ID of the parent project when isForeign is true                                      |
-| data.[].subProject | ID of the parent subproject when isForeign is true                                   |
-| data.[].stream     | ID of the parent subproject branch when isForeign is true in FieldTwin 8.0 and later |
+| Attribute                   | Description                                                                          |
+| :-------------------------- | :----------------------------------------------------------------------------------- |
+| event                       | is set to `select`                                                                   |
+| isFrameActive               | true if the frame is currently selected and active in the UI                         |
+| id                          | ( obsolete ) unique id of the first selected item                                    |
+| type                        | ( obsolete ) type of the first selected item                                         |
+| cursorPosition              | {x,y,z} value of cursor where selection happened (values in project space)           |
+| cursorPosition.x            | x position                                                                           |
+| cursorPosition.y            | y position                                                                           |
+| cursorPosition.z            | z position, on seabed ( height sampled )                                             |
+| cursorPosition.intersection | {x,y,z} value of cursor of intersecting point on a resource if any                   |
+| data                        | contains an array of selected items                                                  |
+| data.[].type                | contains the type of the selected item                                               |
+| data.[].id                  | unique id of the selected item                                                       |
+| data.[].name                | display name of selected item                                                        |
+| data.[].isForeign           | true if the selected item comes from a linked parent project                         |
+| data.[].project             | ID of the parent project when isForeign is true                                      |
+| data.[].subProject          | ID of the parent subproject when isForeign is true                                   |
+| data.[].stream              | ID of the parent subproject branch when isForeign is true in FieldTwin 8.0 and later |
 
 #### Example of single selection
 
@@ -439,6 +698,252 @@ The event will contain these attributes:
 }
 ```
 
+### selectByTag
+
+Select resources based on their tags. This message allows you to filter and select resources that match the specified tags.
+The event sent by the integration should contain these attributes:
+
+| Attribute      | Description                                                                                                               |
+| :------------- | :------------------------------------------------------------------------------------------------------------------------ |
+| event          | must be set to `selectByTag`                                                                                              |
+| tags           | Array of tag names (strings). Case-insensitive match                                                                      |
+| matchAll       | Optional. If true (default), resources must have ALL specified tags. If false, resources need ANY of the tags             |
+| resourceTypes  | Optional. Array of resource type names to search (e.g., ["well", "connection"]). If not specified, all types are searched |
+| focusSelection | Optional. If true, the camera will zoom to show the selected resources                                                    |
+
+#### Example selecting all wells with a specific tag
+
+```javascript
+window.parent.postMessage(
+  {
+    event: 'selectByTag',
+    data: {
+      tags: ['Production'],
+    },
+  },
+  '*'
+)
+```
+
+#### Example selecting resources with multiple tags (ALL required)
+
+```javascript
+window.parent.postMessage(
+  {
+    event: 'selectByTag',
+    data: {
+      tags: ['High Priority', 'Phase 1'],
+      matchAll: true, // resources must have both tags
+      resourceTypes: ['connection', 'stagedAsset'],
+      focusSelection: true,
+    },
+  },
+  '*'
+)
+```
+
+#### Example selecting resources with any of the tags
+
+```javascript
+window.parent.postMessage(
+  {
+    event: 'selectByTag',
+    data: {
+      tags: ['Production', 'Development', 'Test'],
+      matchAll: false, // resources need at least one of these tags
+      focusSelection: true,
+    },
+  },
+  '*'
+)
+```
+
+### getResourcesByTags
+
+Get resources grouped by tag without selecting them. This is useful when you need to query which resources have specific tags without modifying the current selection.
+
+The event sent by the integration should contain these attributes:
+
+| Attribute     | Description                                                                                                               |
+| :------------ | :------------------------------------------------------------------------------------------------------------------------ |
+| event         | must be set to `getResourcesByTags`                                                                                       |
+| tags          | Array of tag names (strings). Case-insensitive match                                                                      |
+| resourceTypes | Optional. Array of resource type names to search (e.g., ["well", "connection"]). If not specified, all types are searched |
+| queryId       | Optional. An identifier that will be returned in the response for correlation                                             |
+
+The response message will contain:
+
+| Attribute    | Description                                                                                      |
+| :----------- | :----------------------------------------------------------------------------------------------- |
+| event        | is set to `resourcesByTags`                                                                      |
+| data.results | Object where keys are the requested tags and values are arrays of `{ resourceType, resourceId }` |
+| data.queryId | The queryId from the request (if provided)                                                       |
+| data.error   | Error message if the request was invalid                                                         |
+
+#### Example getting resources by tags
+
+```javascript
+window.parent.postMessage(
+  {
+    event: 'getResourcesByTags',
+    data: {
+      tags: ['VALVE-001', 'PUMP-002'],
+      queryId: 'my-query-123',
+    },
+  },
+  '*'
+)
+```
+
+#### Response example
+
+```javascript
+{
+  event: 'resourcesByTags',
+  data: {
+    results: {
+      'VALVE-001': [
+        { resourceType: 'stagedAssets', resourceId: 'asset-abc-123' },
+        { resourceType: 'connections', resourceId: 'conn-xyz-456' }
+      ],
+      'PUMP-002': [
+        { resourceType: 'stagedAssets', resourceId: 'asset-def-789' }
+      ]
+    },
+    queryId: 'my-query-123'
+  }
+}
+```
+
+#### Example with resource type filter
+
+```javascript
+window.parent.postMessage(
+  {
+    event: 'getResourcesByTags',
+    data: {
+      tags: ['Production', 'Phase 1'],
+      resourceTypes: ['stagedAsset', 'connection'],
+    },
+  },
+  '*'
+)
+```
+
+### updateTagsAnnotation
+
+Create or update volatile annotation resources on resources that have specific tags. This is useful when an integration wants to display visual indicators (like status icons, counts, or labels) on resources based on their tags. The annotations are created as actual annotation resources but marked as volatile, so they are not saved to the database and exist only in the current session. Annotations are tracked per integration, so each integration manages its own annotations independently.
+
+The event sent by the integration should contain these attributes:
+
+| Attribute   | Description                                                                     |
+| :---------- | :------------------------------------------------------------------------------ |
+| event       | must be set to `updateTagsAnnotation`                                           |
+| annotations | Object where keys are tag names and values are arrays of annotation definitions |
+| queryId     | Optional. An identifier that will be returned in the response for correlation   |
+
+Each annotation definition in the array can have these properties:
+
+| Property | Description                                                                                        |
+| :------- | :------------------------------------------------------------------------------------------------- |
+| icon     | Optional. FontAwesome solid icon name (e.g., `faExclamationTriangle`, `faCheckCircle`, `faWrench`) |
+| text     | Optional. Text to display on the annotation                                                        |
+| count    | Optional. A number to display on the annotation                                                    |
+| color    | Optional. Hex color string for the annotation (e.g., `#ff0000`). Defaults to `#ff9900`             |
+
+The response message will contain:
+
+| Attribute          | Description                                                                      |
+| :----------------- | :------------------------------------------------------------------------------- |
+| event              | is set to `tagsAnnotationUpdated`                                                |
+| data.success       | Boolean indicating if the operation succeeded                                    |
+| data.queryId       | The queryId from the request (if provided)                                       |
+| data.annotatedTags | Array of objects with `tag`, `resourceCount`, and `annotationCount` for each tag |
+| data.error         | Error message if the request was invalid                                         |
+
+#### Example creating status annotations
+
+```javascript
+window.parent.postMessage(
+  {
+    event: 'updateTagsAnnotation',
+    data: {
+      annotations: {
+        'VALVE-001': [{ icon: 'faCheckCircle', color: '#00ff00', text: 'Open' }],
+        'VALVE-002': [{ icon: 'faTimesCircle', color: '#ff0000', text: 'Closed' }],
+        'PUMP-003': [{ icon: 'faExclamationTriangle', color: '#ffaa00', count: 3 }],
+      },
+      queryId: 'status-update-1',
+    },
+  },
+  '*'
+)
+```
+
+#### Response example
+
+```javascript
+{
+  event: 'tagsAnnotationUpdated',
+  data: {
+    success: true,
+    queryId: 'status-update-1',
+    annotatedTags: [
+      { tag: 'VALVE-001', resourceCount: 2, annotationCount: 2 },
+      { tag: 'VALVE-002', resourceCount: 1, annotationCount: 1 },
+      { tag: 'PUMP-003', resourceCount: 1, annotationCount: 1 }
+    ]
+  }
+}
+```
+
+### clearTagsAnnotation
+
+Remove annotations previously created by the integration via `updateTagsAnnotation`. You can clear annotations for specific tags or all annotations created by the integration.
+
+The event sent by the integration should contain these attributes:
+
+| Attribute | Description                                                                                               |
+| :-------- | :-------------------------------------------------------------------------------------------------------- |
+| event     | must be set to `clearTagsAnnotation`                                                                      |
+| tags      | Optional. Array of tag names to clear. If not provided, all annotations from this integration are cleared |
+| queryId   | Optional. An identifier that will be returned in the response for correlation                             |
+
+The response message will contain:
+
+| Attribute        | Description                                     |
+| :--------------- | :---------------------------------------------- |
+| event            | is set to `tagsAnnotationCleared`               |
+| data.success     | Boolean indicating if the operation succeeded   |
+| data.queryId     | The queryId from the request (if provided)      |
+| data.clearedTags | Array of tag names that had annotations removed |
+
+#### Example clearing specific tag annotations
+
+```javascript
+window.parent.postMessage(
+  {
+    event: 'clearTagsAnnotation',
+    data: {
+      tags: ['VALVE-001', 'VALVE-002'],
+    },
+  },
+  '*'
+)
+```
+
+#### Example clearing all annotations from this integration
+
+```javascript
+window.parent.postMessage(
+  {
+    event: 'clearTagsAnnotation',
+    data: {},
+  },
+  '*'
+)
+```
+
 ### unselect
 
 Sent when the selection is reset (no more items are selected).
@@ -464,7 +969,7 @@ The result will contain these attributes:
 | data.project.subProjectTags             | aggregation of all sub-project tags            |
 | data.project.developmentLocation        | country defined in the project                 |
 | data.project.toSeabed                   | seabed depth defined in the project            |
-| data.project.CRS                        | CRS used in the project                         |
+| data.project.CRS                        | CRS used in the project                        |
 | data.stagedAssets                       | array of information about staged assets       |
 | data.stagedAssets.[].id                 | id of staged asset                             |
 | data.stagedAssets.[].name               | name of staged asset                           |
@@ -645,7 +1150,7 @@ The event will contain these attributes:
 
 ### didCreate and didCreateFromNetwork
 
-Sent when an item was created.  
+Sent when an item was created.
 Contains the same data as `didUpdate`, except it does not have `previousData` or `diff`.
 
 - `didCreate` event corresponds to an event triggered in the user's browser
@@ -755,7 +1260,7 @@ The event will contain these attributes:
 
 ### didDelete and didDeleteFromNetwork
 
-Sent when an item was deleted.  
+Sent when an item was deleted.
 Contains the same data as `didUpdate`. The data field corresponds to the time of the deletion, so some
 of the relationships might be set to `null`. In this case, you will find this information inside the
 `previousData` (if it was set previously, so for example if you create and then delete an element,
@@ -902,7 +1407,26 @@ The event will contain these attributes:
 }
 ```
 
-## didUpdate / didCreate / didDelete attributes
+## didDrag
+
+This event is send every seconds when a selection is dragged. It contains the data relative to the selection that is being dragged.
+
+| Attribute | Description                                                      |
+| :-------- | :--------------------------------------------------------------- |
+| event     | is set to `didDrag`                                              |
+| resources | array of resources that is being dragged. see below "attributes" |
+
+## exportToGeoJSON
+
+This event is sent after an `exportToGeoJSON` request, it contains the exported data if any
+
+| Attribute | Description                               |
+| :-------- | :---------------------------------------- |
+| event     | is set to `exportToGeoJSON`               |
+| GeoJSON   | contains exported GeoJSON                 |
+| queryId   | same value as passed in the initial query |
+
+## didUpdate / didCreate / didDelete / didDrag attributes
 
 ### Connection
 
@@ -1723,6 +2247,49 @@ Display a temporary pop-up notification ("toast" message) in the FieldTwin Desig
 }
 ```
 
+### displayDocument
+
+Display a document in a File Viewer tab in FieldTwin Design. This allows integrations to show PDFs, images, videos, spreadsheets, and 3D models in the viewer.
+
+| Attribute     | Description                                                                                                        |
+| :------------ | :----------------------------------------------------------------------------------------------------------------- |
+| event         | is set to `displayDocument`                                                                                        |
+| data.url      | URL of the document to display                                                                                     |
+| data.fileType | File type/extension (e.g., 'pdf', 'png', 'mp4', 'xlsx', 'gltf')                                                    |
+| data.tabId    | (Optional) Golden Layout component ID of specific File Viewer tab to target. If omitted, uses the last-focused tab |
+
+Supported file types:
+
+- **PDF**: pdf
+- **Images**: png, jpg, jpeg, gif, bmp, webp, svg, ico
+- **Videos**: mp4, webm, ogg, mov, avi
+- **Spreadsheets**: xlsx, xls, csv, xlsb, xlsm
+- **3D Models**: gltf, glb, obj, fbx, stl, ply, dae, 3ds
+- **CAD Files**: step, stp
+
+```javascript
+{
+  event: "displayDocument",
+  data: {
+    url: "https://example.com/document.pdf",
+    fileType: "pdf"
+  }
+}
+```
+
+Example targeting a specific tab:
+
+```javascript
+{
+  event: "displayDocument",
+  data: {
+    url: "https://example.com/spreadsheet.xlsx",
+    fileType: "xlsx",
+    tabId: "FileViewerTab-abc123"
+  }
+}
+```
+
 ### exportToGLTF
 
 Ask the host software to export the whole design as GLTF. The reply is sent as a blob through postMessage and needs special handling.
@@ -1730,6 +2297,36 @@ Ask the host software to export the whole design as GLTF. The reply is sent as a
 ```javascript
 {
   event:"exportToGLTF",
+  data: {
+    queryId: `[query_id_not_used_for_now]`,
+  },
+}
+```
+
+### exportToGeoJSON
+
+Ask the host software to export the whole design as GeoJSON.
+
+| Attribute                            | Description                                                                                                     |
+| :----------------------------------- | :-------------------------------------------------------------------------------------------------------------- |
+| event                                | is set to `exportToGeoJSON`                                                                                     |
+| data.queryId                         | id that will be sent back with the reply                                                                        |
+| data.mergeParentProjects             | default to true, export parent projects data                                                                    |
+| data.exportMetaData                  | default to true, export meta data as properties                                                                 |
+| data.onlyPublicMetaData              | only export public metadata                                                                                     |
+| data.onlyStdMetaData                 | only export standard metadata                                                                                   |
+| data.filterMetaDataByTags            | array of string, filter which resource are exported by tags                                                     |
+| data.simplify                        | allow connection simplification                                                                                 |
+| data.simplifyTolerance               | simplification tolerance                                                                                        |
+| data.disableConvertion               | Do not convert coordinate to lat / long                                                                         |
+| data.onlyPublicMetaData              | message to display                                                                                              |
+| data.exportLayerOnlyIfContourChecked | true by default, only exports layers that have conntour enables, if not will try to export all layer as contour |
+| data.types                           | array of types to exports, default to 'wells', 'wellBores', 'connections', 'stagedAssets', 'shapes', 'layers'   |
+| data.resourceIds                     | array of resources id to export                                                                                 |
+
+```javascript
+{
+  event:"exportToGeoJSON",
   data: {
     queryId: `[query_id_not_used_for_now]`,
   },
@@ -1773,13 +2370,15 @@ This can be used to create display-only features that are controlled by the inte
 
 On success a `didCreate` message will follow containing the created resource object.
 
-| Attribute         | Description                                            |
-| :---------------- | :----------------------------------------------------- |
-| event             | is set to `createResource`                             |
-| data              | object                                                 |
-| data.volatile     | optional: do not save the resource in the database     |
-| data.resourceType | resource type string                                   |
-| data.attributes   | object containing data attributes for the new resource |
+| Attribute                      | Description                                                                              |
+| :----------------------------- | :--------------------------------------------------------------------------------------- |
+| event                          | is set to `createResource`                                                               |
+| data                           | object                                                                                   |
+| data.volatile                  | optional: do not save the resource in the database                                       |
+| data.draggable                 | optional: allow the resource to be dragged even if locked. Only work if volatile is true |
+| data.resourceType              | resource type string                                                                     |
+| data.projectTreeViewCustomPath | array of strings, describing hiearchy in project tree view                               |
+| data.attributes                | object containing data attributes for the new resource                                   |
 
 ```javascript
 {
@@ -1800,13 +2399,15 @@ This can be used to create display-only features that are controlled by the inte
 
 On success `didCreate` messages will follow containing the created resource objects.
 
-| Attribute            | Description                                            |
-| :------------------- | :----------------------------------------------------- |
-| event                | is set to `createResources`                            |
-| data                 | array of objects                                       |
-| data.[].volatile     | optional: do not save the resource in the database     |
-| data.[].resourceType | resource type string                                   |
-| data.[].attributes   | object containing data attributes for the new resource |
+| Attribute                         | Description                                                                              |
+| :-------------------------------- | :--------------------------------------------------------------------------------------- |
+| event                             | is set to `createResources`                                                              |
+| data                              | array of objects                                                                         |
+| data.[].volatile                  | optional: do not save the resource in the database                                       |
+| data.[].draggable                 | optional: allow the resource to be dragged even if locked. Only work if volatile is true |
+| data.[].projectTreeViewCustomPath | array of strings, describing hiearchy in project tree view                               |
+| data.[].resourceType              | resource type string                                                                     |
+| data.[].attributes                | object containing data attributes for the new resource                                   |
 
 ```javascript
 {
@@ -1830,13 +2431,14 @@ On success `didCreate` messages will follow containing the created resource obje
 Allow the integration to update a resource in FieldTwin Design.
 On success a `didUpdate` message will follow containing the updated resource object.
 
-| Attribute         | Description                                           |
-| :---------------- | :---------------------------------------------------- |
-| event             | is set to `updateResource`                            |
-| data              | object                                                |
-| data.resourceType | resource type string                                  |
-| data.resourceId   | the id of the resource to be updated                  |
-| data.attributes   | object containing updated attributes for the resource |
+| Attribute                      | Description                                                                          |
+| :----------------------------- | :----------------------------------------------------------------------------------- |
+| event                          | is set to `updateResource`                                                           |
+| data                           | object                                                                               |
+| data.resourceType              | resource type string                                                                 |
+| data.resourceId                | the id of the resource to be updated                                                 |
+| data.projectTreeViewCustomPath | array of strings, describing hiearchy in project tree view, set to `null` to default |
+| data.attributes                | object containing updated attributes for the resource                                |
 
 ```javascript
 {
@@ -1854,13 +2456,14 @@ On success a `didUpdate` message will follow containing the updated resource obj
 Allow the integration to update a list of resource in FieldTwin Design.
 On success `didUpdate` messages will follow containing the updated resource objects.
 
-| Attribute            | Description                                           |
-| :------------------- | :---------------------------------------------------- |
-| event                | is set to `updateResources`                           |
-| data                 | array of objects                                      |
-| data.[].resourceType | resource type string                                  |
-| data.[].resourceId   | the id of the resource to be updated                  |
-| data.[].attributes   | object containing updated attributes for the resource |
+| Attribute                      | Description                                                                          |
+| :----------------------------- | :----------------------------------------------------------------------------------- |
+| event                          | is set to `updateResources`                                                          |
+| data                           | array of objects                                                                     |
+| data.projectTreeViewCustomPath | array of strings, describing hiearchy in project tree view, set to `null` to default |
+| data.[].resourceType           | resource type string                                                                 |
+| data.[].resourceId             | the id of the resource to be updated                                                 |
+| data.[].attributes             | object containing updated attributes for the resource                                |
 
 ```javascript
 {
@@ -1932,8 +2535,942 @@ On success `didDelete` messages will follow containing the deleted resource obje
 }
 ```
 
+### displayDocument
+
+Opens a document in FieldTwin's file viewer. The file viewer must be open and support the file type for this to succeed.
+
+Returns a response indicating success or failure.
+
+| Attribute     | Description                                                                |
+| :------------ | :------------------------------------------------------------------------- |
+| event         | is set to `displayDocument`                                                |
+| data          | object                                                                     |
+| data.url      | URL of the document to display (required)                                  |
+| data.fileType | File extension/type (optional, will be extracted from URL if not provided) |
+
+#### Supported file types
+
+The file viewer supports the following formats:
+
+- **3D Models**: STEP (.step, .stp), GLTF/GLB (.gltf, .glb), OBJ (.obj), FBX (.fbx), STL (.stl), PLY (.ply), Collada (.dae), 3DS (.3ds)
+- **Vector**: SVG (.svg), GeoJSON (.geojson, .json), DXF (.dxf), DWG (.dwg)
+- **Documents**: PDF (.pdf)
+- **Images**: PNG (.png), JPEG (.jpg, .jpeg), GIF (.gif), BMP (.bmp), WebP (.webp), ICO (.ico)
+- **Video**: MP4 (.mp4), WebM (.webm), OGG (.ogg), MOV (.mov), AVI (.avi)
+- **Spreadsheets**: Excel (.xlsx, .xls, .xlsb, .xlsm), CSV (.csv)
+
+#### Request example
+
+```javascript
+{
+  event: "displayDocument",
+  data: {
+    url: "https://example.com/documents/drawing.pdf",
+    fileType: "pdf"
+  }
+}
+```
+
+#### Response
+
+The message handler returns a response object:
+
+```javascript
+{
+  event: "displayDocument",
+  success: true,  // or false if failed
+  error: null     // or error message if failed
+}
+```
+
+Error messages:
+
+- `"No URL provided"` - The url parameter was missing
+- `"Unable to open document - unsupported file type or no file viewer available"` - File type not supported or no viewer open
+- `"File viewer not available"` - File viewer feature not loaded in this frontend
+
+### createChart
+
+Creates or updates a Chart.js graph billboard in the 3D viewport at a specified position. The chart is displayed as a plane that always faces the camera (billboard).
+
+If an `id` is provided and a chart with that ID already exists, the chart will be updated with the new data and configuration. Otherwise, a new chart is created.
+
+Returns a response with success status, a chart ID (auto-generated if not provided), and an `updated` flag indicating whether an existing chart was updated.
+
+| Attribute       | Description                                                                     |
+| :-------------- | :------------------------------------------------------------------------------ |
+| event           | is set to `createChart`                                                         |
+| data            | object                                                                          |
+| data.title      | Chart title (required)                                                          |
+| data.labels     | Array of x-axis labels (required)                                               |
+| data.datasets   | Array of dataset objects (required)                                             |
+| data.type       | Chart type: 'line', 'bar', 'scatter', 'pie', etc. (optional, default: 'line')   |
+| data.xAxisLabel | X-axis label text (optional)                                                    |
+| data.yAxisLabel | Y-axis label text (optional)                                                    |
+| data.position   | Object with {x, y, z} coordinates in world space (optional, default: {0, 0, 0}) |
+| data.width      | Billboard width in world units (optional, default: 2)                           |
+| data.height     | Billboard height in world units (optional, default: 1.5)                        |
+| data.id         | Chart ID for updates/reference (optional, auto-generated if not provided)       |
+
+#### Dataset format
+
+Each dataset in `data.datasets` should follow the Chart.js dataset format:
+
+```javascript
+{
+  label: 'Dataset Name',           // Dataset label
+  data: [12, 19, 3, 5, 2, 3],     // Data values
+  borderColor: 'rgb(75, 192, 192)', // Line/border color (optional)
+  backgroundColor: 'rgba(75, 192, 192, 0.2)', // Fill color (optional)
+  tension: 0.1                     // Line tension for smooth curves (optional, line charts)
+}
+```
+
+#### Supported chart types
+
+- **line** - Line chart (default)
+- **bar** - Bar chart
+- **scatter** - Scatter plot
+- **pie** - Pie chart
+- **doughnut** - Doughnut chart
+- **radar** - Radar chart
+- **polarArea** - Polar area chart
+- **bubble** - Bubble chart
+
+#### Request example - Line chart
+
+```javascript
+{
+  event: "createChart",
+  data: {
+    title: "Temperature Over Time",
+    type: "line",
+    labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
+    datasets: [{
+      label: "Temperature (°C)",
+      data: [12, 19, 3, 5, 2, 3],
+      borderColor: "rgb(75, 192, 192)",
+      tension: 0.1
+    }],
+    xAxisLabel: "Month",
+    yAxisLabel: "Temperature (°C)",
+    position: { x: 100, y: 50, z: 0 },
+    width: 3,
+    height: 2,
+    id: "temp-chart-1"
+  }
+}
+```
+
+#### Request example - Multi-dataset bar chart
+
+```javascript
+{
+  event: "createChart",
+  data: {
+    title: "Production Comparison",
+    type: "bar",
+    labels: ["Q1", "Q2", "Q3", "Q4"],
+    datasets: [
+      {
+        label: "2023",
+        data: [65, 59, 80, 81],
+        backgroundColor: "rgba(255, 99, 132, 0.5)"
+      },
+      {
+        label: "2024",
+        data: [28, 48, 40, 19],
+        backgroundColor: "rgba(54, 162, 235, 0.5)"
+      }
+    ],
+    xAxisLabel: "Quarter",
+    yAxisLabel: "Units",
+    position: { x: 200, y: 100, z: 10 }
+  }
+}
+```
+
+#### Response
+
+```javascript
+{
+  event: "createChart",
+  success: true,
+  chartId: "temp-chart-1",  // provided ID or auto-generated like "chart-1234567890-abc123def"
+  updated: false             // true if an existing chart was updated, false if newly created
+}
+```
+
+#### Updating an existing chart
+
+To update an existing chart, send a `createChart` message with the same `id`:
+
+```javascript
+{
+  event: "createChart",
+  data: {
+    id: "temp-chart-1",  // Same ID as before
+    title: "Updated Temperature Data",
+    labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul"],
+    datasets: [{
+      label: "Temperature (°C)",
+      data: [12, 19, 3, 5, 2, 3, 8],
+      borderColor: "rgb(255, 99, 132)",
+      tension: 0.1
+    }],
+    xAxisLabel: "Month",
+    yAxisLabel: "Temperature (°C)"
+    // position can be updated too
+  }
+}
+```
+
+Error messages:
+
+- `"Missing required fields: labels and datasets are required"` - Missing required parameters
+- `"No active 3D viewport found"` - No 3D view is currently open or focused
+- Other error messages describe specific Chart.js or rendering errors
+
+### deleteChart
+
+Deletes a chart billboard from the 3D viewport.
+
+| Attribute | Description                   |
+| :-------- | :---------------------------- |
+| event     | is set to `deleteChart`       |
+| data      | object                        |
+| data.id   | Chart ID to delete (required) |
+
+#### Request example
+
+```javascript
+{
+  event: "deleteChart",
+  data: {
+    id: "temp-chart-1"
+  }
+}
+```
+
+#### Response
+
+```javascript
+{
+  event: "deleteChart",
+  success: true,
+  chartId: "temp-chart-1"
+}
+```
+
+Error messages:
+
+- `"No chart ID provided"` - Missing required ID parameter
+- `"Chart with ID 'xxx' not found"` - No chart exists with the specified ID
+- `"No active 3D viewport found"` - No 3D view is currently open or focused
+
+#### Close button
+
+All charts created with `createChart` include a close button in the top-right corner. When clicked, the chart is automatically removed from the scene. This provides a user-friendly way to dismiss charts without requiring integration code.
+
+### getUserSettings
+
+Return the user settings object stored inside the user. Can be use by integration to store transcient data.
+
+### setUserSettgins
+
+Merge the user settings with the passed object.
+
+### requestTagsInfos (from File Viewer)
+
+Sent when a document is loaded and tags have been extracted. The integration receives this event to determine how to style the tags.
+
+| Attribute              | Description                                                  |
+| :--------------------- | :----------------------------------------------------------- |
+| event                  | is set to `requestTagsInfos`                                 |
+| data                   | object                                                       |
+| data.documentUrl       | URL of the document that was loaded                          |
+| data.tags              | Array of tag objects extracted from the document             |
+| data.tags[].text       | The text content of the tag                                  |
+| data.tags[].source     | Extraction source: 'direct' (PDF text) or 'ocr' (image)      |
+| data.tags[].confidence | OCR confidence score (0-100), only present for OCR tags      |
+| data.subProject        | ID of the current subproject                                 |
+| data.project           | ID of the current project                                    |
+| data.requestId         | Unique request ID - include this in updateTagStyles response |
+
+#### Example event received by integration
+
+```javascript
+{
+  event: "requestTagsInfos",
+  data: {
+    documentUrl: "https://example.com/documents/P&ID-Rev3.pdf",
+    tags: [
+      { text: "VALVE-001", source: "direct" },
+      { text: "VALVE-002", source: "direct" },
+      { text: "PUMP-A-01", source: "ocr", confidence: 92.5 },
+      { text: "TANK-B-03", source: "ocr", confidence: 88.1 }
+    ],
+    subProject: "-LvA9E5njA5MwR38ClmA",
+    project: "-LvA9E5njA5MwR38ClmB"
+  }
+}
+```
+
+### updateTagStyles (to File Viewer)
+
+Sent by the integration to apply styling to tags. Supports pattern matching with wildcards for efficient bulk styling.
+
+| Attribute                              | Description                                                                                                                                                                        |
+| :------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| event                                  | is set to `updateTagStyles`                                                                                                                                                        |
+| data                                   | object                                                                                                                                                                             |
+| data.tagStyles                         | Array of tag style objects                                                                                                                                                         |
+| data.tagStyles[].pattern               | Tag pattern to match (supports wildcards with `*`)                                                                                                                                 |
+| data.tagStyles[].style                 | Style object containing CSS properties to apply                                                                                                                                    |
+| data.tagStyles[].style.color           | Text color (CSS color string, e.g., "#FF0000", "red", "rgb(255,0,0)")                                                                                                              |
+| data.tagStyles[].style.backgroundColor | Background color (CSS color string)                                                                                                                                                |
+| data.tagStyles[].style.border          | Border style (CSS border value, e.g., "1px solid #00FF00")                                                                                                                         |
+| data.tagStyles[].style.borderRadius    | Border radius (CSS value, e.g., "4px")                                                                                                                                             |
+| data.tagStyles[].style.fontWeight      | Font weight ("normal", "bold", "100"-"900")                                                                                                                                        |
+| data.tagStyles[].style.fontStyle       | Font style ("normal", "italic", "oblique")                                                                                                                                         |
+| data.tagStyles[].style.fontSize        | Font size (CSS size string, e.g., "14px", "1.2em")                                                                                                                                 |
+| data.tagStyles[].style.textDecoration  | Text decoration ("none", "underline", "line-through")                                                                                                                              |
+| data.tagStyles[].style.opacity         | Opacity (0-1 or CSS value)                                                                                                                                                         |
+| data.tagStyles[].style.padding         | Padding (CSS value)                                                                                                                                                                |
+| data.tagStyles[].style.margin          | Margin (CSS value)                                                                                                                                                                 |
+| data.requestId                         | Optional request ID from requestTagsInfos event. If provided, styles are applied only to the document that made the request. If omitted, styles are applied to all open documents. |
+
+#### Pattern Matching
+
+Patterns support wildcard matching using the `*` character:
+
+- `"VALVE-*"` matches all tags starting with "VALVE-" (e.g., "VALVE-001", "VALVE-ABC")
+- `"*-CRITICAL"` matches all tags ending with "-CRITICAL"
+- `"PUMP-*-01"` matches tags like "PUMP-A-01", "PUMP-B-01"
+- `"*"` matches all tags (use for default styling)
+
+#### Styling Priority
+
+When multiple patterns match a tag, the most specific pattern wins:
+
+1. Exact match (no wildcards)
+2. First matching wildcard pattern in the array order
+
+#### Request ID Behavior
+
+The `requestId` field controls which documents receive the styling:
+
+- **With `requestId`**: Styles are applied only to the document that sent the original `requestTagsInfos` event with that `requestId`. This is useful when responding to a specific document's tag extraction.
+- **Without `requestId`**: Styles are applied to **all** open documents in File Viewer. This allows integrations to proactively style documents based on their own data/state changes, without waiting for a tag extraction request.
+
+#### Example: Basic tag styling
+
+```javascript
+window.parent.postMessage(
+  {
+    event: 'updateTagStyles',
+    data: {
+      tagStyles: [
+        {
+          pattern: 'VALVE-001',
+          style: {
+            color: '#00FF00',
+            backgroundColor: '#004400',
+            fontWeight: 'bold',
+          },
+        },
+        {
+          pattern: 'VALVE-002',
+          style: {
+            color: '#FF0000',
+            backgroundColor: '#440000',
+            fontWeight: 'bold',
+          },
+        },
+      ],
+    },
+  },
+  '*'
+)
+```
+
+#### Example: Wildcard patterns for bulk styling
+
+```javascript
+window.parent.postMessage(
+  {
+    event: 'updateTagStyles',
+    data: {
+      tagStyles: [
+        // All valves - green (open status)
+        {
+          pattern: 'VALVE-*',
+          style: {
+            color: '#00FF00',
+            backgroundColor: 'rgba(0, 100, 0, 0.3)',
+            border: '1px solid #00FF00',
+          },
+        },
+        // All pumps - blue
+        {
+          pattern: 'PUMP-*',
+          style: {
+            color: '#0088FF',
+            backgroundColor: 'rgba(0, 50, 150, 0.2)',
+            fontWeight: 'bold',
+          },
+        },
+        // Critical equipment - red background
+        {
+          pattern: '*-CRITICAL',
+          style: {
+            backgroundColor: '#FF0000',
+            color: '#FFFFFF',
+            fontWeight: 'bold',
+            textDecoration: 'underline',
+          },
+        },
+        // Default style for all tags
+        {
+          pattern: '*',
+          style: {
+            color: '#333333',
+            fontSize: '12px',
+          },
+        },
+      ],
+    },
+  },
+  '*'
+)
+```
+
+#### Example: Status-based valve styling
+
+```javascript
+// Integration receives requestTagsInfos event with valve tags
+// It queries its database for valve statuses and responds with styling
+
+async function handleRequestTagsInfos(event) {
+  const { tags, documentUrl, requestId } = event.data
+
+  // Extract valve IDs from tags
+  const valveIds = tags.map((tag) => tag.text).filter((text) => text.startsWith('VALVE-'))
+
+  // Query valve statuses from your system
+  const valveStatuses = await fetchValveStatuses(valveIds)
+
+  // Build styling based on status
+  const tagStyles = valveStatuses.map((valve) => ({
+    pattern: valve.id,
+    style: {
+      color: valve.status === 'OPEN' ? '#00FF00' : valve.status === 'CLOSED' ? '#FF0000' : '#FFA500', // PARTIAL = orange
+      backgroundColor:
+        valve.status === 'OPEN'
+          ? 'rgba(0, 100, 0, 0.2)'
+          : valve.status === 'CLOSED'
+            ? 'rgba(100, 0, 0, 0.2)'
+            : 'rgba(255, 165, 0, 0.2)',
+      fontWeight: 'bold',
+      border: `2px solid ${valve.status === 'OPEN' ? '#00FF00' : valve.status === 'CLOSED' ? '#FF0000' : '#FFA500'}`,
+    },
+  }))
+
+  // Send styling back to File Viewer with requestId for targeted delivery
+  window.parent.postMessage(
+    {
+      event: 'updateTagStyles',
+      data: {
+        tagStyles,
+        requestId, // Include requestId to ensure response goes to correct document
+      },
+    },
+    '*'
+  )
+}
+
+// Listen for tag extraction events
+window.addEventListener('message', (event) => {
+  if (event.data.event === 'requestTagsInfos') {
+    handleRequestTagsInfos(event)
+  }
+})
+```
+
+#### Example: Proactive styling without requestId
+
+Integrations can send styling updates at any time without waiting for tag extraction. This is useful when your integration's data changes and you want to update all open documents immediately:
+
+```javascript
+// Example: Integration detects valve status changed in external system
+function onValveStatusChanged(valveId, newStatus) {
+  // Update styling for all open documents immediately
+  window.parent.postMessage(
+    {
+      event: 'updateTagStyles',
+      data: {
+        tagStyles: [
+          {
+            pattern: valveId,
+            style: {
+              color: newStatus === 'OPEN' ? '#00FF00' : '#FF0000',
+              backgroundColor: newStatus === 'OPEN' ? 'rgba(0, 100, 0, 0.2)' : 'rgba(100, 0, 0, 0.2)',
+              fontWeight: 'bold',
+            },
+          },
+        ],
+        // No requestId = apply to ALL open documents
+      },
+    },
+    '*'
+  )
+}
+
+// Integration can also send bulk updates for all equipment
+function updateAllEquipmentStyling(equipmentStatuses) {
+  const tagStyles = equipmentStatuses.map((eq) => ({
+    pattern: eq.id,
+    style: {
+      color: eq.isOperational ? '#00FF00' : '#FF0000',
+      backgroundColor: eq.isOperational ? 'rgba(0, 100, 0, 0.2)' : 'rgba(100, 0, 0, 0.2)',
+    },
+  }))
+
+  window.parent.postMessage(
+    {
+      event: 'updateTagStyles',
+      data: { tagStyles }, // No requestId = applies to all documents
+    },
+    '*'
+  )
+}
+```
+
 ### User defined message
 
 For metadata of type "button", the administrator can define a custom message to be sent when the user
 clicks on the button. The message contains project and related item information, and `event` will be
 set to the value saved in the metadata definition.
+
+## Operation Search
+
+FieldTwin Operation provides a global search interface (Google Maps style) that allows integrations to provide searchable content and handle actions when results are selected.
+
+### operationSearch
+
+This event is sent from the host to **all active integrations** when the user presses **Enter** in the operation search input. Integrations should listen for this event and perform a search within their own domain.
+
+| Attribute | Description                         |
+| :-------- | :---------------------------------- |
+| event     | is set to `operationSearch`         |
+| query     | the search string typed by the user |
+
+### operationSearchResults
+
+Integrations should reply with this message to provide search results to the host.
+
+| Attribute                | Description                                                                                    |
+| :----------------------- | :--------------------------------------------------------------------------------------------- |
+| event                    | must be set to `operationSearchResults`                                                        |
+| results                  | an array of result objects                                                                     |
+| results.category         | a string identifying the category of the item (for grouping, used if no tags)  |
+| results.tags             | (optional) an array of strings. Items sharing the same tags are grouped together. |
+| results.html             | the HTML string to display for the result (sanitized by host)                                  |
+| results.action           | (optional) the event name to send back to integration on click                                 |
+| results.args             | (optional) an object containing arguments for the action                                       |
+| results.target           | (optional) "core" to execute action in core app, otherwise sends to integration                |
+| results.noPanel          | (optional) boolean. If `true`, clicking the item will NOT open/focus the integration panel     |
+| results.subItems         | (optional) an array of sub-item objects. These are displayed beneath the parent when expanded. |
+| results.subItems.id      | (optional) unique ID for the sub-item.                                                         |
+| results.subItems.html    | the HTML string to display for the sub-item.                                                   |
+| results.subItems.action  | (optional) event to send back to integration on click.                                         |
+| results.subItems.args    | (optional) arguments for the action.                                                           |
+| results.subItems.target  | (optional) "core" to execute action in core app.                                               |
+| results.subItems.noPanel | (optional) boolean. If `true`, clicking does not open panel.                                   |
+| results.subItems.icon    | (optional) icon to display: `file`, `cube`, or `circle` (default).                             |
+
+#### Example
+
+```javascript
+window.parent.postMessage(
+  {
+    event: 'operationSearchResults',
+    data: {
+      results: [
+        {
+          category: 'Assets',
+          html: '<strong>Asset 001</strong> - <em>Active</em>',
+          action: 'focusOnAsset',
+          args: { id: 'asset-123' },
+          subItems: [
+            {
+              html: 'Maintenance Log',
+              icon: 'file',
+              action: 'openMaintenanceLog',
+              args: { id: 'log-456' },
+            },
+            {
+              html: 'Subsea Tree 3D',
+              icon: 'cube',
+              action: 'focusOnTree',
+              args: { id: 'tree-789' },
+            },
+          ],
+        },
+      ],
+    },
+  },
+  '*'
+)
+```
+
+### operationSearchProgress
+
+Integrations can use this message to communicate search progress or status to the host. If no update is received for 30 seconds, the progress indicator will be automatically removed.
+
+| Attribute  | Description                                                                          |
+| :--------- | :----------------------------------------------------------------------------------- |
+| event      | must be set to `operationSearchProgress`                                             |
+| status     | a string describing the current progress state (e.g., "Scanning database...")        |
+| progress   | (optional) a number from 0 to 100 representing completion percentage                 |
+| isComplete | (optional) boolean. If `true`, the progress indicator for this integration is hidden |
+
+#### Example
+
+```javascript
+window.parent.postMessage(
+  {
+    event: 'operationSearchProgress',
+    data: {
+      status: 'Querying external API...',
+      progress: 50,
+      isComplete: false,
+    },
+  },
+  '*'
+)
+```
+
+### Visual Filtering (Operation Mode)
+
+FieldTwin Operation allows integrations to provide dynamic visual filters displayed as persistent buttons next to the global search bar.
+
+#### visualFilteringUpdate
+
+Integrations can send this message at any time to update the list of available filters. Filters are automatically grouped by integration and sorted by `integrationId` to ensure a consistent UI layout.
+
+| Attribute                | Description                                                           |
+| :----------------------- | :-------------------------------------------------------------------- |
+| event                    | must be set to `visualFilteringUpdate`                                |
+| filters                  | an array of filter objects                                            |
+| filters.id               | unique ID for the filter                                              |
+| filters.label            | display name for the button                                           |
+| filters.state            | boolean indicating if the filter is currently active                  |
+| filters.subFilters       | (optional) array of sub-filters. If present, the button opens a popup |
+| filters.subFilters.id    | unique ID for the sub-filter                                          |
+| filters.subFilters.label | display name for the sub-filter                                       |
+| filters.subFilters.state | boolean indicating if the sub-filter is active                        |
+
+#### Example
+
+```javascript
+window.parent.postMessage(
+  {
+    event: 'visualFilteringUpdate',
+    data: {
+      filters: [
+        {
+          id: 'safety',
+          label: 'Safety Hazards',
+          state: true,
+          subFilters: [
+            { id: 'electrical', label: 'Electrical', state: true },
+            { id: 'chemical', label: 'Chemical', state: false },
+          ],
+        },
+      ],
+    },
+  },
+  '*'
+)
+```
+
+#### visualFilterToggle
+
+When a user interacts with a filter chip or a sub-filter checkbox, FieldTwin sends a message back to the originating integration.
+
+| Attribute        | Description                                          |
+| :--------------- | :--------------------------------------------------- |
+| event            | set to `visualFilterToggle`                          |
+| data.id          | the ID of the parent filter                          |
+| data.state       | the new desired state (boolean)                      |
+| data.subFilterId | (optional) the ID of the specific sub-filter toggled |
+
+### Context Menu Entries (Operation Mode)
+
+Integrations can publish custom context menu entries that appear in the viewport context menu in Operation mode.
+
+#### contextMenuUpdate
+
+Use this message to register or replace context menu entries for the sending integration.
+
+| Attribute                     | Description                                                                                         |
+| :---------------------------- | :-------------------------------------------------------------------------------------------------- |
+| event                         | must be set to `contextMenuUpdate`                                                                  |
+| data.entries                  | array of menu entries                                                                               |
+| data.entries[].id             | unique ID for this entry within the integration                                                     |
+| data.entries[].label          | text shown in the context menu                                                                      |
+| data.entries[].tooltip        | (optional) tooltip text                                                                             |
+| data.entries[].icon           | (optional) Font Awesome icon name (for example `faMapMarker`, `faWrench`)                          |
+| data.entries[].action         | integration-defined action string returned in `contextMenuAction`                                   |
+| data.entries[].args           | (optional) object payload returned in `contextMenuAction`                                           |
+| data.entries[].subItems       | (optional) nested entries using the same structure                                                  |
+
+#### Example
+
+```javascript
+window.parent.postMessage(
+  {
+    event: 'contextMenuUpdate',
+    data: {
+      entries: [
+        {
+          id: 'asset-tools',
+          label: 'Asset Tools',
+          icon: 'faWrench',
+          subItems: [
+            {
+              id: 'open-integration-detail',
+              label: 'Open details',
+              action: 'openDetails',
+              args: { source: 'context-menu' },
+            },
+          ],
+        },
+      ],
+    },
+  },
+  '*'
+)
+```
+
+### Action Events
+
+When a user clicks on a search result that has an `action` defined, FieldTwin will send a message back to the **specific integration** that provided that result.
+
+| Attribute | Description                                              |
+| :-------- | :------------------------------------------------------- |
+| event     | set to the `action` string provided in the search result |
+| data      | set to the `args` object provided in the search result   |
+
+### contextMenuAction
+
+When a user clicks a context menu item defined by `contextMenuUpdate`, FieldTwin sends a `contextMenuAction` message to the originating integration.
+
+| Attribute      | Description                                                               |
+| :------------- | :------------------------------------------------------------------------ |
+| event          | set to `contextMenuAction`                                                |
+| action         | the `action` string from the clicked entry                                |
+| args           | the `args` object from the clicked entry (if any)                         |
+| integrationId  | integration ID that registered the menu entry                             |
+
+#### Example
+
+```javascript
+window.addEventListener('message', (event) => {
+  const msg = event.data
+  if (msg?.event !== 'contextMenuAction') {
+    return
+  }
+
+  if (msg.action === 'openDetails') {
+    openDetails(msg.args)
+  }
+})
+```
+
+### Operation UI Navigation
+
+#### openOperationPanel
+
+Integrations can use this message to request the FieldTwin UI to open or focus on a specific integration panel. This is particularly useful for opening [Dynamic Pages](#dynamic-pages) from another integration or from a Global integration.
+
+| Attribute          | Description                                                                             |
+| :----------------- | :-------------------------------------------------------------------------------------- |
+| event              | must be set to `openOperationPanel`                                                     |
+| data.path          | (optional) the specific path of a Dynamic Page to open. This should match the page `path` returned by `dynamicPagesUrl` (or the generated fallback path such as `page-1` if omitted). |
+| data.integrationId | (optional) the ID of the integration to open. Defaults to the sending integration's ID. |
+
+#### Example
+
+```javascript
+window.parent.postMessage(
+  {
+    event: 'openOperationPanel',
+    data: {
+      integrationId: 'my-asset-manager',
+      path: '/details/asset-123',
+    },
+  },
+  '*'
+)
+```
+
+### Time Series
+
+The **Time Series** Golden Layout panel allows integrations to publish multi-channel time-series data
+that engineers can inspect, zoom, measure, and export directly inside FieldTwin. The protocol uses
+three messages in a request/reply pattern.
+
+#### displayTimeSeries
+
+Sent by the integration to open the **Time Series** panel in the right-side operation HUD.
+All series already registered via `timeSeriesInfo` will be available in the panel immediately.
+
+| Attribute | Description                        |
+| :-------- | :--------------------------------- |
+| event     | must be set to `displayTimeSeries` |
+
+##### Example
+
+```javascript
+window.parent.postMessage({ event: 'displayTimeSeries' }, '*')
+```
+
+#### timeSeriesInfo
+
+Sent by the integration to publish its available time series. The host registers the metadata and
+the **Time Series** panel displays these series in its tree. Send this on startup and whenever your
+dataset changes.
+
+| Attribute            | Description                                                                                                                                                              |
+| :------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| event                | must be set to `timeSeriesInfo`                                                                                                                                          |
+| data.series          | array of series descriptor objects (see below)                                                                                                                           |
+| data.replaceExisting | *(optional, default `false`)* when `true`, all series previously registered by this integration are removed before the new list is applied; when `false` the lists merge |
+
+Each series descriptor:
+
+| Field       | Description                                                                             |
+| :---------- | :-------------------------------------------------------------------------------------- |
+| id          | Unique series identifier (scoped to this integration)                                   |
+| name        | Display name shown in the series tree                                                   |
+| unit        | Y-axis unit string (e.g. `bar`, `°C`, `m/s`). Series with the same unit share a Y axis. |
+| xMin        | Minimum X value of the full dataset                                                     |
+| xMax        | Maximum X value of the full dataset                                                     |
+| sampleCount | Total number of samples in the full dataset (used to compute the downsampling ratio)    |
+| xAxisTitle  | Label for the X axis                                                                    |
+| yAxisTitle  | Label for the Y axis                                                                    |
+| color       | (optional) hex color string — auto-assigned if omitted                                  |
+
+##### Example
+
+```javascript
+window.parent.postMessage(
+  {
+    event: 'timeSeriesInfo',
+    data: {
+      replaceExisting: true, // omit or set false to merge with existing series
+      series: [
+        {
+          id: 'pressure',
+          name: 'Wellhead Pressure',
+          unit: 'bar',
+          xMin: 0,
+          xMax: 86400,
+          sampleCount: 86400,
+          xAxisTitle: 'Time (s)',
+          yAxisTitle: 'Pressure',
+        },
+        {
+          id: 'temperature',
+          name: 'Fluid Temperature',
+          unit: '°C',
+          xMin: 0,
+          xMax: 86400,
+          sampleCount: 86400,
+          xAxisTitle: 'Time (s)',
+          yAxisTitle: 'Temperature',
+        },
+      ],
+    },
+  },
+  '*'
+)
+```
+
+#### getTimeSeriesData
+
+Sent by the **Time Series** panel to request downsampled data for a specific viewport window.
+The host automatically calculates an appropriate `sampleCount` based on the viewport pixel width
+(capped at `2 × pixel width` or 4096) to avoid loading unnecessary data.
+
+This message is sent only to the integration that owns the series (matched by `customTabId`).
+
+| Attribute        | Description                                                       |
+| :--------------- | :---------------------------------------------------------------- |
+| event            | set to `getTimeSeriesData`                                        |
+| data.seriesId    | the `id` of the series to fetch (as provided in `timeSeriesInfo`) |
+| data.reqId       | unique request correlation ID — must be echoed back in the reply  |
+| data.xMin        | start of the requested data window                                |
+| data.xMax        | end of the requested data window                                  |
+| data.sampleCount | maximum number of samples to return                               |
+
+##### Example (integration side)
+
+```javascript
+window.addEventListener('message', (event) => {
+  if (event.data?.event !== 'getTimeSeriesData') return
+
+  const { seriesId, reqId, xMin, xMax, sampleCount } = event.data.data
+  const buffer = buildSampledBuffer(seriesId, xMin, xMax, sampleCount)
+
+  // Transfer the buffer to avoid copying
+  event.source.postMessage({ event: 'timeSeriesData', data: { reqId, buffer } }, event.origin, [buffer])
+})
+```
+
+#### timeSeriesData
+
+Reply to `getTimeSeriesData`. Contains a binary `ArrayBuffer` of `Float64` values and a
+`stride` field that selects the encoding:
+
+**Stride 2 (legacy / simple):** `[x0, y0, x1, y1, …]` — one mean value per sample.  
+**Stride 4 (envelope):** `[x0, mean0, min0, max0, x1, mean1, min1, max1, …]` — mean plus the
+min/max spread for each sample, used to render a shaded confidence band in the chart.
+
+Passing the buffer as a transferable (third argument to `postMessage`) avoids copying and is
+strongly recommended.
+
+| Attribute   | Description                                                                     |
+| :---------- | :------------------------------------------------------------------------------ |
+| event       | must be set to `timeSeriesData`                                                 |
+| data.reqId  | the `reqId` from the `getTimeSeriesData` request                                |
+| data.buffer | `ArrayBuffer` — see stride encoding above                                       |
+| data.stride | `2` (default, legacy) or `4` (envelope with min/max). Omitting defaults to `2`. |
+
+##### Example (stride 4 — min/max envelope)
+
+```javascript
+function buildSampledBuffer(seriesId, xMin, xMax, sampleCount) {
+  // Each sample produces 4 Float64 values: x, mean, min, max.
+  const arr = new Float64Array(sampleCount * 4)
+  const step = (xMax - xMin) / Math.max(1, sampleCount - 1)
+  for (let i = 0; i < sampleCount; i++) {
+    const x = xMin + i * step
+    const { mean, min, max } = sampleEnvelope(seriesId, x)
+    arr[i * 4] = x
+    arr[i * 4 + 1] = mean
+    arr[i * 4 + 2] = min
+    arr[i * 4 + 3] = max
+  }
+  return arr.buffer
+}
+
+window.addEventListener('message', (event) => {
+  if (event.data?.event !== 'getTimeSeriesData') return
+  const { seriesId, reqId, xMin, xMax, sampleCount } = event.data.data
+  const buffer = buildSampledBuffer(seriesId, xMin, xMax, sampleCount)
+  event.source.postMessage({ event: 'timeSeriesData', data: { reqId, buffer, stride: 4 } }, event.origin, [buffer])
+})
+```
