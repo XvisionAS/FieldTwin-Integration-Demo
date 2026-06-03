@@ -1,0 +1,6 @@
+node_modules/
+.DS_Store
+
+# local config and build output
+descriptor.json
+out/

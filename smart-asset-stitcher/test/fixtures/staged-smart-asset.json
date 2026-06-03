@@ -1,0 +1,468 @@
+{
+  "id": "-OP5jKjeGPz619z_4b_m",
+  "name": "TBE-SMART #1",
+  "asset": {
+    "id": "-OP5hZrFGqswXDGsXAkA",
+    "params": {
+      "max": {
+        "x": 4.339882888146951,
+        "y": 4.001302104399643,
+        "z": 4.3398833597262625
+      },
+      "min": {
+        "x": -4.33988320857123,
+        "y": -0.0017119568957690316,
+        "z": -4.98064740825576
+      },
+      "top": -4.98064740825576,
+      "left": -4.33988320857123,
+      "width": 8.679766096718181,
+      "height": 9.320530767982023,
+      "isGLTF": true,
+      "minimumSocketSize": 0.1
+    },
+    "shared": false,
+    "source": "",
+    "sockets2d": [],
+    "description": "",
+    "dockingMales": [
+      {
+        "name": "001",
+        "matrix": [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 4, 4, 4, 1]
+      }
+    ],
+    "name": "TBE-SMART",
+    "imageUrl": "https://example.com/dummy/asset-2d.png",
+    "filename2D": "TBE-SMART.png - Fri, 25 Apr 2025 10:07:54 GMT",
+    "filename3D": "TBE-SMART.glb - Fri, 25 Apr 2025 10:05:26 GMT",
+    "model3dUrl": "https://example.com/dummy/asset-3d.glb",
+    "dockingFemale": {
+      "name": "001",
+      "matrix": [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 4, 0, 4, 1]
+    },
+    "filenameSockets": "TBE-SMART.sockets - Fri, 25 Apr 2025 12:12:47 GMT",
+    "category": "TBE",
+    "subType": "Base Object",
+    "type": "structure"
+  },
+  "source": "",
+  "created": "2025-04-30T12:47:59.009Z",
+  "creator": "chameleon@fieldap.com",
+  "virtual": false,
+  "visible": true,
+  "isLocked": false,
+  "textColor": "#FFF",
+  "isInactive": false,
+  "subProject": "-OP5hq2IK2hyLf42LP6v:-OP5hq2IK2hyLf42LP6v",
+  "clonedFroms": [],
+  "description": "",
+  "hiddenLabel": true,
+  "renderOrder": 0,
+  "importParams": {},
+  "initialState": {
+    "x": 254,
+    "y": 234,
+    "z": -1200,
+    "scale": 1,
+    "rotation": 48,
+    "xRotation": 30,
+    "yRotation": 45
+  },
+  "isValidForCost": true,
+  "showDescription": false,
+  "linkedConnectionFollowOrientation": false,
+  "costObject": {
+    "value": 0,
+    "locked": false,
+    "costPerDay": 0,
+    "costByLength": false,
+    "costPerLengthUnit": 1
+  },
+  "connectionsAsFrom": {},
+  "connectionsAsTo": {},
+  "shapes": {},
+  "streamId": "-OP5hq2IK2hyLf42LP6v",
+  "subProjectDocumentId": "-OP5hq2IK2hyLf42LP6v",
+  "metaData": [
+    {
+      "metaDatumId": "-OP5jV5GiP2pFH5AZrz9",
+      "definitionId": "FutureOnMetadata:Std.SmartAssets.TBE_SMART.001[asset]",
+      "name": "TBE_SMART.001",
+      "type": "asset",
+      "tags": ["SmartModel"],
+      "cost": 0,
+      "value": "-OP5hZrFGqswXDGsXAkA",
+      "options": {
+        "filter": {
+          "assets": ["-OP5hZrFGqswXDGsXAkA"],
+          "assetTypes": [],
+          "assetSubTypes": [],
+          "assetCategories": [],
+          "assetSubCategories": []
+        },
+        "default": {},
+        "docking": {
+          "dockingSlot": "001"
+        }
+      },
+      "params": {
+        "initialState": {
+          "rotation": 35,
+          "xRotation": 48.62427701974083,
+          "yRotation": 22.113222355549116,
+          "zRotation": 15.576599249006623,
+          "x": 250.89666768249177,
+          "y": 224.10360934942608,
+          "z": -1206.0357916314554,
+          "transformMatrix": [
+            0.8924157250236764, -0.24877409843747836, -0.3764380715032497, 0, 0.03818472647588084, -0.789646710031747,
+            0.6123724356957948, 0, -0.4495954852914208, -0.560864975981437, -0.6951937703424234, 0, 250.89666768249177,
+            224.10360934942608, -1206.0357916314554, 1
+          ]
+        }
+      },
+      "vendorId": "FutureOnMetadata:Std.SmartAssets.TBE_SMART.001[asset]",
+      "metaDatumLinkId": "-OP5jV5Horn1ElRK_qEO",
+      "id": "-OP5jV5Horn1ElRK_qEO",
+      "subType": "Base Object",
+      "category": "TBE",
+      "assetName": "TBE-SMART",
+      "imageUrl": "https://example.com/dummy/asset-2d.png",
+      "model3dUrl": "https://example.com/dummy/asset-3d.glb",
+      "assetTags": [],
+      "docking": "001",
+      "subValue": [
+        {
+          "metaDatumId": "-OP5jV5GiP2pFH5AZrz9",
+          "definitionId": "FutureOnMetadata:Std.SmartAssets.TBE_SMART.001[asset]",
+          "name": "TBE_SMART.001",
+          "type": "asset",
+          "tags": ["SmartModel"],
+          "cost": 0,
+          "value": "-OP5hZrFGqswXDGsXAkA",
+          "options": {
+            "filter": {
+              "assets": ["-OP5hZrFGqswXDGsXAkA"],
+              "assetTypes": [],
+              "assetSubTypes": [],
+              "assetCategories": [],
+              "assetSubCategories": []
+            },
+            "default": {},
+            "docking": {
+              "dockingSlot": "001"
+            }
+          },
+          "params": {
+            "initialState": {
+              "rotation": 989,
+              "xRotation": -32.392674180858435,
+              "yRotation": 43.51292088009789,
+              "zRotation": 129.89076039856883,
+              "x": 254.59196850625335,
+              "y": 214.46790991394775,
+              "z": -1212.1593566234376,
+              "transformMatrix": [
+                -0.46510181166548376, -0.5564378468519846, -0.6885181387416112, 0, 0.03818472647588084,
+                -0.789646710031747, 0.6123724356957948, 0, -0.8844332826445684, 0.258524652454588, 0.38851354239432545,
+                0, 254.59196850625335, 214.46790991394775, -1212.1593566234376, 1
+              ]
+            }
+          },
+          "vendorId": "FutureOnMetadata:Std.SmartAssets.TBE_SMART.001[asset]",
+          "metaDatumLinkId": "-OP5jV5Horn1ElRK_qEO",
+          "id": "-OP5jV5Horn1ElRK_qEO",
+          "subType": "Base Object",
+          "category": "TBE",
+          "assetName": "TBE-SMART",
+          "imageUrl": "https://example.com/dummy/asset-2d.png",
+          "model3dUrl": "https://example.com/dummy/asset-3d.glb",
+          "assetTags": [],
+          "docking": "001",
+          "subValue": [
+            {
+              "metaDatumId": "-OP5jV5GiP2pFH5AZrz9",
+              "definitionId": "FutureOnMetadata:Std.SmartAssets.TBE_SMART.001[asset]",
+              "name": "TBE_SMART.001",
+              "type": "asset",
+              "tags": ["SmartModel"],
+              "cost": 0,
+              "value": "-OP5hZrFGqswXDGsXAkA",
+              "options": {
+                "filter": {
+                  "assets": ["-OP5hZrFGqswXDGsXAkA"],
+                  "assetTypes": [],
+                  "assetSubTypes": [],
+                  "assetCategories": [],
+                  "assetSubCategories": []
+                },
+                "default": {},
+                "docking": {
+                  "dockingSlot": "001"
+                }
+              },
+              "params": {
+                "initialState": {
+                  "rotation": -78,
+                  "xRotation": -50.92695640047149,
+                  "yRotation": -13.70203300062013,
+                  "zRotation": -171.8824834527896,
+                  "x": 243.94842665767646,
+                  "y": 208.9260175186416,
+                  "z": -1212.1099036514327,
+                  "transformMatrix": [
+                    -0.9618063974936821, 0.13718533495500657, 0.23687261896113604, 0, 0.03818472647588084,
+                    -0.789646710031747, 0.6123724356957948, 0, 0.2710542019674057, 0.5980286424656606,
+                    0.7542488729766139, 0, 243.94842665767646, 208.9260175186416, -1212.1099036514327, 1
+                  ]
+                }
+              },
+              "vendorId": "FutureOnMetadata:Std.SmartAssets.TBE_SMART.001[asset]",
+              "metaDatumLinkId": "-OP5jV5Horn1ElRK_qEO",
+              "id": "-OP5jV5Horn1ElRK_qEO",
+              "subType": "Base Object",
+              "category": "TBE",
+              "assetName": "TBE-SMART",
+              "assetTags": [],
+              "docking": "001",
+              "imageUrl": "https://example.com/dummy/asset-2d.png",
+              "model3dUrl": "https://example.com/dummy/asset-3d.glb",
+              "subValue": [
+                {
+                  "metaDatumId": "-OP5jV5GiP2pFH5AZrz9",
+                  "definitionId": "FutureOnMetadata:Std.SmartAssets.TBE_SMART.001[asset]",
+                  "name": "TBE_SMART.001",
+                  "type": "asset",
+                  "tags": ["SmartModel"],
+                  "cost": 0,
+                  "value": "-OP5hZrFGqswXDGsXAkA",
+                  "options": {
+                    "filter": {
+                      "assets": ["-OP5hZrFGqswXDGsXAkA"],
+                      "assetTypes": [],
+                      "assetSubTypes": [],
+                      "assetCategories": [],
+                      "assetSubCategories": []
+                    },
+                    "default": {},
+                    "docking": {
+                      "dockingSlot": "001"
+                    }
+                  },
+                  "params": {
+                    "initialState": {
+                      "rotation": -89,
+                      "xRotation": 20.06505561355526,
+                      "yRotation": -49.311745107557606,
+                      "zRotation": -67.04842864899575,
+                      "x": 238.57514799936976,
+                      "y": 211.64914249787995,
+                      "z": -1201.7314419731474,
+                      "transformMatrix": [
+                        0.2542270829365263, 0.600331774029666, 0.7582679944399466, 0, 0.03818472647588084,
+                        -0.789646710031747, 0.6123724356957948, 0, 0.9663904578199988, -0.12672740203457317,
+                        -0.22367308422789903, 0, 238.57514799936976, 211.64914249787995, -1201.7314419731474, 1
+                      ]
+                    }
+                  },
+                  "vendorId": "FutureOnMetadata:Std.SmartAssets.TBE_SMART.001[asset]",
+                  "metaDatumLinkId": "-OP5jV5Horn1ElRK_qEO",
+                  "id": "-OP5jV5Horn1ElRK_qEO",
+                  "subType": "Base Object",
+                  "category": "TBE",
+                  "assetName": "TBE-SMART",
+                  "imageUrl": "https://example.com/dummy/asset-2d.png",
+                  "model3dUrl": "https://example.com/dummy/asset-3d.glb",
+                  "assetTags": [],
+                  "docking": "001",
+                  "subValue": [
+                    {
+                      "metaDatumId": "-OP5jV5GiP2pFH5AZrz9",
+                      "definitionId": "FutureOnMetadata:Std.SmartAssets.TBE_SMART.001[asset]",
+                      "name": "TBE_SMART.001",
+                      "type": "asset",
+                      "tags": ["SmartModel"],
+                      "cost": 0,
+                      "value": "-OP5hZrFGqswXDGsXAkA",
+                      "options": {
+                        "filter": {
+                          "assets": ["-OP5hZrFGqswXDGsXAkA"],
+                          "assetTypes": [],
+                          "assetSubTypes": [],
+                          "assetCategories": [],
+                          "assetSubCategories": []
+                        },
+                        "default": {},
+                        "docking": {
+                          "dockingSlot": "001"
+                        }
+                      },
+                      "params": {
+                        "initialState": {
+                          "rotation": 0,
+                          "xRotation": 20.06505561355526,
+                          "yRotation": -49.311745107557606,
+                          "zRotation": -67.04842864899575,
+                          "x": 248.4928272313255,
+                          "y": 212.27939063371372,
+                          "z": -1195.0051929486679,
+                          "transformMatrix": [
+                            0.2542270829365263, 0.600331774029666, 0.7582679944399466, 0, 0.03818472647588084,
+                            -0.789646710031747, 0.6123724356957948, 0, 0.9663904578199988, -0.12672740203457317,
+                            -0.22367308422789903, 0, 248.4928272313255, 212.27939063371372, -1195.0051929486679, 1
+                          ]
+                        }
+                      },
+                      "vendorId": "FutureOnMetadata:Std.SmartAssets.TBE_SMART.001[asset]",
+                      "metaDatumLinkId": "-OP5jV5Horn1ElRK_qEO",
+                      "id": "-OP5jV5Horn1ElRK_qEO",
+                      "subType": "Base Object",
+                      "category": "TBE",
+                      "assetName": "TBE-SMART",
+                      "imageUrl": "https://example.com/dummy/asset-2d.png",
+                      "model3dUrl": "https://example.com/dummy/asset-3d.glb",
+                      "assetTags": [],
+                      "docking": "001",
+                      "subValue": [
+                        {
+                          "metaDatumId": "-OP5jV5GiP2pFH5AZrz9",
+                          "definitionId": "FutureOnMetadata:Std.SmartAssets.TBE_SMART.001[asset]",
+                          "name": "TBE_SMART.001",
+                          "type": "asset",
+                          "tags": ["SmartModel"],
+                          "cost": 0,
+                          "value": "-OP5hZrFGqswXDGsXAkA",
+                          "options": {
+                            "filter": {
+                              "assets": ["-OP5hZrFGqswXDGsXAkA"],
+                              "assetTypes": [],
+                              "assetSubTypes": [],
+                              "assetCategories": [],
+                              "assetSubCategories": []
+                            },
+                            "default": {},
+                            "docking": {
+                              "dockingSlot": "001"
+                            }
+                          },
+                          "params": {
+                            "initialState": {
+                              "rotation": -9099,
+                              "xRotation": 49.37919201809084,
+                              "yRotation": 19.848762268111525,
+                              "zRotation": 13.468859875520746,
+                              "x": 258.4105064632812,
+                              "y": 212.90963876954748,
+                              "z": -1188.2789439241883,
+                              "transformMatrix": [
+                                0.9147227099333005, -0.21907975734043794, -0.3395385454641843, 0, 0.03818472647588083,
+                                -0.7896467100317469, 0.6123724356957947, 0, -0.4022738999689657, -0.5731161603546816,
+                                -0.7139422778797078, 0, 258.4105064632812, 212.90963876954748, -1188.2789439241883, 1
+                              ]
+                            }
+                          },
+                          "vendorId": "FutureOnMetadata:Std.SmartAssets.TBE_SMART.001[asset]",
+                          "metaDatumLinkId": "-OP5jV5Horn1ElRK_qEO",
+                          "id": "-OP5jV5Horn1ElRK_qEO",
+                          "subType": "Base Object",
+                          "category": "TBE",
+                          "assetName": "TBE-SMART",
+                          "imageUrl": "https://example.com/dummy/asset-2d.png",
+                          "model3dUrl": "https://example.com/dummy/asset-3d.glb",
+                          "assetTags": [],
+                          "docking": "001",
+                          "subValue": [
+                            {
+                              "metaDatumId": "-OP5jV5GiP2pFH5AZrz9",
+                              "definitionId": "FutureOnMetadata:Std.SmartAssets.TBE_SMART.001[asset]",
+                              "name": "TBE_SMART.001",
+                              "type": "asset",
+                              "tags": ["SmartModel"],
+                              "cost": 0,
+                              "value": "-OP5hZrFGqswXDGsXAkA",
+                              "options": {
+                                "filter": {
+                                  "assets": ["-OP5hZrFGqswXDGsXAkA"],
+                                  "assetTypes": [],
+                                  "assetSubTypes": [],
+                                  "assetCategories": [],
+                                  "assetSubCategories": []
+                                },
+                                "default": {},
+                                "docking": {
+                                  "dockingSlot": "001"
+                                }
+                              },
+                              "params": {
+                                "initialState": {
+                                  "rotation": 0,
+                                  "xRotation": 49.37919201809084,
+                                  "yRotation": 19.848762268111525,
+                                  "zRotation": 13.468859875520746,
+                                  "x": 262.6628358488994,
+                                  "y": 203.41348458785956,
+                                  "z": -1194.2573007681563,
+                                  "transformMatrix": [
+                                    0.9147227099333005, -0.21907975734043794, -0.3395385454641843, 0,
+                                    0.03818472647588083, -0.7896467100317469, 0.6123724356957947, 0,
+                                    -0.4022738999689657, -0.5731161603546816, -0.7139422778797078, 0, 262.6628358488994,
+                                    203.41348458785956, -1194.2573007681563, 1
+                                  ]
+                                }
+                              },
+                              "vendorId": "FutureOnMetadata:Std.SmartAssets.TBE_SMART.001[asset]",
+                              "metaDatumLinkId": "-OP5jV5Horn1ElRK_qEO",
+                              "id": "-OP5jV5Horn1ElRK_qEO",
+                              "subType": "Base Object",
+                              "category": "TBE",
+                              "assetName": "TBE-SMART",
+                              "imageUrl": "https://example.com/dummy/asset-2d.png",
+                              "model3dUrl": "https://example.com/dummy/asset-3d.glb",
+                              "assetTags": [],
+                              "docking": "001",
+                              "subValue": [
+                                {
+                                  "metaDatumId": "-OP5jV5GiP2pFH5AZrz9",
+                                  "definitionId": "FutureOnMetadata:Std.SmartAssets.TBE_SMART.001[asset]",
+                                  "name": "TBE_SMART.001",
+                                  "type": "asset",
+                                  "tags": ["SmartModel"],
+                                  "cost": 0,
+                                  "options": {
+                                    "filter": {
+                                      "assets": ["-OP5hZrFGqswXDGsXAkA"],
+                                      "assetTypes": [],
+                                      "assetSubTypes": [],
+                                      "assetCategories": [],
+                                      "assetSubCategories": []
+                                    },
+                                    "default": {},
+                                    "docking": {
+                                      "dockingSlot": "001"
+                                    }
+                                  },
+                                  "params": {},
+                                  "vendorId": "FutureOnMetadata:Std.SmartAssets.TBE_SMART.001[asset]",
+                                  "metaDatumLinkId": "-OP5jV5Horn1ElRK_qEO",
+                                  "id": "-OP5jV5Horn1ElRK_qEO",
+                                  "docking": "001",
+                                  "subValue": []
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "tags": [],
+  "sockets2d": []
+}

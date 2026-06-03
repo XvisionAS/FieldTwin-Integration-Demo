@@ -1,0 +1,10 @@
+{
+  "api": "https://your-fieldtwin-host/",
+  "token": "REPLACE_WITH_API_TOKEN_OR_JWT",
+  "projectId": "project-id",
+  "subProjectId": "sub-project-id",
+  "streamId": "stream-id",
+  "stagedAssetIds": ["id-1", "id-2"],
+  "output": "./out",
+  "optimize": false
+}
