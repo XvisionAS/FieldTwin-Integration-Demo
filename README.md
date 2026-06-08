@@ -32,3 +32,4 @@ You will find the following resources helpful:
 | [scripts/javascript/warning-zone](./scripts/javascript/warning-zone) | Script to tag staged assets that fall within a circular zone | API | Javascript, Node.js, API token
 | [scripts/python](./scripts/python/) | Scripts for reading project data and updating metadata values using Python | API | Python, API token
 | [simple-cost-server](./simple-cost-server/) | Example "Compute Using Server" function for use with the standard Cost tab | Integration | Javascript, Node.js
+| [smart-asset-stitcher](./smart-asset-stitcher/) | A CLI and library that assembles FieldTwin smart assets (multi-part 3D models) into a single self-contained GLTF/GLB — downloads the part models and applies the API's transform matrices. Targets specific staged assets or a whole sub-project. Requires backend >= 8.3. | API | Javascript, Node.js, API token, glTF/GLB, 3D
