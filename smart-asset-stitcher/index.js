@@ -1,0 +1,7 @@
+export { loadDescriptor, validateDescriptor } from './src/descriptor.js'
+export { fetchStagedAsset, fetchSubProject, stagedAssetUrl, subProjectUrl } from './src/apiClient.js'
+export { flattenParts, listStagedAssets } from './src/treeWalker.js'
+export { downloadAll, cacheFileName } from './src/downloader.js'
+export { buildGlb } from './src/stitcher.js'
+export { buildDescription } from './src/description.js'
+export { orchestrate, stitchStagedAsset } from './src/run.js'

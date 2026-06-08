@@ -1,0 +1,52 @@
+{
+  "name": "smart-asset-stitcher",
+  "version": "0.1.0",
+  "description": "Stitch FieldTwin smart assets (multi-part 3D models) into a single GLTF/GLB",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "main": "index.js",
+  "types": "index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./index.js",
+      "types": "./index.d.ts"
+    }
+  },
+  "bin": {
+    "smart-asset-stitcher": "bin/cli.js"
+  },
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "bin/",
+    "src/",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "start": "node bin/cli.js",
+    "debug": "node --inspect-brk bin/cli.js",
+    "test": "node --test",
+    "format": "prettier --write ."
+  },
+  "keywords": [
+    "fieldtwin",
+    "gltf",
+    "glb",
+    "3d",
+    "smart-asset",
+    "gltf-transform"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "@gltf-transform/core": "~4.0.0",
+    "@gltf-transform/extensions": "^4.0.0",
+    "@gltf-transform/functions": "~4.0.0",
+    "draco3dgltf": "^1.5.7"
+  },
+  "devDependencies": {
+    "prettier": "~3.8.3"
+  }
+}

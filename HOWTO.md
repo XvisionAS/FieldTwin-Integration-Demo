@@ -1328,7 +1328,7 @@ Content of JWT in 7.1:
 
 ```
 {
-  "userEmail": "matt@futureon.com",
+  "userEmail": "user@example.com",
   "accountId": "-MIyPbG_cjUjO7E3ZgzZ",
   "projectId": "-M-HHqMifhz6qskW2goc",
   "subProjectId": "-NlT9gazCfieinkJYsOv",
@@ -1339,7 +1339,7 @@ Content of JWT in 8.0:
 
 ```
 {
-  "userEmail": "matt@futureon.com",
+  "userEmail": "user@example.com",
   "accountId": "-MIyPbG_cjUjO7E3ZgzZ",
   "projectId": "-M-HHqMifhz6qskW2goc",
   "subProjectId": "-NlT9gazCfieinkJYsOv:-NlT9gbQQVEiFVxlL2_U",
