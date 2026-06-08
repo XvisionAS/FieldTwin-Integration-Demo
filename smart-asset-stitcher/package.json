@@ -27,6 +27,7 @@
   ],
   "scripts": {
     "start": "node bin/cli.js",
+    "debug": "node --inspect-brk bin/cli.js",
     "test": "node --test",
     "format": "prettier --write ."
   },

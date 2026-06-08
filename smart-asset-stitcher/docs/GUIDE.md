@@ -1,10 +1,8 @@
 # Smart Asset Stitcher — The Complete Guide
 
 > A from-scratch walkthrough of the whole application for someone new to the 3D world.
-> By the end you should be able to (a) answer client questions confidently and (b) know
-> exactly where to change things.
 >
-> If you want the *terse* engineering notes instead, see [CLAUDE.md](../CLAUDE.md) and
+> If you want the *terse* engineering notes instead
 > [ARCHITECTURE.md](./ARCHITECTURE.md). This guide is the friendly, long-form version.
 
 ---
@@ -17,14 +15,13 @@
 4. [The map: files and what each does](#4-the-map-files-and-what-each-does)
 5. [The pipeline, step by step](#5-the-pipeline-step-by-step)
 6. [Coordinate systems — the trickiest part, explained slowly](#6-coordinate-systems--the-trickiest-part-explained-slowly)
-7. [The base object: a bug we hit and how we fixed it](#7-the-base-object-a-bug-we-hit-and-how-we-fixed-it)
-8. [Two finishing touches: the frame node and helper stripping](#8-two-finishing-touches-the-frame-node-and-helper-stripping)
-9. [The output files explained](#9-the-output-files-explained)
-10. [How to run it](#10-how-to-run-it)
-11. [Client Q&A cheat-sheet](#11-client-qa-cheat-sheet)
-12. [How to modify or extend it](#12-how-to-modify-or-extend-it)
-13. [Troubleshooting](#13-troubleshooting)
-14. [Glossary](#14-glossary)
+7. [Two finishing touches: the frame node and helper stripping](#7-two-finishing-touches-the-frame-node-and-helper-stripping)
+8. [The output files explained](#8-the-output-files-explained)
+9. [How to run it](#9-how-to-run-it)
+10. [FAQ](#10-faq)
+11. [How to modify or extend it](#11-how-to-modify-or-extend-it)
+12. [Troubleshooting](#12-troubleshooting)
+13. [Glossary](#13-glossary)
 
 ---
 
@@ -169,7 +166,7 @@ Different software disagrees on **which way is up**:
 
 If you load Z-up data into a Y-up viewer without converting, the model appears **lying on
 its back, rotated 90°**. Converting between the two is a single fixed rotation. This is
-exactly the "−90° about X" step you'll see later (§8). It is not a bug or a hack — it's the
+exactly the "−90° about X" step you'll see later (§7). It is not a bug or a hack — it's the
 standard handshake between these two worlds.
 
 ### 2.6 Draco compression
@@ -217,7 +214,8 @@ graph LR
 ```
 
 (There is **one** thing the API does *not* give a matrix for — the base object. We handle
-that specially; see §7.)
+that specially: `matrix.js` synthesizes its matrix from the staged-asset `initialState`, and
+`flattenParts` emits it first as `partId: "base"`.)
 
 ---
 
@@ -325,7 +323,7 @@ In words:
 
 1. **You provide a descriptor** — a small JSON file with the API address, a token, and the
    project/sub-project/stream IDs. Optionally the staged asset IDs you want; leave them out
-   to take the whole sub-project. (§10 shows the shape.)
+   to take the whole sub-project. (§9 shows the shape.)
 2. **Validate it** ([descriptor.js](../src/descriptor.js)) — fail fast with a clear message
    if a field is missing.
 3. **Collect the staged assets** ([run.js](../src/run.js) → [apiClient.js](../src/apiClient.js)):
@@ -370,8 +368,9 @@ deepest leaf is empty (no model) and is skipped + counted. `flattenParts` produc
 `listStagedAssets(subProject)` turns the sub-project's keyed `stagedAssets` map into a
 sorted array, ready to flatten one by one.
 
-**matrix.js** — builds the one matrix the API doesn't provide (the base object's). Covered
-in detail in §7.
+**matrix.js** — builds the one matrix the API doesn't provide (the base object's): the API
+gives a `transformMatrix` for every docked part but **not** for the base, so `matrix.js`
+synthesizes it from the staged-asset `initialState` and `flattenParts` emits it first.
 
 **downloader.js** — a hand-rolled "download pool": it keeps at most 8 downloads in flight
 (polite to the server) and retries each up to 3 times with backoff. It is given *all* the
@@ -382,12 +381,12 @@ URL always maps to the same file, and a file already present (from another asset
 a previous run) is reused without re-downloading. Afterwards every part's `localPath` points
 at its file in the shared `<output>/assets` cache.
 
-**stitcher.js** — covered in §8. This is where the parts become one model.
+**stitcher.js** — covered in §7. This is where the parts become one model.
 
 **io.js** — creates the gltf-transform `NodeIO` (the read/write engine) with the Draco
 decoder/encoder registered, so compressed part files can be read.
 
-**description.js** — produces the `description.json` object (see §9). Pure.
+**description.js** — produces the `description.json` object (see §8). Pure.
 
 **run.js** — the wiring, in three clear phases. `orchestrate`: **collect** the staged assets
 (listed IDs, or the whole sub-project filtered to smart assets) → flatten them all →
@@ -459,78 +458,12 @@ twice. (This is rule 2 from §3.)
 
 ---
 
-## 7. The base object: a bug we hit and how we fixed it
-
-This is a great story for understanding the system, and a likely client question.
-
-### 7.1 The symptom
-
-Early on, the stitched model had **all the docked parts in the right place, but the central
-base object was missing.** Parts floated around an empty center.
-
-### 7.2 The cause
-
-The API response has two distinct things:
-
-- `stagedAsset.asset` — **the base object** (the manifold body the parts dock onto). It has
-  its own model URL.
-- `stagedAsset.metaData[]` — **the docked parts** (the tree we walk).
-
-Our walker only looked at `metaData[]`, so the base object's model was never collected.
-
-**And here's the wrinkle:** the API gives a `transformMatrix` for every docked part, but
-**not** for the base object. The base's position is only given as plain numbers in the
-top-level `initialState`: `{ x, y, z, scale, rotation, xRotation, yRotation }`.
-
-### 7.3 The fix
-
-We **synthesize** the base object's matrix from `initialState` in
-[src/matrix.js](../src/matrix.js), reproducing the exact same recipe the API uses internally
-for a part with no docking:
-
-```
-matrix = modelCorrection(+90°X) · translation(x, z, −y) · heading · yRot · xRot · scale
-```
-
-Then [treeWalker.js](../src/treeWalker.js) emits the base as the **first part** in the list,
-with `partId: "base"`.
-
-```mermaid
-graph TD
-    SA["staged asset (from API)"]
-    SA --> ASSET["asset.model3dUrl<br/>(base object — NO matrix)"]
-    SA --> IS["initialState<br/>{x,y,z,rotation,…}"]
-    SA --> MD["metaData[]<br/>(docked parts — each HAS a matrix)"]
-
-    ASSET --> BUILD
-    IS --> BUILD["matrix.js: build base matrix"]
-    BUILD --> BASEPART["base part (partId: 'base')"]
-    MD --> PARTS["8 docked parts"]
-
-    BASEPART --> LIST["flat parts list"]
-    PARTS --> LIST
-    style ASSET fill:#fdd,stroke:#900
-    style BUILD fill:#dfd,stroke:#090
-```
-
-### 7.4 How we *proved* the recipe is right
-
-We can't easily eyeball a matrix. Instead: we found a real docked part whose rotation angles
-were all ≈ 0 (so its matrix should be "just the model correction + position"), fed *its*
-`initialState` through our `matrix.js` function, and checked the result reproduced **that
-part's API-provided matrix to ~0.000001**. That confirmed the stack order and the correction
-were correct. (Real bases observed so far have zero rotation; the heading/tilt terms follow
-the same proven order but haven't been exercised by a rotated base yet — noted as an open
-item.)
-
----
-
-## 8. Two finishing touches: the frame node and helper stripping
+## 7. Two finishing touches: the frame node and helper stripping
 
 These two steps in [stitcher.js](../src/stitcher.js) are what made our output match the
 client's reference file exactly.
 
-### 8.1 The frame node (`fieldtwin-root`)
+### 7.1 The frame node (`fieldtwin-root`)
 
 As explained in §6.3: all parts are added as children of a single node carrying the
 **−90°X** matrix, converting Z-up FieldTwin data into Y-up viewer data. One line of intent:
@@ -542,7 +475,7 @@ scene.addChild(frameRoot)
 // … each part node is added with frameRoot.addChild(node)
 ```
 
-### 8.2 Helper stripping
+### 7.2 Helper stripping
 
 The individual part `.glb` files contain **editor-only helper geometry** that FieldTwin
 shows while you're designing but does **not** include in its own exports:
@@ -555,7 +488,7 @@ To match a clean export, `buildGlb` removes any node whose name matches
 meshes. You can keep them with the `keepHelpers: true` option if a client ever wants the
 sockets visible.
 
-### 8.3 The full stitch, visualized
+### 7.3 The full stitch, visualized
 
 ```mermaid
 flowchart TD
@@ -579,7 +512,7 @@ flowchart TD
 
 ---
 
-## 9. The output files explained
+## 8. The output files explained
 
 The downloaded part files live **once** in a shared cache; each stitched staged asset gets
 its own small folder:
@@ -621,7 +554,7 @@ This is the file you'll read to answer "what's in here?" questions. It records:
 
 ---
 
-## 10. How to run it
+## 9. How to run it
 
 ### As a command-line tool
 
@@ -710,7 +643,7 @@ URL builders `stagedAssetUrl` / `subProjectUrl`) if you want to assemble your ow
 
 ---
 
-## 11. FAQ
+## 10. FAQ
 
 **Q: What does this actually produce?**
 A single self-contained `.glb` 3D file of a FieldTwin smart asset, with every part already
@@ -756,7 +689,7 @@ talks to FieldTwin only over the public API.
 
 ---
 
-## 12. How to modify or extend it
+## 11. How to modify or extend it
 
 A quick "if you want to change X, edit Y" table, then a couple of worked examples.
 
@@ -806,7 +739,7 @@ the frame, expect to update [test/matrix.test.js](../test/matrix.test.js) /
 
 ---
 
-## 13. Troubleshooting
+## 12. Troubleshooting
 
 | Symptom | Likely cause | Fix |
 | --- | --- | --- |
@@ -816,14 +749,14 @@ the frame, expect to update [test/matrix.test.js](../test/matrix.test.js) /
 | `Missing required extension "KHR_draco_mesh_compression"` | Draco decoder not registered (shouldn't happen now) | Ensure [src/io.js](../src/io.js)'s `createIO` is used |
 | `GLB must have 0–1 buffers` | The single-buffer step was skipped | Ensure `unpartition()` runs in [stitcher.js](../src/stitcher.js) |
 | Model appears rotated 90° / lying down | Frame conversion missing or wrong | Check `FIELDTWIN_TO_GLTF` in [stitcher.js](../src/stitcher.js) |
-| Base object missing, parts float | Base not collected | Ensure `flattenParts` emits the base (see §7) |
+| Base object missing, parts float | Base not collected | Ensure `flattenParts` emits the base (`partId: "base"`) |
 | Extra socket/tag clutter in output | Helpers not stripped | Default strips them; check `HELPER_NODE` / `keepHelpers` |
 | `produced no placeable parts` | A listed ID isn't a smart asset, or response shape changed | Verify it's a multi-part smart asset |
 | `No smart assets to stitch` (whole-sub-project mode) | The sub-project has no multi-part smart assets | Use `stagedAssetIds` to target specific assets, or check the sub-project |
 
 ---
 
-## 14. Glossary
+## 13. Glossary
 
 - **Asset** — a 3D model of a piece of equipment in FieldTwin.
 - **Smart asset** — a base object plus docked parts (and their docked parts…), forming one
