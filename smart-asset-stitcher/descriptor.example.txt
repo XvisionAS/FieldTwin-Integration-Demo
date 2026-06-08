@@ -4,7 +4,8 @@
   "projectId": "project-id",
   "subProjectId": "sub-project-id",
   "streamId": "stream-id",
-  "stagedAssetIds": ["id-1", "id-2"],
+  "stagedAssetIds": [], // all staged assets from a sub project
+  // "stagedAssetIds": ["id-1", "id-2"],  // fetching specific staged assets
   "output": "./out",
   "optimize": false
 }
