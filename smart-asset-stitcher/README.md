@@ -13,6 +13,8 @@ It works two ways: stitch **specific** staged assets by id, or stitch a **whole
 sub-project** at once (omit the ids). Either way it fetches each part GLB only **once** —
 a model shared by many staged assets is downloaded a single time into a shared cache.
 
+> **Requirement:** this library only works against a FieldTwin backend running >= **version 8.3**.
+
 ## Install
 
 ```bash
@@ -21,7 +23,7 @@ npm install -g smart-asset-stitcher
 npx smart-asset-stitcher ./descriptor.json
 ```
 
-Requires Node.js >= 20.
+Requires Node.js >= 20 and a FieldTwin backend >= **version 8.3**.
 
 ## Usage (CLI)
 
