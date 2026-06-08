@@ -4,3 +4,10 @@ node_modules/
 # local config and build output
 descriptor.json
 out/
+
+# tests
+test/
+
+# claude
+CLAUDE.md
+

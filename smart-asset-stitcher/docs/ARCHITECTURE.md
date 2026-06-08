@@ -81,38 +81,26 @@ buildDescription(...) + write              (src/description.js, src/run.js)
 
 The FieldTwin v1.9/v1.10 API builds each part's `transformMatrix` by multiplying a
 matrix stack. The stack is **seeded with the model-correction rotation**, then world
-placement, then per-part docking matrices. Traced in the monorepo:
+placement, then per-part docking matrices:
 
-1. `common/libraries/three/utils/modelQuaternion.js:5`
-   ```js
-   modelCorrectionQuaternion = new Quaternion().setFromAxisAngle(new Vector3(1,0,0), Math.PI*0.5)
-   ```
-   The model→FieldTwin correction is a +90° rotation about X.
+1. **Model correction.** The model→FieldTwin correction is a **+90° rotation about X**
+   (`setFromAxisAngle((1,0,0), π/2)`). Raw exported models are authored lying down; this
+   stands them upright in FieldTwin's frame.
 
-2. `backends/fieldtwinapi/routes/API.v1.9/subProject/API.utils.v1.9.subProject.outputs.js:30-73`
-   ```js
-   const initialMatrix = new Matrix4().makeRotationFromQuaternion(modelCorrectionQuaternion)
-   // ...
-   const matrices = [initialMatrix, translation, headingMatrix, yMatrix, xMatrix, scaleMatrix]
-   options.matrices = matrices   // passed into per-metaData computation
-   ```
-   The correction is pushed **first**, then world translation (note the FieldTwin↔three
-   axis swap at `makeTranslation(wp.x, wp.z, -wp.y)`), heading, rotations, scale.
+2. **World placement.** The correction matrix is pushed **first**, then world translation —
+   with the FieldTwin↔three axis swap `translate(x, z, −y)` — then heading, the y/x
+   rotations, and scale, in that stack order.
 
-3. `backends/fieldtwinapi/routes/API.v1.9/API.utils.v1.9.output.js:330-378`
-   The per-metaDatum routine extends that stack with the docking male/female matrices,
-   multiplies the whole list, and stores the result:
-   ```js
-   output.params.initialState.transformMatrix = matrix.toArray()
-   ```
-   It then recurses into `subValue`, passing the accumulated stack down — so **every
-   nested part's matrix already includes the correction + the full ancestor chain.**
+3. **Docking + recursion.** For each `metaData` node the API extends that stack with the
+   docking male/female matrices, multiplies the whole list, and stores the result as
+   `params.initialState.transformMatrix` (`matrix.toArray()`). It then recurses into
+   `subValue`, passing the accumulated stack down — so **every nested part's matrix already
+   includes the correction + the full ancestor chain.**
 
-4. `common/libraries/three/visualizer/objects/StagedAssetMesh.js:982`
-   In the live renderer the correction is applied **once, at the staged-asset root**
-   (`this.quaternion.multiply(modelCorrectionQuaternion)`), and the loaded GLB scene is
-   used as-is. The API output achieves the equivalent by baking the correction into each
-   part matrix instead. **The two representations are equivalent.**
+4. **Equivalence with the live renderer.** In the live FieldTwin renderer the correction is
+   applied **once, at the staged-asset root**, and the loaded GLB scene is used as-is. The
+   API output achieves the equivalent by baking the correction into each part matrix
+   instead. **The two representations are equivalent.**
 
 ### Conclusions
 

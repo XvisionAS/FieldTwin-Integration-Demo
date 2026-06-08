@@ -2623,7 +2623,7 @@
       "tags": [],
       "isInactive": false,
       "created": "2020-06-17T14:01:50.886Z",
-      "creator": "ivba@equinor.com",
+      "creator": "creator@example.com",
       "clonedFroms": [
         "-M19w-ui-7JNHkSCxgqA",
         "-MA6kwdwFITtzPFg86ov",
@@ -4329,7 +4329,7 @@
         "tags": [],
         "isInactive": false,
         "created": "2020-06-17T14:01:50.886Z",
-        "creator": "ivba@equinor.com",
+        "creator": "creator@example.com",
         "clonedFroms": [
           "-M19w-ui-7JNHkSCxgqA",
           "-MA6kwdwFITtzPFg86ov",
@@ -9582,7 +9582,7 @@
         "tags": [],
         "isInactive": false,
         "created": "2020-06-17T14:01:50.886Z",
-        "creator": "ivba@equinor.com",
+        "creator": "creator@example.com",
         "clonedFroms": [
           "-M19w-ui-7JNHkSCxgqA",
           "-MA6kwdwFITtzPFg86ov",
