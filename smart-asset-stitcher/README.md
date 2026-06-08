@@ -40,7 +40,8 @@ smart-asset-stitcher <descriptor.json> [--optimize]
   "projectId": "-LM78qPOH8A5iZFM7GmI",
   "subProjectId": "-LM78xhiiKEWdlr8Ixuj",
   "streamId": "-Npt9mDwxOc-GzO3kTcc",
-  "stagedAssetIds": ["-OP5jKjeGPz619z_4b_m"],
+  "stagedAssetIds": [],
+  //"stagedAssetIds": ["-OP5jKjeGPz619z_4b_m"], // fetch specific staged assets
   "output": "./out"
 }
 ```
@@ -77,10 +78,10 @@ out/
 ## Usage (library)
 
 ```js
-import { orchestrate, loadDescriptor } from 'smart-asset-stitcher'
+import { orchestrate, loadDescriptor } from "smart-asset-stitcher";
 
-const descriptor = await loadDescriptor('./descriptor.json')
-const results = await orchestrate(descriptor, { log: console.error })
+const descriptor = await loadDescriptor("./descriptor.json");
+const results = await orchestrate(descriptor, { log: console.error });
 // results: [{ stagedAssetId, outputDir, glbPath, descriptionPath, partCount, skippedNodes }]
 ```
 
