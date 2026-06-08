@@ -109,7 +109,6 @@ are skipped and counted in `description.json` as `skippedNodes`.
 
 ```bash
 npm install
-npm test       # node --test
 npm run format # prettier
 ```
 
