@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
 
-import { flattenParts } from '../src/treeWalker.js'
+import { flattenParts, listStagedAssets } from '../src/treeWalker.js'
 
 const fixtureUrl = new URL('./fixtures/staged-smart-asset.json', import.meta.url)
 
@@ -74,4 +74,24 @@ test('each part carries a 16-element matrix whose translation matches the node x
 test('flattenParts tolerates an empty / missing metaData array', () => {
   assert.deepEqual(flattenParts({}), { parts: [], skippedNodes: 0 })
   assert.deepEqual(flattenParts({ metaData: [] }), { parts: [], skippedNodes: 0 })
+})
+
+test('listStagedAssets returns the keyed staged assets in stable id order', () => {
+  const subProject = {
+    stagedAssets: {
+      b: { id: 'b', name: 'Beta' },
+      a: { id: 'a', name: 'Alpha' },
+    },
+  }
+  const list = listStagedAssets(subProject)
+  assert.deepEqual(
+    list.map((s) => s.id),
+    ['a', 'b']
+  )
+})
+
+test('listStagedAssets tolerates a missing or empty stagedAssets map', () => {
+  assert.deepEqual(listStagedAssets({}), [])
+  assert.deepEqual(listStagedAssets({ stagedAssets: {} }), [])
+  assert.deepEqual(listStagedAssets(undefined), [])
 })

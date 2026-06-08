@@ -1,4 +1,5 @@
-import { mkdir, writeFile } from 'node:fs/promises'
+import { createHash } from 'node:crypto'
+import { mkdir, stat, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
 /**
@@ -9,15 +10,15 @@ const DEFAULT_CONCURRENCY = 8
 const MAX_RETRIES = 3
 
 /**
- * Turn a partId into a filesystem-safe base filename.
+ * Content-addressed cache filename for a part URL: a short hash of the URL plus a
+ * `.glb` extension. Identical URLs map to the same file, so a model shared by many
+ * staged assets is stored — and downloaded — exactly once, and re-runs reuse it.
  *
- * @param {string} partId
- * @param {number} index Used to guarantee uniqueness across parts.
+ * @param {string} url
  * @returns {string}
  */
-function partFileName(partId, index) {
-  const safe = partId.replace(/[^a-zA-Z0-9._-]+/g, '_').replace(/^_+|_+$/g, '')
-  return `${index}_${safe || 'part'}.glb`
+export function cacheFileName(url) {
+  return `${createHash('sha1').update(url).digest('hex').slice(0, 16)}.glb`
 }
 
 /**
@@ -28,6 +29,21 @@ function partFileName(partId, index) {
  */
 function delay(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+/**
+ * Whether a path already exists as a non-empty file (a previously cached download).
+ *
+ * @param {string} path
+ * @returns {Promise<boolean>}
+ */
+async function fileExists(path) {
+  try {
+    const info = await stat(path)
+    return info.isFile() && info.size > 0
+  } catch {
+    return false
+  }
 }
 
 /**
@@ -64,54 +80,59 @@ async function downloadOne(url, destination, fetchImpl) {
 }
 
 /**
- * Download all part GLBs into `outDir`, mutating each part's `localPath`. Identical
- * URLs are fetched once and reused. Failures are collected and reported together so
- * a single bad part does not mask the rest.
+ * Download every part GLB into a shared, content-addressed cache directory, then
+ * point each part's `localPath` at its cached file. Parts are deduped by URL across
+ * the whole list — so a model used by N staged assets is fetched once — and a file
+ * already present in the cache (e.g. from a prior run) is reused without a network
+ * call. Failures are collected and reported together so one bad URL does not mask the rest.
  *
- * @param {Part[]} parts
- * @param {string} outDir Directory to write GLBs into (created if missing).
- * @param {{ concurrency?: number, fetchImpl?: typeof fetch }} [options]
+ * @param {Part[]} parts All parts to resolve (may span many staged assets).
+ * @param {string} cacheDir Directory to cache GLBs in (created if missing).
+ * @param {{ concurrency?: number, fetchImpl?: typeof fetch, log?: (msg: string) => void }} [options]
  * @returns {Promise<Part[]>} The same parts, with `localPath` populated.
  */
-export async function downloadAll(parts, outDir, options = {}) {
+export async function downloadAll(parts, cacheDir, options = {}) {
   const concurrency = options.concurrency ?? DEFAULT_CONCURRENCY
   const fetchImpl = options.fetchImpl ?? fetch
-  await mkdir(outDir, { recursive: true })
+  const log = options.log ?? (() => {})
+  await mkdir(cacheDir, { recursive: true })
 
+  // Resolve one job per unique URL; many parts may share a URL and reuse its file.
+  const uniqueUrls = [...new Set(parts.map((part) => part.model3dUrl))]
   /** @type {Map<string, string>} */
   const urlToFile = new Map()
-  /** @type {{ partId: string, url: string, message: string }[]} */
+  /** @type {{ url: string, message: string }[]} */
   const failures = []
   let cursor = 0
 
   const worker = async () => {
-    while (cursor < parts.length) {
-      const index = cursor
+    while (cursor < uniqueUrls.length) {
+      const url = uniqueUrls[cursor]
       cursor += 1
-      const part = parts[index]
-      const fileName = partFileName(part.partId, index)
-      const destination = join(outDir, fileName)
-      const cached = urlToFile.get(part.model3dUrl)
-      if (cached) {
-        part.localPath = cached
-        continue
-      }
+      const destination = join(cacheDir, cacheFileName(url))
       try {
-        await downloadOne(part.model3dUrl, destination, fetchImpl)
-        urlToFile.set(part.model3dUrl, destination)
-        part.localPath = destination
+        if (await fileExists(destination)) {
+          log(`Cached ${url}`)
+        } else {
+          await downloadOne(url, destination, fetchImpl)
+        }
+        urlToFile.set(url, destination)
       } catch (error) {
-        failures.push({ partId: part.partId, url: part.model3dUrl, message: /** @type {Error} */ (error).message })
+        failures.push({ url, message: /** @type {Error} */ (error).message })
       }
     }
   }
 
-  const workerCount = Math.min(concurrency, parts.length)
+  const workerCount = Math.min(concurrency, uniqueUrls.length)
   await Promise.all(Array.from({ length: workerCount }, () => worker()))
 
   if (failures.length > 0) {
-    const lines = failures.map((f) => `  - ${f.partId} (${f.url}): ${f.message}`)
-    throw new Error(`Failed to download ${failures.length} part(s):\n${lines.join('\n')}`)
+    const lines = failures.map((f) => `  - ${f.url}: ${f.message}`)
+    throw new Error(`Failed to download ${failures.length} asset(s):\n${lines.join('\n')}`)
+  }
+
+  for (const part of parts) {
+    part.localPath = urlToFile.get(part.model3dUrl) ?? null
   }
   return parts
 }

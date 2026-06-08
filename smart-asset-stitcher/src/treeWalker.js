@@ -18,6 +18,11 @@
  */
 
 /**
+ * @typedef {Object} SubProject
+ * @property {Object<string, StagedAsset>} [stagedAssets] Staged assets keyed by id.
+ */
+
+/**
  * @typedef {Object} Part
  * @property {string} assetName Name of the asset for this part.
  * @property {string} partId Stable id unique within a staged asset (depth-path based).
@@ -118,4 +123,23 @@ export function flattenParts(stagedAsset) {
   }
 
   return { parts, skippedNodes }
+}
+
+/**
+ * Extract the staged assets from a sub-project response. The API returns them as an
+ * object keyed by id; this yields them as an array (each carries its own id) in a
+ * stable key order so downstream traversal is deterministic.
+ *
+ * @param {SubProject} subProject The sub-project returned by fetchSubProject.
+ * @returns {StagedAsset[]} Every staged asset in the sub-project (empty when none).
+ */
+export function listStagedAssets(subProject) {
+  const map = subProject?.stagedAssets
+  if (!map || typeof map !== 'object') {
+    return []
+  }
+  return Object.keys(map)
+    .sort()
+    .map((id) => map[id])
+    .filter((stagedAsset) => stagedAsset && typeof stagedAsset === 'object')
 }

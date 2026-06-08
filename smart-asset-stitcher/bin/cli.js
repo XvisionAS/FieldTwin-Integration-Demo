@@ -9,17 +9,21 @@ Usage:
 
 Arguments:
   <descriptor.json>   Path to a descriptor JSON file. It must contain:
-                        api, token, projectId, subProjectId, streamId,
-                        stagedAssetIds[], output
+                        api, token, projectId, subProjectId, streamId, output
+                      and optionally:
+                        stagedAssetIds[]  — stitch just these staged assets.
+                                            Omit it to fetch the whole sub-project
+                                            and stitch every smart asset in it.
 
 Options:
   --optimize          Run dedup + prune on the stitched glb to reduce size.
   -h, --help          Show this help.
 
-For each staged asset id, the tool writes:
+Part GLBs are downloaded once into a shared, deduped cache:
+  <output>/assets/*.glb
+For each stitched staged asset the tool writes:
   <output>/<stagedAssetId>/stitched.glb
   <output>/<stagedAssetId>/description.json
-  <output>/<stagedAssetId>/parts/*.glb
 `
 
 /**
@@ -63,6 +67,7 @@ async function main() {
       `✔ ${result.stagedAssetId}: ${result.partCount} part(s) -> ${result.glbPath} (${result.skippedNodes} skipped)\n`
     )
   }
+  process.stdout.write(`Done: stitched ${results.length} staged asset(s).\n`)
 }
 
 main().catch((error) => {

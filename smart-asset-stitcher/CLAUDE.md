@@ -9,10 +9,24 @@ A **standalone, publishable npm package** (NOT part of the `field-activity-plann
 monorepo). It is a CLI **and** a library that assembles FieldTwin **smart assets**
 (multi-part 3D models) into a single self-contained GLTF/GLB.
 
-Pipeline: read a descriptor JSON → call the FieldTwin API for each staged asset →
-walk the recursive `metaData`/`subValue` tree to collect placeable parts →
-download every part GLB → stitch them under one scene using each part's
-precomputed transform matrix → write `stitched.glb` + `description.json`.
+Pipeline: read a descriptor JSON → **collect** the staged assets to stitch (either the
+specific `stagedAssetIds`, OR the whole sub-project in one request when none are given) →
+walk each one's recursive `metaData`/`subValue` tree to collect placeable parts →
+**download every UNIQUE part GLB once** into a shared content-addressed cache (deduped
+across all staged assets) → stitch each staged asset under one scene using each part's
+precomputed transform matrix → write `stitched.glb` + `description.json` per asset.
+
+**Two modes (same efficient backend):**
+- **Specific** — `stagedAssetIds: [...]` present: fetch exactly those staged assets.
+- **Whole sub-project** — `stagedAssetIds` omitted/empty: `fetchSubProject()` pulls every
+  staged asset in one call (the sub-project endpoint matrix-enriches them through the same
+  code path as the single-asset endpoint), and only the **multi-part smart assets** (those
+  with ≥1 docked, non-base part) are stitched; plain single-model staged assets are skipped.
+
+Both modes funnel into one global `downloadAll(allParts, <output>/assets)`, so a model
+shared by N staged assets is fetched and stored **once** (the original code re-downloaded
+per staged asset). The shared cache is content-addressed (`sha1(url)`) and re-run-safe:
+an already-present file is reused without a network call.
 
 ## The one insight that drives the whole design
 
@@ -64,21 +78,32 @@ header: token: <apiToken>
 have `subValue[]` children. The deepest leaf has empty `params: {}` and no model — it
 is skipped and counted as `skippedNodes`.
 
+**Whole sub-project endpoint** (one request → all staged assets):
+```
+GET {api}/API/v1.10/{projectId}/subProject/{subProjectId}:{streamId}
+header: token: <apiToken>
+```
+Returns `stagedAssets` as an **object keyed by id**; `listStagedAssets()` turns it into a
+sorted array. Each entry carries the same matrix-enriched `asset` + `initialState` +
+`metaData[]` form as the single-asset endpoint, so `flattenParts()` is reused unchanged.
+
 ## File map
 
 ```
 bin/cli.js            # CLI entry (#!/usr/bin/env node), arg parsing, calls orchestrate()
 index.js              # library public API (re-exports)
 index.d.ts            # hand-written types for consumers
-src/descriptor.js     # loadDescriptor() + validateDescriptor() — pure
-src/apiClient.js      # fetchStagedAsset(), stagedAssetUrl()
+src/descriptor.js     # loadDescriptor() + validateDescriptor() — pure; stagedAssetIds optional
+src/apiClient.js      # fetchStagedAsset()/stagedAssetUrl() + fetchSubProject()/subProjectUrl()
 src/matrix.js         # stagedAssetRootMatrix(initialState) — synthesize base-object matrix
-src/treeWalker.js     # flattenParts(stagedAsset) -> { parts, skippedNodes } — pure; emits base first
-src/downloader.js     # downloadAll(parts, outDir) — bounded pool (8), dedup, retry
+src/treeWalker.js     # flattenParts(stagedAsset) + listStagedAssets(subProject) — pure; base first
+src/downloader.js     # downloadAll(parts, cacheDir) — content-addressed (sha1) shared cache,
+                       #   one fetch per UNIQUE url, skips already-cached files, pool (8), retry
 src/io.js             # createIO() — NodeIO with KHR_draco_mesh_compression registered
 src/stitcher.js       # buildGlb(parts, outPath) — frame root + setMatrix + strip helpers + unpartition
 src/description.js    # buildDescription(stagedAsset, parts, meta) — pure
-src/run.js            # orchestrate() / stitchStagedAsset() — wires the pipeline
+src/run.js            # orchestrate() (collect→flatten-all→global download→stitch each) +
+                       #   stitchStagedAsset() single-asset path. Both share <output>/assets cache.
 test/*.test.js        # node:test unit tests
 test/fixtures/staged-smart-asset.json  # copied from the monorepo mock (self-contained)
 ```
@@ -118,14 +143,18 @@ test/fixtures/staged-smart-asset.json  # copied from the monorepo mock (self-con
   "keepHelpers": false
 }
 ```
+`stagedAssetIds` is **optional**: omit it (or pass `[]`) to fetch the whole sub-project and
+stitch every multi-part smart asset in it.
 
-## Output per staged asset
+## Output
 
 ```
+<output>/assets/<sha1>.glb            # shared, deduped part cache (one file per unique url)
 <output>/<stagedAssetId>/stitched.glb
 <output>/<stagedAssetId>/description.json
-<output>/<stagedAssetId>/parts/*.glb
 ```
+Parts are NO LONGER copied into a per-asset `parts/` folder — they live once in the shared
+`assets/` cache, and `description.json#parts[].localFile` names the cache file.
 
 `description.json` records: source ids, base asset (model + docking sockets),
 `skippedNodes`, and per-part `{ assetName, partId, isBase, docking, model3dUrl, localFile,
@@ -134,7 +163,18 @@ transformMatrix }`. The base object is emitted as the first part (`partId: "base
 `correctionApplied: "baked-in-by-api"` so downstream consumers don't re-apply the
 +90°X correction.
 
-## Current status (last session: 2026-06-02)
+## Current status (last session: 2026-06-08)
+
+- [x] **PR-review restructure: fetch-once / download-once.** Added whole-sub-project mode
+      (`fetchSubProject()` + `listStagedAssets()`); `stagedAssetIds` is now optional (omit ⇒
+      stitch all multi-part smart assets in the sub-project). `downloadAll` rewritten to a
+      content-addressed shared cache (`<output>/assets/<sha1>.glb`): one fetch per UNIQUE url
+      across ALL staged assets (was per-staged-asset), and already-cached files are reused
+      with no network call. `orchestrate()` now collects → flattens all → one global download
+      → stitches each. Per-asset `parts/` folder removed. New tests: apiClient URLs,
+      downloader dedup/reuse, listStagedAssets. `npm test` → 21 green.
+
+## Previous status (2026-06-02)
 
 - [x] Package scaffolded, all source modules + entry points written.
 - [x] README, LICENSE (MIT), .prettierrc, .gitignore, CLAUDE.md, docs/ARCHITECTURE.md.

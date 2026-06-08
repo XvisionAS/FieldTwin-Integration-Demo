@@ -57,9 +57,19 @@ a different 3D viewer, a game engine, a VR walkthrough — you can't easily give
 plus instructions on how to arrange them." You want **one self-contained file** that already
 has everything in the right place.
 
-**This tool does exactly that:** you give it the IDs of some smart assets, it talks to the
+**This tool does exactly that:** you point it at some smart assets, it talks to the
 FieldTwin API, downloads all the individual part models, places each one correctly, and
-writes out a single `stitched.glb` (plus a human-readable `description.json`).
+writes out a single `stitched.glb` per asset (plus a human-readable `description.json`).
+
+You can point it at assets two ways:
+
+- **Specific** — list the staged-asset IDs you want.
+- **Whole sub-project** — give no IDs, and it pulls *every* staged asset in the sub-project
+  in one request and stitches each multi-part smart asset it finds.
+
+Either way it is careful about downloads: each part model is fetched only **once**, even if
+ten different smart assets all use the same part — they share one cached file. (The earlier
+version re-downloaded the parts separately for every staged asset; see §5.)
 
 "Stitching" = sewing the separate parts into one combined model.
 
@@ -251,15 +261,15 @@ graph TD
 | [bin/cli.js](../bin/cli.js) | Parse command-line args, call `orchestrate`, print results | no (I/O) |
 | [index.js](../index.js) | Public library API — re-exports the functions below | n/a |
 | [index.d.ts](../index.d.ts) | Hand-written TypeScript types for library consumers | n/a |
-| [src/descriptor.js](../src/descriptor.js) | Load + validate the descriptor JSON you feed in | pure-ish |
-| [src/apiClient.js](../src/apiClient.js) | Build the API URL, fetch one staged asset, handle HTTP errors | no (network) |
-| [src/treeWalker.js](../src/treeWalker.js) | Walk the API's nested tree → a flat list of parts (+ the base) | **pure** |
+| [src/descriptor.js](../src/descriptor.js) | Load + validate the descriptor JSON you feed in (`stagedAssetIds` optional) | pure-ish |
+| [src/apiClient.js](../src/apiClient.js) | Build the API URLs, fetch one staged asset **or** the whole sub-project, handle HTTP errors | no (network) |
+| [src/treeWalker.js](../src/treeWalker.js) | Walk the API's nested tree → a flat list of parts (+ the base); list a sub-project's staged assets | **pure** |
 | [src/matrix.js](../src/matrix.js) | Synthesize the base object's transform matrix | **pure** |
-| [src/downloader.js](../src/downloader.js) | Download every part `.glb` (concurrency-limited, retries, dedup) | no (network) |
+| [src/downloader.js](../src/downloader.js) | Download every **unique** part `.glb` once into a shared cache (concurrency-limited, retries, reuses cached files) | no (network) |
 | [src/stitcher.js](../src/stitcher.js) | Merge parts into one document, place them, strip helpers, write GLB | no (file I/O) |
 | [src/io.js](../src/io.js) | Create a GLB reader/writer that understands Draco compression | no |
 | [src/description.js](../src/description.js) | Build the `description.json` manifest object | **pure** |
-| [src/run.js](../src/run.js) | Wire all the above together for each staged asset | no |
+| [src/run.js](../src/run.js) | Wire it together: collect staged assets → flatten all → one global download → stitch each | no |
 
 > **"Pure" means** the function only transforms its inputs into outputs with no side effects
 > (no network, no disk). Pure functions are the easiest to test and the safest to change —
@@ -285,39 +295,59 @@ sequenceDiagram
 
     You->>CLI: node bin/cli.js descriptor.json
     CLI->>Run: orchestrate(descriptor)
-    loop for each stagedAssetId
-        Run->>API: GET staged asset (with token)
-        API-->>Run: JSON (base object + nested parts, each with a matrix)
-        Run->>Tree: flattenParts(response)
-        Tree-->>Run: [ base, part, part, … ] (flat list)
-        Run->>DL: downloadAll(parts)
-        DL->>API: download each part .glb (max 8 at once)
-        API-->>DL: .glb bytes
-        DL-->>Run: parts now have localPath
-        Run->>Stitch: buildGlb(parts)
-        Stitch->>Disk: write stitched.glb
-        Run->>Disk: write description.json
+    alt stagedAssetIds given
+        loop for each id
+            Run->>API: GET that staged asset (with token)
+            API-->>Run: JSON (base + nested parts, each with a matrix)
+        end
+    else no ids → whole sub-project
+        Run->>API: GET the whole sub-project (one request)
+        API-->>Run: JSON with all staged assets
+        Run->>Tree: listStagedAssets(subProject)
+        Note over Run,Tree: keep only multi-part smart assets
     end
-    Run-->>You: ✔ 9 parts -> stitched.glb
+    Run->>Tree: flattenParts(each staged asset)
+    Tree-->>Run: [ base, part, … ] per asset
+    Run->>DL: downloadAll(ALL parts, shared cache)
+    Note over DL: one fetch per UNIQUE url<br/>(shared across every asset; cached files reused)
+    DL->>API: download each unique part .glb (max 8 at once)
+    API-->>DL: .glb bytes
+    DL-->>Run: every part now has a localPath (into the cache)
+    loop for each staged asset
+        Run->>Stitch: buildGlb(its parts)
+        Stitch->>Disk: write <id>/stitched.glb
+        Run->>Disk: write <id>/description.json
+    end
+    Run-->>You: ✔ stitched N staged asset(s)
 ```
 
 In words:
 
-1. **You provide a descriptor** — a small JSON file with the API address, a token, the
-   project/sub-project/stream IDs, and the staged asset IDs you want. (§10 shows the shape.)
+1. **You provide a descriptor** — a small JSON file with the API address, a token, and the
+   project/sub-project/stream IDs. Optionally the staged asset IDs you want; leave them out
+   to take the whole sub-project. (§10 shows the shape.)
 2. **Validate it** ([descriptor.js](../src/descriptor.js)) — fail fast with a clear message
    if a field is missing.
-3. **For each staged asset ID**, fetch it from the API ([apiClient.js](../src/apiClient.js)).
-4. **Flatten** the response ([treeWalker.js](../src/treeWalker.js)): the API returns a deeply
+3. **Collect the staged assets** ([run.js](../src/run.js) → [apiClient.js](../src/apiClient.js)):
+   either fetch each listed ID, or fetch the **whole sub-project in one request** and keep
+   only its multi-part smart assets ([treeWalker.js](../src/treeWalker.js)'s `listStagedAssets`).
+4. **Flatten** each one ([treeWalker.js](../src/treeWalker.js)): the API returns a deeply
    nested tree; we walk it and pull out a flat list of placeable parts — plus we synthesize
    the base object and put it first.
-5. **Download** every part's `.glb` ([downloader.js](../src/downloader.js)): up to 8 at a
-   time, retrying on failure, and downloading each unique URL only once.
-6. **Stitch** ([stitcher.js](../src/stitcher.js)): merge all the part files into one
+5. **Download once, globally** ([downloader.js](../src/downloader.js)): all the parts from
+   all the staged assets go through a *single* download pass, up to 8 at a time, retrying on
+   failure. Each **unique URL** is fetched only once (a part shared by many assets → one
+   file) into the shared `<output>/assets` cache, and a file already in the cache is reused
+   with no network call.
+6. **Stitch each asset** ([stitcher.js](../src/stitcher.js)): merge its part files into one
    document, place each at its matrix under a shared "frame" node, strip editor-only helper
-   bits, consolidate into one buffer, and write `stitched.glb`.
-7. **Describe** ([description.js](../src/description.js)): write `description.json`, a
+   bits, consolidate into one buffer, and write `<id>/stitched.glb`.
+7. **Describe** ([description.js](../src/description.js)): write `<id>/description.json`, a
    human-readable manifest of what went where.
+
+> **Why this shape?** The earlier version did fetch-download-stitch *per staged asset*, so a
+> part used by 100 assets was downloaded 100 times. Splitting it into "collect everything →
+> download the unique set once → stitch each" is the whole efficiency win.
 
 ### Module deep-dives
 
@@ -325,24 +355,32 @@ In words:
 checks the required fields are present and non-empty. Throws actionable errors. Pure
 validation, easy to extend (add a field check here).
 
-**apiClient.js** — `stagedAssetUrl(...)` builds the endpoint URL. It is tolerant: if your
-`api` value already ends in `/API/v1.10/`, it won't double it up. `fetchStagedAsset(...)`
-does the HTTP GET with the `token` header and turns common failures into clear messages
-(401/403 = bad/expired token; 404 = wrong IDs).
+**apiClient.js** — `stagedAssetUrl(...)` and `subProjectUrl(...)` build the two endpoint
+URLs. They're tolerant: if your `api` value already ends in `/API/v1.10/`, they won't double
+it up. `fetchStagedAsset(...)` fetches one staged asset; `fetchSubProject(...)` fetches the
+whole sub-project (its `stagedAssets` is a map keyed by id, enriched the same way). Both do
+the HTTP GET with the `token` header and turn common failures into clear messages (401/403 =
+bad/expired token; 404 = wrong IDs).
 
 **treeWalker.js** — the heart of "understanding" the response. The API gives a recursive
 structure: `metaData[]`, where each entry can have `subValue[]` children, nested up to ~7
 deep. A node is a **placeable part** if it has both a model URL and a 16-number matrix. The
 deepest leaf is empty (no model) and is skipped + counted. `flattenParts` produces
 `{ parts, skippedNodes }`. It also calls into `matrix.js` to prepend the base object.
+`listStagedAssets(subProject)` turns the sub-project's keyed `stagedAssets` map into a
+sorted array, ready to flatten one by one.
 
 **matrix.js** — builds the one matrix the API doesn't provide (the base object's). Covered
 in detail in §7.
 
 **downloader.js** — a hand-rolled "download pool": it keeps at most 8 downloads in flight
-(polite to the server), retries each up to 3 times with backoff, and remembers URLs it has
-already fetched so a repeated URL isn't downloaded twice. Each part ends up with a
-`localPath` pointing at the file on disk.
+(polite to the server) and retries each up to 3 times with backoff. It is given *all* the
+parts across *all* the staged assets at once, and downloads the **set of unique URLs** —
+so a part shared by many assets is fetched a single time. Files are stored
+**content-addressed**: the filename is a short hash of the URL (`cacheFileName`), so the same
+URL always maps to the same file, and a file already present (from another asset this run, or
+a previous run) is reused without re-downloading. Afterwards every part's `localPath` points
+at its file in the shared `<output>/assets` cache.
 
 **stitcher.js** — covered in §8. This is where the parts become one model.
 
@@ -351,8 +389,11 @@ decoder/encoder registered, so compressed part files can be read.
 
 **description.js** — produces the `description.json` object (see §9). Pure.
 
-**run.js** — `stitchStagedAsset` runs steps 3–7 for one asset; `orchestrate` loops over all
-the IDs. This is the "wiring" — it contains no clever logic itself, which is intentional.
+**run.js** — the wiring, in three clear phases. `orchestrate`: **collect** the staged assets
+(listed IDs, or the whole sub-project filtered to smart assets) → flatten them all →
+**download** every unique part once into the shared cache → **stitch** each asset.
+`stitchStagedAsset` is the single-asset path (fetch → flatten → download → stitch) kept for
+direct library use; it writes into the same shared cache.
 
 ---
 
@@ -540,17 +581,28 @@ flowchart TD
 
 ## 9. The output files explained
 
-For each staged asset ID, the tool writes a folder:
+The downloaded part files live **once** in a shared cache; each stitched staged asset gets
+its own small folder:
 
 ```
-<output>/<stagedAssetId>/
-├── stitched.glb          ← the final combined model (give this to clients)
-├── description.json      ← a human-readable manifest of what's inside
-└── parts/                ← the individual downloaded part files (kept for reference)
-    ├── 0_base.glb
-    ├── 1_003.glb
-    └── …
+<output>/
+├── assets/                       ← shared part cache (one file per unique URL, reused
+│   ├── 8f3a1c9b2e7d4a06.glb         across every asset and across re-runs)
+│   ├── a1b2c3d4e5f60718.glb
+│   └── …
+├── <stagedAssetId-1>/
+│   ├── stitched.glb              ← the final combined model (give this to clients)
+│   └── description.json          ← a human-readable manifest of what's inside
+└── <stagedAssetId-2>/
+    ├── stitched.glb
+    └── description.json
 ```
+
+> **Where did `parts/` go?** Earlier versions copied each asset's parts into its own
+> `parts/` subfolder. Now the parts are deduplicated into the single `assets/` cache — a part
+> used by several assets is stored once. `description.json` still names the exact cache file
+> for each part (`localFile`), so you can always trace a part back to its `.glb`. The cache
+> filename is a hash of the source URL.
 
 ### description.json — your "receipt"
 
@@ -564,7 +616,7 @@ This is the file you'll read to answer "what's in here?" questions. It records:
 - `skippedNodes` — how many empty tree nodes were skipped (normal; the deepest leaves).
 - `parts[]` — one entry per placed part:
   - `partId` (e.g. `"base"`, `"003"`), `isBase` (true for the base object),
-  - `docking` (which socket), `model3dUrl`, `localFile` (the file in `parts/`),
+  - `docking` (which socket), `model3dUrl`, `localFile` (the file in the shared `assets/` cache),
   - `transformMatrix` (the 16 numbers used to place it).
 
 ---
@@ -604,11 +656,27 @@ node bin/cli.js ./descriptor.json
 | --- | --- |
 | `api` | FieldTwin API base URL. May or may not include `/API/v1.10/` — both work. |
 | `token` | Auth token, sent as the `token` header. **Secret — never commit.** |
-| `projectId` / `subProjectId` / `streamId` | Which project/branch the asset lives in. |
-| `stagedAssetIds` | List of smart-asset IDs to stitch (one output folder each). |
-| `output` | Where to write results. |
+| `projectId` / `subProjectId` / `streamId` | Which project/branch the assets live in. |
+| `stagedAssetIds` | **Optional.** List of smart-asset IDs to stitch (one output folder each). **Omit it (or use `[]`) to stitch the whole sub-project** — every multi-part smart asset in it. |
+| `output` | Where to write results (parts cache + one folder per stitched asset). |
 | `optimize` | `true` = run dedup + prune to reduce file size. |
 | `keepHelpers` | `true` = keep docking-socket/tag markers (default strips them). |
+
+**Whole-sub-project run** — same command, just drop `stagedAssetIds`:
+
+```json
+{
+  "api": "https://your-fieldtwin-host/",
+  "token": "<api-token-or-jwt>",
+  "projectId": "...",
+  "subProjectId": "...",
+  "streamId": "...",
+  "output": "./out"
+}
+```
+
+This fetches the sub-project once and stitches every smart asset it contains, downloading
+each shared part only once.
 
 > **Security note:** descriptors carry a live token. The repo's `.gitignore` keeps
 > `descriptor.json` and `descriptor.*.json` out of git, committing only the placeholder
@@ -620,20 +688,29 @@ node bin/cli.js ./descriptor.json
 ```js
 import { orchestrate } from 'smart-asset-stitcher'
 
+// Specific staged assets:
 const results = await orchestrate({
   api: 'https://host/', token: '…',
   projectId: '…', subProjectId: '…', streamId: '…',
   stagedAssetIds: ['…'], output: './out',
 })
+
+// Whole sub-project — same call, just omit stagedAssetIds:
+const all = await orchestrate({
+  api: 'https://host/', token: '…',
+  projectId: '…', subProjectId: '…', streamId: '…',
+  output: './out',
+})
 ```
 
-Individual pieces are also exported (`fetchStagedAsset`, `flattenParts`, `downloadAll`,
-`buildGlb`, `buildDescription`) if you want to assemble your own flow — see
+Individual pieces are also exported (`fetchStagedAsset`, `fetchSubProject`,
+`listStagedAssets`, `flattenParts`, `downloadAll`, `buildGlb`, `buildDescription`, plus the
+URL builders `stagedAssetUrl` / `subProjectUrl`) if you want to assemble your own flow — see
 [index.js](../index.js).
 
 ---
 
-## 11. Client Q&A cheat-sheet
+## 11. FAQ
 
 **Q: What does this actually produce?**
 A single self-contained `.glb` 3D file of a FieldTwin smart asset, with every part already
@@ -656,7 +733,18 @@ markers (sockets/tags) that FieldTwin itself also leaves out of exports.
 Yes — set `keepHelpers: true`.
 
 **Q: Can it do several assets at once?**
-Yes — list multiple IDs in `stagedAssetIds`; each gets its own output folder.
+Yes — list multiple IDs in `stagedAssetIds`; each gets its own output folder. Or omit
+`stagedAssetIds` entirely to stitch the **whole sub-project** in one go.
+
+**Q: What's the difference between giving IDs and doing the whole sub-project?**
+With IDs it fetches exactly those staged assets. Without IDs it fetches the sub-project in a
+single request and stitches every multi-part smart asset in it (skipping plain single-model
+ones). Both share the same efficient backend.
+
+**Q: If many assets reuse the same part, is it downloaded repeatedly?**
+No. All parts across all assets go through one download pass, and each unique part URL is
+fetched only once into a shared cache (and reused on re-runs). This is the main performance
+improvement over the original per-asset approach.
 
 **Q: What 3D formats does it support?**
 Output is `.glb` (binary glTF), the industry-standard interchange format. Input part files
@@ -675,10 +763,11 @@ A quick "if you want to change X, edit Y" table, then a couple of worked example
 | You want to… | Go to… |
 | --- | --- |
 | Add/validate a new descriptor field | [src/descriptor.js](../src/descriptor.js) |
-| Change the API version or URL shape | [src/apiClient.js](../src/apiClient.js) (`stagedAssetUrl`) |
+| Change the API version or URL shape | [src/apiClient.js](../src/apiClient.js) (`stagedAssetUrl` / `subProjectUrl`) |
+| Change which staged assets are selected (ids vs sub-project, smart-asset filter) | [src/run.js](../src/run.js) (`collectEntries` / `isSmartAsset`) |
 | Change which tree nodes count as "parts" | [src/treeWalker.js](../src/treeWalker.js) (`isPlaceablePart`) |
 | Change how the base object is positioned | [src/matrix.js](../src/matrix.js) |
-| Change download concurrency / retries | [src/downloader.js](../src/downloader.js) (constants at top) |
+| Change download concurrency / retries / cache naming | [src/downloader.js](../src/downloader.js) (constants + `cacheFileName`) |
 | Change the coordinate frame / orientation | [src/stitcher.js](../src/stitcher.js) (`FIELDTWIN_TO_GLTF`) |
 | Change which helper meshes get stripped | [src/stitcher.js](../src/stitcher.js) (`HELPER_NODE` regex) |
 | Add support for Meshopt-compressed inputs | [src/io.js](../src/io.js) (register another extension) |
@@ -729,7 +818,8 @@ the frame, expect to update [test/matrix.test.js](../test/matrix.test.js) /
 | Model appears rotated 90° / lying down | Frame conversion missing or wrong | Check `FIELDTWIN_TO_GLTF` in [stitcher.js](../src/stitcher.js) |
 | Base object missing, parts float | Base not collected | Ensure `flattenParts` emits the base (see §7) |
 | Extra socket/tag clutter in output | Helpers not stripped | Default strips them; check `HELPER_NODE` / `keepHelpers` |
-| `produced no placeable parts` | The ID isn't a smart asset, or response shape changed | Verify it's a multi-part smart asset |
+| `produced no placeable parts` | A listed ID isn't a smart asset, or response shape changed | Verify it's a multi-part smart asset |
+| `No smart assets to stitch` (whole-sub-project mode) | The sub-project has no multi-part smart assets | Use `stagedAssetIds` to target specific assets, or check the sub-project |
 
 ---
 

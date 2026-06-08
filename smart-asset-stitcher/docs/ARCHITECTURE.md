@@ -165,15 +165,3 @@ required because GLB allows only 0–1 buffers and each merged part brought its 
   them; `buildGlb` strips nodes matching `/^(docking_male|docking_female|tag)_/i` by default
   (`keepHelpers: true` to retain), then `prune()` removes the orphaned meshes/accessors.
 
-## Verifying correctness
-
-The proof above is a static trace. Confirmed against reality:
-
-- **Against the FieldTwin export.** `real-coord.gltf` is a THREE.GLTFExporter dump of the same
-  staged asset. Matching per-mesh world centroids (in the viewer frame), all 9 of our model
-  meshes (base + 8 parts) coincide with the reference to ~3e-5. The reference's only extra
-  mesh is a standalone scene object (`node 28`) outside the staged asset.
-- **Numerical:** for each part, the world-space centroid of its geometry sits at the API's
-  reported `x/y/z`, which equal `transformMatrix[12]`, `[13]`, `[14]`.
-- **Visual (still worth a glance):** open `stitched.glb` in any glTF viewer; it should be
-  upright and match the in-app render (no surprise 90° flip).

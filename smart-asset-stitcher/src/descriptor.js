@@ -7,7 +7,9 @@ import { readFile } from 'node:fs/promises'
  * @property {string} projectId FieldTwin project id.
  * @property {string} subProjectId FieldTwin sub-project id.
  * @property {string} streamId Stream id (branch) within the sub-project.
- * @property {string[]} stagedAssetIds Staged smart-asset ids to fetch and stitch.
+ * @property {string[]} [stagedAssetIds] Staged smart-asset ids to fetch and stitch. When
+ *   omitted (or an empty array) the whole sub-project is fetched and every multi-part smart
+ *   asset in it is stitched.
  * @property {string} output Output directory for the downloaded parts, description.json and stitched glb.
  * @property {boolean} [optimize] When true, run prune/dedup on the stitched document.
  * @property {boolean} [keepHelpers] When true, keep FieldTwin editor-only helper geometry
@@ -32,12 +34,16 @@ export function validateDescriptor(value) {
       throw new Error(`Descriptor field "${field}" is required and must be a non-empty string`)
     }
   }
-  if (!Array.isArray(descriptor.stagedAssetIds) || descriptor.stagedAssetIds.length === 0) {
-    throw new Error('Descriptor field "stagedAssetIds" is required and must be a non-empty array')
-  }
-  for (const id of descriptor.stagedAssetIds) {
-    if (typeof id !== 'string' || id === '') {
-      throw new Error('Each entry of "stagedAssetIds" must be a non-empty string')
+  // stagedAssetIds is optional: omitting it (or passing []) selects whole-sub-project mode.
+  // When present it must be an array of non-empty strings.
+  if (descriptor.stagedAssetIds !== undefined) {
+    if (!Array.isArray(descriptor.stagedAssetIds)) {
+      throw new Error('Descriptor field "stagedAssetIds", when present, must be an array of strings')
+    }
+    for (const id of descriptor.stagedAssetIds) {
+      if (typeof id !== 'string' || id === '') {
+        throw new Error('Each entry of "stagedAssetIds" must be a non-empty string')
+      }
     }
   }
   return /** @type {Descriptor} */ (value)
