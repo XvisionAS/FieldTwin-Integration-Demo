@@ -307,14 +307,14 @@ sequenceDiagram
     Run->>Tree: flattenParts(each staged asset)
     Tree-->>Run: [ base, part, … ] per asset
     Run->>DL: downloadAll(ALL parts, shared cache)
-    Note over DL: one fetch per UNIQUE url<br/>(shared across every asset; cached files reused)
+    Note over DL: one fetch per UNIQUE url, shared across every asset, cached files reused
     DL->>API: download each unique part .glb (max 8 at once)
     API-->>DL: .glb bytes
     DL-->>Run: every part now has a localPath (into the cache)
     loop for each staged asset
         Run->>Stitch: buildGlb(its parts)
-        Stitch->>Disk: write <id>/stitched.glb
-        Run->>Disk: write <id>/description.json
+        Stitch->>Disk: write stitched.glb (per id)
+        Run->>Disk: write description.json (per id)
     end
     Run-->>You: ✔ stitched N staged asset(s)
 ```
