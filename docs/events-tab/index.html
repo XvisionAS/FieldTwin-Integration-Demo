@@ -62,18 +62,51 @@
           </button>
         </div>
         <div>
+          <button onclick="exportToGeoJSON()">
+            <strong> Export to GeoJSON </strong>
+          </button>
+        </div>
+        <div>
           <button onclick="clearSelection()">
             <strong> Clear Selection </strong>
           </button>
         </div>
         <div>
-          <label for="inputData">Enter data for create / update / delete (JSON Array)</label>
+          <button onclick="createChart()">
+            <strong> Create Chart </strong>
+          </button>
+          <button onclick="updateChart()">
+            <strong> Update Chart </strong>
+          </button>
+          <button onclick="deleteChart()">
+            <strong> Delete Chart </strong>
+          </button>
+        </div>
+        <hr />
+        <div><strong>Time Series</strong></div>
+        <div>
+          <button onclick="sendTimeSeriesInfo()">
+            <strong> Send Time Series Info </strong>
+          </button>
         </div>
         <div>
-          <textarea id="inputData" rows="4" cols="50"></textarea>
+          <button onclick="displayTimeSeries()">
+            <strong> Open Time Series Panel </strong>
+          </button>
         </div>
         <div>
-          <input type="checkbox" id="sendDocumentCount" name="sendDocumentCount" checked />
+          <button onclick="sendTimeSeriesMarkers()">
+            <strong> Send Time Series Markers </strong>
+          </button>
+        </div>
+        <div>
+          <label for="inputData">Enter data for create / update / delete (JSON Object for charts, JSON Array for other operations)</label>
+        </div>
+        <div>
+          <textarea id="inputData" rows="4" cols="50" placeholder='Example for chart: {"datasets": [{"label": "Sales", "data": [10, 20, 30, 40]}], "labels": ["Q1", "Q2", "Q3", "Q4"]}'></textarea>
+        </div>
+        <div>
+          <input type="checkbox" id="sendDocumentCount" name="sendDocumentCount" />
           <label for="sendDocumentCount">Send document count on selection</label>
         </div>
 
@@ -85,7 +118,7 @@
             <strong> Copy </strong>
           </button>
         </div>
-    </div>
+      </div>
       <div>
         <h4>
           Event log:
@@ -107,6 +140,11 @@
 
     <script>
       let selectedResources = []
+
+      // Target origin for messages we send up to the host. The host identifies itself
+      // via the origin of the loaded message it sends us, so we capture that and only
+      // post back only to it (instead of the less secure '*').
+      let hostOrigin = '*'
 
       async function onMessage(message) {
         if (message.data instanceof Blob) {
@@ -137,19 +175,62 @@
                     event: 'replyInfo',
                     data: {
                       items: items.map((e) => {
-                        e.documentCount = Math.floor(Math.random() * 10)
+                        e.documentCount = Math.floor(Math.random() * 100)
                         return e
                       }),
                     },
                   }
-                  window.parent.postMessage(reply, '*')
+                  window.parent.postMessage(reply, hostOrigin)
                 }
               }
               break
+            case 'tokenRefresh':
             case 'loaded':
               {
+                hostOrigin = message.origin
                 const token = document.getElementById('token')
                 token.innerHTML = `${message.data.token}`
+                // Auto-register time series so data is ready when the panel opens
+                // sendTimeSeriesInfo()
+                // sendTimeSeriesMarkers()
+              }
+              break
+            case 'timeSeriesMarkerClick':
+              addTextNode(`Marker clicked: ${message.data.data?.id} @ ${message.data.data?.timestamp}`)
+              break
+            case 'exportToGeoJSON':
+              {
+                const queryId = message.data.data.queryId
+                if (message.data.data.GeoJSON) {
+                  const blob = new Blob([JSON.stringify(message.data.data.GeoJSON)], {
+                    type: 'text/plain;charset=utf-8',
+                  })
+                  saveAs(blob, `${queryId}.json`)
+                }
+              }
+              break
+            case 'createChart':
+              {
+                if (message.data.success && message.data.chartId) {
+                  chartId = message.data.chartId
+                  const action = message.data.updated ? 'updated' : 'created'
+                  addTextNode(`Chart ${action} successfully with ID: ${chartId}`)
+                } else if (message.data.error) {
+                  addTextNode(`Chart error: ${message.data.error}`)
+                }
+              }
+              break
+            case 'deleteChart':
+              {
+                if (message.data.success) {
+                  addTextNode(`Chart deleted successfully with ID: ${message.data.chartId}`)
+                  // Clear chartId if it was the deleted one
+                  if (chartId === message.data.chartId) {
+                    chartId = null
+                  }
+                } else if (message.data.error) {
+                  addTextNode(`Delete chart error: ${message.data.error}`)
+                }
               }
               break
             // case 'exportToGLTF':
@@ -162,6 +243,17 @@
             //     saveAs(blob, `${queryId}.gltf`)
             //   }
             //   break
+            case 'getTimeSeriesData':
+              {
+                const { seriesId, reqId, xMin, xMax, sampleCount } = message.data.data || {}
+                const buffer = generateSeriesBuffer(seriesId, xMin, xMax, sampleCount)
+                window.parent.postMessage(
+                  { event: 'timeSeriesData', data: { reqId, buffer, stride: 4 } },
+                  hostOrigin,
+                  [buffer]
+                )
+              }
+              break
             default:
               if (message.data.type) {
                 const focusOn = document.getElementById('focusOn')
@@ -193,7 +285,7 @@
               message: 'Hello from an integration',
             },
           },
-          '*'
+          hostOrigin
         )
         window.parent.postMessage(
           {
@@ -203,7 +295,7 @@
               message: 'Danger from an integration',
             },
           },
-          '*'
+          hostOrigin
         )
       }
 
@@ -211,7 +303,7 @@
         const message = {
           event: 'getCostQuery',
         }
-        window.parent.postMessage(message, '*')
+        window.parent.postMessage(message, hostOrigin)
       }
 
       function getCostQueryForItem(type, id) {
@@ -227,21 +319,21 @@
             queryId: `query_${id}`,
           },
         }
-        window.parent.postMessage(message, '*')
+        window.parent.postMessage(message, hostOrigin)
       }
 
       function computeCostUsingServer() {
         const message = {
           event: 'computeCostUsingServer',
         }
-        window.parent.postMessage(message, '*')
+        window.parent.postMessage(message, hostOrigin)
       }
 
       function getProjectData() {
         const message = {
           event: 'getProjectData',
         }
-        window.parent.postMessage(message, '*')
+        window.parent.postMessage(message, hostOrigin)
       }
 
       function clearSelection() {
@@ -249,7 +341,7 @@
           {
             event: 'clearSelection',
           },
-          '*'
+          hostOrigin
         )
       }
       function getVisibleResources() {
@@ -259,7 +351,7 @@
             queryId: `getVisibleResources_${Math.random()}`,
           },
         }
-        window.parent.postMessage(message, '*')
+        window.parent.postMessage(message, hostOrigin)
       }
 
       function getResources() {
@@ -270,7 +362,7 @@
             queryId: `getResources_${Math.random()}`,
           },
         }
-        window.parent.postMessage(message, '*')
+        window.parent.postMessage(message, hostOrigin)
       }
 
       function createResources() {
@@ -280,7 +372,7 @@
             event: 'createResources',
             data: JSON.parse(data),
           }
-          window.parent.postMessage(message, '*')
+          window.parent.postMessage(message, hostOrigin)
         }
       }
 
@@ -291,7 +383,7 @@
             event: 'updateResources',
             data: JSON.parse(data),
           }
-          window.parent.postMessage(message, '*')
+          window.parent.postMessage(message, hostOrigin)
         }
       }
 
@@ -302,7 +394,7 @@
             event: 'deleteResources',
             data: JSON.parse(data),
           }
-          window.parent.postMessage(message, '*')
+          window.parent.postMessage(message, hostOrigin)
         }
       }
 
@@ -314,12 +406,12 @@
             id,
           },
         }
-        window.parent.postMessage(message, '*')
+        window.parent.postMessage(message, hostOrigin)
       }
 
       function addTextNode(text) {
         var newDiv = document.createElement('li')
-        const date = moment().format('HH:MM:ss')
+        const date = moment().format('hh:mm:ss')
         newDiv.innerHTML = `[${date}]<pre><code>${text}</code></pre>`
         event_log = document.getElementById('event_log')
         event_log.prepend(newDiv)
@@ -345,9 +437,237 @@
           event: 'exportToGLTF',
           data: {
             queryId: `${++exportToGLTFQueryID}`,
+            excludeWater: true,
+            excludeInfiniteSeabed: true,
+            excludeFutureOnLogo: true,
+            centerAroundZero: true
           },
         }
-        window.parent.postMessage(message, '*')
+        window.parent.postMessage(message, hostOrigin)
+      }
+
+      function exportToGeoJSON() {
+        const message = {
+          event: 'exportToGeoJSON',
+          data: {
+            queryId: `${++exportToGLTFQueryID}`,
+          },
+        }
+        window.parent.postMessage(message, hostOrigin)
+      }
+
+      let chartId = null
+
+      function createChart() {
+        // Try to get custom data from input field
+        const inputDataElement = document.getElementById('inputData')
+        let customData = null
+
+        if (inputDataElement && inputDataElement.value.trim()) {
+          try {
+            customData = JSON.parse(inputDataElement.value)
+          } catch (e) {
+            addTextNode('Invalid JSON in input data field. Using default data.')
+          }
+        }
+
+        // Default chart data
+        let chartData = {
+          title: 'Temperature Over Time',
+          type: 'line',
+          labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+          datasets: [
+            {
+              label: 'Temperature (°C)',
+              data: [12, 19, 3, 5, 2, 3],
+              borderColor: 'rgb(75, 192, 192)',
+              backgroundColor: 'rgba(75, 192, 192, 0.2)',
+              tension: 0.1,
+            },
+          ],
+          xAxisLabel: 'Month',
+          yAxisLabel: 'Temperature (°C)',
+          position: { x: 0, y: 0, z: 10 },
+          width: 3,
+          height: 2,
+        }
+
+        // Merge custom data if provided
+        if (customData) {
+          chartData = { ...chartData, ...customData }
+        }
+
+        const message = {
+          event: 'createChart',
+          data: chartData,
+        }
+        window.parent.postMessage(message, hostOrigin)
+        addTextNode('Chart creation requested')
+      }
+
+      function updateChart() {
+        if (!chartId) {
+          addTextNode('No chart ID available. Create a chart first or use a known ID.')
+          return
+        }
+
+        // Try to get custom data from input field
+        const inputDataElement = document.getElementById('inputData')
+        let customData = null
+
+        if (inputDataElement && inputDataElement.value.trim()) {
+          try {
+            customData = JSON.parse(inputDataElement.value)
+          } catch (e) {
+            addTextNode('Invalid JSON in input data field. Using default data.')
+          }
+        }
+
+        // Default update data
+        let chartData = {
+          id: chartId,
+          title: 'Updated Temperature Data',
+          type: 'line',
+          labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'],
+          datasets: [
+            {
+              label: 'Temperature (°C)',
+              data: [12, 19, 3, 5, 2, 3, 8, 15],
+              borderColor: 'rgb(255, 99, 132)',
+              backgroundColor: 'rgba(255, 99, 132, 0.2)',
+              tension: 0.1,
+            },
+          ],
+          xAxisLabel: 'Month',
+          yAxisLabel: 'Temperature (°C)',
+          position: { x: 0, y: 0, z: 10 },
+        }
+
+        // Merge custom data if provided (keep the id)
+        if (customData) {
+          chartData = { ...chartData, ...customData, id: chartId }
+        }
+
+        const message = {
+          event: 'createChart',
+          data: chartData,
+        }
+        window.parent.postMessage(message, hostOrigin)
+        addTextNode('Chart update requested')
+      }
+
+      /**
+       * Registers the three demo series (pressure, temperature, flow rate) with the host.
+       * Each series will be requested on-demand via `getTimeSeriesData`.
+       */
+      function sendTimeSeriesInfo() {
+        const series = [
+          {
+            id: 'pressure',
+            name: 'Wellhead Pressure',
+            unit: 'bar',
+            xMin: 0,
+            xMax: 86400,
+            sampleCount: 86400,
+            xAxisTitle: 'Time (s)',
+            yAxisTitle: 'Pressure (bar)',
+          },
+          {
+            id: 'temperature',
+            name: 'Fluid Temperature',
+            unit: '°C',
+            xMin: 0,
+            xMax: 86400,
+            sampleCount: 86400,
+            xAxisTitle: 'Time (s)',
+            yAxisTitle: 'Temperature (°C)',
+          },
+          {
+            id: 'flowrate',
+            name: 'Flow Rate',
+            unit: 'm³/h',
+            xMin: 0,
+            xMax: 86400,
+            sampleCount: 86400,
+            xAxisTitle: 'Time (s)',
+            yAxisTitle: 'Flow Rate (m³/h)',
+          },
+        ]
+        window.parent.postMessage({ event: 'timeSeriesInfo', data: { series } }, hostOrigin)
+        addTextNode(`timeSeriesInfo sent — ${series.length} series registered`)
+      }
+
+      function displayTimeSeries() {
+        window.parent.postMessage({ event: 'displayTimeSeries' }, hostOrigin)
+        addTextNode('displayTimeSeries sent')
+      }
+
+      /**
+       * Sends a set of demo event markers at fixed timestamps within the demo series range.
+       * Each marker has an id, timestamp (seconds, matching the series x-axis), description
+       * and optional color.
+       */
+      function sendTimeSeriesMarkers() {
+        const markers = [
+          { id: 'alarm-1', timestamp: 7200,  description: 'High pressure alarm',     color: '#f96161' },
+          { id: 'maint-1', timestamp: 21600, description: 'Pump maintenance window', color: '#f9c846' },
+          { id: 'shift-1', timestamp: 43200, description: 'Shift change',            color: '#4e9af1' },
+          { id: 'alarm-2', timestamp: 64800, description: 'Flow rate drop detected', color: '#f97f51' },
+        ]
+        window.parent.postMessage({ event: 'timeSeriesMarkers', data: { markers } }, hostOrigin)
+        addTextNode(`timeSeriesMarkers sent — ${markers.length} markers`)
+      }
+
+      /**
+       * Generates a synthetic Float64 ArrayBuffer in stride-4 envelope format:
+       * each sample is [x, mean, min, max].
+       * @param {string} seriesId
+       * @param {number} xMin
+       * @param {number} xMax
+       * @param {number} sampleCount
+       * @returns {ArrayBuffer}
+       */
+      function generateSeriesBuffer(seriesId, xMin, xMax, sampleCount) {
+        const arr = new Float64Array(sampleCount * 4)
+        const range = xMax - xMin
+        for (let i = 0; i < sampleCount; i++) {
+          const x = xMin + (i / Math.max(1, sampleCount - 1)) * range
+          let mean, spread
+          if (seriesId === 'pressure') {
+            mean = 200 + 20 * Math.sin((x / 86400) * 2 * Math.PI * 3)
+              + 5 * Math.sin((x / 86400) * 2 * Math.PI * 17)
+            spread = 4 + 2 * Math.abs(Math.sin((x / 86400) * 2 * Math.PI * 7))
+          } else if (seriesId === 'temperature') {
+            mean = 60 + 30 * (x / 86400)
+              + 4 * Math.sin((x / 86400) * 2 * Math.PI * 8)
+            spread = 1.5 + Math.abs(Math.sin((x / 86400) * 2 * Math.PI * 13))
+          } else {
+            mean = Math.max(0, 80 + 40 * Math.sin((x / 86400) * 2 * Math.PI * 5)
+              + 15 * Math.sin((x / 86400) * 2 * Math.PI * 22))
+            spread = 6 + 4 * Math.abs(Math.sin((x / 86400) * 2 * Math.PI * 9))
+          }
+          arr[i * 4]     = x
+          arr[i * 4 + 1] = mean
+          arr[i * 4 + 2] = mean - spread
+          arr[i * 4 + 3] = mean + spread
+        }
+        return arr.buffer
+      }
+
+      function deleteChart() {
+        if (!chartId) {
+          addTextNode('No chart ID available. Create a chart first.')
+          return
+        }
+
+        const message = {
+          event: 'deleteChart',
+          data: {
+            id: chartId,
+          },
+        }
+        window.parent.postMessage(message, hostOrigin)
+        addTextNode('Chart deletion requested')
       }
     </script>
   </body>
