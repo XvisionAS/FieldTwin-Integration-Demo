@@ -189,7 +189,7 @@
               {
                 hostOrigin = message.origin
                 const token = document.getElementById('token')
-                token.innerHTML = `${message.data.token}`
+                token.textContent = `${message.data.token}`
                 // Auto-register time series so data is ready when the panel opens
                 // sendTimeSeriesInfo()
                 // sendTimeSeriesMarkers()
@@ -256,19 +256,12 @@
               break
             default:
               if (message.data.type) {
-                const focusOn = document.getElementById('focusOn')
-                focusOn.innerHTML = `
-    <button onclick="focusOn('${message.data.type}', '${message.data.id}')">
-      <strong>
-        Focus on ${message.data.type} with id ${message.data.id}
-      </strong>
-    </button>
-    <button onclick="getCostQueryForItem('${message.data.type}', '${message.data.id}')">
-      <strong>
-        Get Cost Query For id ${message.data.id}
-      </strong>
-    </button>
-    `
+                const container = document.getElementById('focusOn')
+                const { type, id } = message.data
+                container.replaceChildren(
+                  actionButton(`Focus on ${type} with id ${id}`, () => focusOn(type, id)),
+                  actionButton(`Get Cost Query For id ${id}`, () => getCostQueryForItem(type, id))
+                )
               }
           }
         }
@@ -409,10 +402,27 @@
         window.parent.postMessage(message, hostOrigin)
       }
 
+      /**
+       * Builds an action button, with the label set as text and the handler bound as a
+       * function, so that message fields cannot become markup or script.
+       */
+      function actionButton(label, onClick) {
+        const button = document.createElement('button')
+        const strong = document.createElement('strong')
+        strong.textContent = label
+        button.appendChild(strong)
+        button.addEventListener('click', onClick)
+        return button
+      }
+
       function addTextNode(text) {
         var newDiv = document.createElement('li')
         const date = moment().format('hh:mm:ss')
-        newDiv.innerHTML = `[${date}]<pre><code>${text}</code></pre>`
+        const pre = document.createElement('pre')
+        const code = document.createElement('code')
+        code.textContent = text
+        pre.appendChild(code)
+        newDiv.append(`[${date}]`, pre)
         event_log = document.getElementById('event_log')
         event_log.prepend(newDiv)
         console.log(`${date}: ${text}`)
