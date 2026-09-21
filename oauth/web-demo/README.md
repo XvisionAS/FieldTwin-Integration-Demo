@@ -32,7 +32,7 @@ PKCE (`code_challenge`/`code_verifier`, S256) is required for every client.
 4. Change into this directory
    ```
    cd <path to cloned repository or extracted zip>
-   cd sauth/web-demo
+   cd oauth/web-demo
    ```
 
 No `npm install` is needed — the script only uses Node's built-in modules.
