@@ -117,8 +117,12 @@ async function testJwt(accessToken) {
 async function refreshTokens(refreshToken) {
   const response = await fetch(`${BACKEND_URL}/oauth/token`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ grant_type: 'refresh_token', refresh_token: refreshToken }),
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      grant_type: 'refresh_token',
+      client_id: CLIENT_ID,
+      refresh_token: refreshToken,
+    }).toString(),
   })
   const data = await response.json()
   if (!response.ok) {
@@ -218,13 +222,14 @@ async function login() {
 
   const tokenResponse = await fetch(`${BACKEND_URL}/oauth/token`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
       grant_type: 'authorization_code',
+      client_id: CLIENT_ID,
       code,
       redirect_uri: redirectUri,
       code_verifier: codeVerifier,
-    }),
+    }).toString(),
   })
   const data = await tokenResponse.json()
   if (!tokenResponse.ok) {

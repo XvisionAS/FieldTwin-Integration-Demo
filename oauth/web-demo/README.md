@@ -14,25 +14,25 @@ exchange, and stores the resulting token pair server-side in a session
 the token against the API, refresh it, log out, and view/revoke this app's
 own authorization.
 
-This demonstrates **FieldTwin's specific implementation** of the OAuth2
-authorization-code + PKCE flow, not a generic, spec-conformant OAuth client.
-It differs from RFC 6749 in ways that matter if you plug in a generic OAuth
-library instead of following this demo directly:
+This demonstrates **FieldTwin's implementation** of the OAuth2
+authorization-code + PKCE flow. `/oauth/token` requests use
+`application/x-www-form-urlencoded` bodies and include `client_id`, per
+RFC 6749 §4.1.3, matching a standard public-client token request.
+
+One intentional deviation remains, and is outside this demo's control:
 
 - Authorization starts through the FieldTwin login frontend, which then
   drives `/oauth/authorize` itself — a client doesn't call that endpoint
-  directly.
-- `/oauth/authorize` responds with **JSON**, which the login frontend
-  navigates on the client's behalf, not an HTTP redirect with a `Location`
-  header.
-- Token requests (`/oauth/token`) use a **JSON** body, not
-  `application/x-www-form-urlencoded` as RFC 6749 §4.1.3 specifies.
-- The token exchange **omits `client_id`** — the authorization code and PKCE
-  `code_verifier` are what's authenticated, not the client itself.
+  directly. `/oauth/authorize` responds with **JSON**, which the login
+  frontend navigates on the client's behalf, not an HTTP redirect with a
+  `Location` header. This is FieldTwin login-frontend behavior, not
+  something `server.mjs` sends or can change.
 
-A generic OAuth client library that assumes standard RFC 6749 wire formats
-will likely need patching (or won't work at all) against this backend;
-treat the requests below as the source of truth instead.
+> **Not yet verified against a live FieldTwin backend.** The
+> `application/x-www-form-urlencoded` + `client_id` change above hasn't been
+> exercised against a real `/oauth/token` endpoint yet — if your backend
+> rejects it, that's a backend compatibility gap to confirm/fix, not
+> something to silently work around here.
 
 ## What a "client" is
 

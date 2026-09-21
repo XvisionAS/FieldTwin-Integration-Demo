@@ -316,13 +316,14 @@ async function handleRequest(req, res) {
     try {
       const tokenResponse = await fetch(`${BACKEND_URL}/oauth/token`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
           grant_type: 'authorization_code',
+          client_id: EFFECTIVE_CLIENT_ID,
           code,
           redirect_uri: REDIRECT_URI,
           code_verifier: codeVerifier,
-        }),
+        }).toString(),
       })
       const data = await tokenResponse.json()
       if (!tokenResponse.ok) {
@@ -437,8 +438,12 @@ async function handleRequest(req, res) {
     try {
       const refreshResponse = await fetch(`${BACKEND_URL}/oauth/token`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ grant_type: 'refresh_token', refresh_token: session.refreshToken }),
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          grant_type: 'refresh_token',
+          client_id: EFFECTIVE_CLIENT_ID,
+          refresh_token: session.refreshToken,
+        }).toString(),
       })
       const data = await refreshResponse.json()
       if (!refreshResponse.ok) {
