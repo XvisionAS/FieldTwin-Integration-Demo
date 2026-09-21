@@ -12,6 +12,10 @@ const CLIENT_ID = process.env.CLIENT_ID
 const REDIRECT_URI = `http://localhost:${PORT}/callback`
 const MANIFEST_URL = `http://localhost:${PORT}/manifest`
 
+// Debug-only: renders the raw access_token on the logged-in page. Off by default - the refresh
+// token is never rendered, opt-in or not (see the security notes in the README).
+const SHOW_TOKENS = process.env.UNSAFE_SHOW_TOKENS === '1'
+
 // This integration registers itself via its own /manifest URL (paste it into the admin UI's
 // "add by manifest URL" field, or PUT it to /API/v1.10/:accountId/integrations/manifest).
 const MANIFEST = {
@@ -28,36 +32,101 @@ const MANIFEST = {
 const EFFECTIVE_CLIENT_ID = CLIENT_ID || MANIFEST.id
 
 // One flow in flight per state - fine for a demo, keyed so a stray callback can't be confused
-// with the request actually waiting on it.
+// with the request actually waiting on it. Entries carry a creation time so they can expire.
 const pending = new Map()
+const PENDING_TTL_MS = 5 * 60 * 1000
+const MAX_PENDING = 500
 
 // Token pairs live server-side, keyed by an opaque session id in an HttpOnly cookie - never in a
-// URL, where they'd end up in browser history, a Referer header, or any access log.
+// URL, where they'd end up in browser history, a Referer header, or any access log. Demo-only TTL;
+// a real deployment should size this to its actual refresh-token/session policy.
 const sessions = new Map()
+const SESSION_TTL_MS = 24 * 60 * 60 * 1000
+const MAX_SESSIONS = 500
+
+const ALLOWED_ORIGINS = new Set([`http://localhost:${PORT}`, `http://127.0.0.1:${PORT}`])
+
+const NO_STORE_HTML_HEADERS = {
+  'Content-Type': 'text/html',
+  'Cache-Control': 'no-store, private',
+  Pragma: 'no-cache',
+}
+
+function pruneExpired(map, ttlMs) {
+  const cutoff = Date.now() - ttlMs
+  for (const [key, value] of map) {
+    if (value.createdAt < cutoff) map.delete(key)
+  }
+}
+
+function capSize(map, max) {
+  while (map.size > max) {
+    map.delete(map.keys().next().value)
+  }
+}
+
+// Runs even if nothing hits "/" or logs in for a while, so idle entries don't linger until the
+// next request happens to prune them. unref() so it never keeps the process alive by itself.
+setInterval(() => {
+  pruneExpired(pending, PENDING_TTL_MS)
+  pruneExpired(sessions, SESSION_TTL_MS)
+}, 60 * 1000).unref()
 
 function parseCookies(req) {
   const header = req.headers.cookie || ''
-  return Object.fromEntries(
-    header
-      .split(';')
-      .map((part) => part.trim())
-      .filter(Boolean)
-      .map((part) => {
-        const eq = part.indexOf('=')
-        return [decodeURIComponent(part.slice(0, eq)), decodeURIComponent(part.slice(eq + 1))]
-      })
-  )
+  const cookies = {}
+  for (const part of header.split(';')) {
+    const trimmed = part.trim()
+    if (!trimmed) continue
+    const eq = trimmed.indexOf('=')
+    if (eq === -1) continue
+    try {
+      cookies[decodeURIComponent(trimmed.slice(0, eq))] = decodeURIComponent(trimmed.slice(eq + 1))
+    } catch {
+      // Malformed percent-encoding in a cookie value - ignore that cookie rather than crash.
+    }
+  }
+  return cookies
 }
 
 function createSession(res, accessToken, refreshToken) {
+  pruneExpired(sessions, SESSION_TTL_MS)
+  capSize(sessions, MAX_SESSIONS - 1)
   const sessionId = crypto.randomBytes(24).toString('hex')
-  sessions.set(sessionId, { accessToken, refreshToken })
+  const session = {
+    accessToken,
+    refreshToken,
+    csrfToken: crypto.randomBytes(24).toString('hex'),
+    createdAt: Date.now(),
+  }
+  sessions.set(sessionId, session)
   res.setHeader('Set-Cookie', `sid=${sessionId}; HttpOnly; Path=/; SameSite=Lax`)
-  return sessions.get(sessionId)
+  return session
 }
 
 function getSession(req) {
-  return sessions.get(parseCookies(req).sid)
+  const sessionId = parseCookies(req).sid
+  const session = sessions.get(sessionId)
+  if (!session) return undefined
+  if (Date.now() - session.createdAt > SESSION_TTL_MS) {
+    sessions.delete(sessionId)
+    return undefined
+  }
+  return session
+}
+
+function isTrustedOrigin(req) {
+  const origin = req.headers.origin
+  return !origin || ALLOWED_ORIGINS.has(origin)
+}
+
+function hasValidCsrf(session, formBody) {
+  return Boolean(session.csrfToken) && formBody.get('csrf') === session.csrfToken
+}
+
+function forbidden(res, message) {
+  res.writeHead(403, NO_STORE_HTML_HEADERS)
+  res.end(page(`<h2>Request rejected</h2><p>${escapeHtml(message)}</p><a href="/">Back</a>`))
 }
 
 async function readFormBody(req) {
@@ -96,30 +165,37 @@ function escapeHtml(value) {
 
 // What this user has approved via the OAuth consent screen (GET /oauth/authorizations) - the
 // access_token from the flow above works as the bearer here too, same as any other resource call.
+// The backend restricts an integration-scoped token to its own authorization, so this normally
+// returns at most one entry. Failures are reported distinctly from "no apps" rather than
+// collapsed into an empty list.
 async function fetchConnectedApps(accessToken) {
   try {
     const response = await fetch(`${BACKEND_URL}/oauth/authorizations`, {
       headers: { Authorization: `Bearer ${accessToken}` },
     })
     if (!response.ok) {
-      return []
+      return { ok: false, error: `HTTP ${response.status}` }
     }
-    return (await response.json()) || []
+    return { ok: true, apps: (await response.json()) || [] }
   } catch (e) {
-    return []
+    return { ok: false, error: e.message }
   }
 }
 
-function renderConnectedApps(apps) {
-  if (!apps.length) {
-    return '<p>No connected apps for this user.</p>'
+function renderConnectedApps(result, csrfField) {
+  if (!result.ok) {
+    return `<p>Could not check this app's authorization: ${escapeHtml(result.error)}</p>`
   }
-  return `<ul>${apps
+  if (!result.apps.length) {
+    return '<p>No authorization found for this app - it may already have been revoked.</p>'
+  }
+  return `<ul>${result.apps
     .map(
       (app) => `
     <li style="margin-bottom: 0.5em;">
       ${escapeHtml(app.name || app.clientId)} - granted ${escapeHtml(app.grantedAt || 'unknown')}
       <form method="POST" action="/revoke" style="display:inline">
+        ${csrfField}
         <input type="hidden" name="client_id" value="${escapeHtml(app.clientId)}" />
         <button type="submit">Revoke</button>
       </form>
@@ -130,32 +206,48 @@ function renderConnectedApps(apps) {
 
 // Shared page for anywhere we end up holding a token pair (login, revoke, JWT test, refresh),
 // optionally with a one-line `notice`.
-async function renderLoggedInPage(accessToken, refreshToken, { expiresIn, notice } = {}) {
-  const { header, payload } = decodeJwt(accessToken)
-  const apps = await fetchConnectedApps(accessToken)
+async function renderLoggedInPage(session, { expiresIn, notice } = {}) {
+  const { header, payload } = decodeJwt(session.accessToken)
+  const authResult = await fetchConnectedApps(session.accessToken)
+  const csrfField = `<input type="hidden" name="csrf" value="${escapeHtml(session.csrfToken)}" />`
   return page(`
     <h2>Logged in</h2>
     ${notice ? `<p><strong>${escapeHtml(notice)}</strong></p>` : ''}
     ${expiresIn !== undefined ? `<p>expires_in: ${expiresIn}s</p>` : ''}
-    <h3>Connected apps</h3>
-    ${renderConnectedApps(apps)}
+    <h3>This app's authorization</h3>
+    <p style="font-size:0.85em;color:#555">
+      FieldTwin restricts an integration-scoped token to seeing and revoking only its own
+      authorization - the full list of apps you've connected is only visible in your FieldTwin
+      account settings.
+    </p>
+    ${renderConnectedApps(authResult, csrfField)}
     <p>
       <form method="POST" action="/whoami" style="display:inline">
+        ${csrfField}
         <button type="submit">Test JWT (GET /API/v2.0/accounts/:accountId)</button>
       </form>
       <form method="POST" action="/refresh" style="display:inline">
+        ${csrfField}
         <button type="submit">Refresh (POST /oauth/token grant_type=refresh_token)</button>
+      </form>
+      <form method="POST" action="/logout" style="display:inline">
+        ${csrfField}
+        <button type="submit">Log out</button>
       </form>
     </p>
     <h3>JWT header</h3><pre>${escapeHtml(JSON.stringify(header, null, 2))}</pre>
     <h3>JWT payload</h3><pre>${escapeHtml(JSON.stringify(payload, null, 2))}</pre>
-    <h3>raw access_token</h3><pre style="white-space: pre-wrap; word-break: break-all;">${escapeHtml(accessToken)}</pre>
-    <h3>raw refresh_token</h3><pre style="white-space: pre-wrap; word-break: break-all;">${escapeHtml(refreshToken)}</pre>
+    ${
+      SHOW_TOKENS
+        ? `<h3>⚠️ raw access_token — UNSAFE_SHOW_TOKENS=1, do not enable outside a local demo</h3>
+    <pre style="white-space: pre-wrap; word-break: break-all;">${escapeHtml(session.accessToken)}</pre>`
+        : ''
+    }
     <a href="/">Log in again</a>
   `)
 }
 
-const server = http.createServer(async (req, res) => {
+async function handleRequest(req, res) {
   const url = new URL(req.url, `http://localhost:${PORT}`)
 
   if (url.pathname === '/manifest') {
@@ -175,10 +267,13 @@ const server = http.createServer(async (req, res) => {
   }
 
   if (url.pathname === '/') {
+    pruneExpired(pending, PENDING_TTL_MS)
+    capSize(pending, MAX_PENDING - 1)
+
     const state = crypto.randomBytes(16).toString('hex')
     const codeVerifier = crypto.randomBytes(32).toString('base64url')
     const codeChallenge = crypto.createHash('sha256').update(codeVerifier).digest('base64url')
-    pending.set(state, codeVerifier)
+    pending.set(state, { codeVerifier, createdAt: Date.now() })
 
     const authorizeUrl = new URL(LOGIN_URL)
     authorizeUrl.searchParams.set('client_id', EFFECTIVE_CLIENT_ID)
@@ -203,8 +298,9 @@ const server = http.createServer(async (req, res) => {
     const code = url.searchParams.get('code')
     const state = url.searchParams.get('state')
     const error = url.searchParams.get('error')
-    const codeVerifier = pending.get(state)
+    const entry = pending.get(state)
     pending.delete(state)
+    const codeVerifier = entry && Date.now() - entry.createdAt <= PENDING_TTL_MS ? entry.codeVerifier : undefined
 
     if (error) {
       res.writeHead(200, { 'Content-Type': 'text/html' })
@@ -213,7 +309,7 @@ const server = http.createServer(async (req, res) => {
     }
     if (!code || !codeVerifier) {
       res.writeHead(400, { 'Content-Type': 'text/html' })
-      res.end(page(`<h2>Invalid callback</h2><p>Missing or unrecognized state.</p><a href="/">Try again</a>`))
+      res.end(page(`<h2>Invalid callback</h2><p>Missing, unrecognized, or expired state.</p><a href="/">Try again</a>`))
       return
     }
 
@@ -233,9 +329,9 @@ const server = http.createServer(async (req, res) => {
         throw new Error(data.error_description || data.error || `HTTP ${tokenResponse.status}`)
       }
 
-      createSession(res, data.access_token, data.refresh_token)
-      res.writeHead(200, { 'Content-Type': 'text/html' })
-      res.end(await renderLoggedInPage(data.access_token, data.refresh_token, { expiresIn: data.expires_in }))
+      const session = createSession(res, data.access_token, data.refresh_token)
+      res.writeHead(200, NO_STORE_HTML_HEADERS)
+      res.end(await renderLoggedInPage(session, { expiresIn: data.expires_in }))
     } catch (e) {
       res.writeHead(502, { 'Content-Type': 'text/html' })
       res.end(page(`<h2>Token exchange failed</h2><pre>${escapeHtml(String(e.message || e))}</pre><a href="/">Try again</a>`))
@@ -246,13 +342,22 @@ const server = http.createServer(async (req, res) => {
   if (url.pathname === '/revoke' && req.method === 'POST') {
     const session = getSession(req)
     if (!session) {
-      res.writeHead(400, { 'Content-Type': 'text/html' })
+      res.writeHead(400, NO_STORE_HTML_HEADERS)
       res.end(page(`<h2>No active session</h2><a href="/">Log in</a>`))
       return
     }
-    const clientId = (await readFormBody(req)).get('client_id')
+    if (!isTrustedOrigin(req)) {
+      forbidden(res, 'Unexpected Origin header.')
+      return
+    }
+    const body = await readFormBody(req)
+    if (!hasValidCsrf(session, body)) {
+      forbidden(res, 'Invalid or missing CSRF token.')
+      return
+    }
+    const clientId = body.get('client_id')
     if (!clientId) {
-      res.writeHead(400, { 'Content-Type': 'text/html' })
+      res.writeHead(400, NO_STORE_HTML_HEADERS)
       res.end(page(`<h2>Missing client_id</h2><a href="/">Back</a>`))
       return
     }
@@ -270,16 +375,25 @@ const server = http.createServer(async (req, res) => {
       notice = `Failed to revoke ${clientId}: ${e.message}`
     }
 
-    res.writeHead(200, { 'Content-Type': 'text/html' })
-    res.end(await renderLoggedInPage(session.accessToken, session.refreshToken, { notice }))
+    res.writeHead(200, NO_STORE_HTML_HEADERS)
+    res.end(await renderLoggedInPage(session, { notice }))
     return
   }
 
   if (url.pathname === '/whoami' && req.method === 'POST') {
     const session = getSession(req)
     if (!session) {
-      res.writeHead(400, { 'Content-Type': 'text/html' })
+      res.writeHead(400, NO_STORE_HTML_HEADERS)
       res.end(page(`<h2>No active session</h2><a href="/">Log in</a>`))
+      return
+    }
+    if (!isTrustedOrigin(req)) {
+      forbidden(res, 'Unexpected Origin header.')
+      return
+    }
+    const body = await readFormBody(req)
+    if (!hasValidCsrf(session, body)) {
+      forbidden(res, 'Invalid or missing CSRF token.')
       return
     }
 
@@ -298,16 +412,25 @@ const server = http.createServer(async (req, res) => {
       notice = `Could not reach backend to check: ${e.message}`
     }
 
-    res.writeHead(200, { 'Content-Type': 'text/html' })
-    res.end(await renderLoggedInPage(session.accessToken, session.refreshToken, { notice }))
+    res.writeHead(200, NO_STORE_HTML_HEADERS)
+    res.end(await renderLoggedInPage(session, { notice }))
     return
   }
 
   if (url.pathname === '/refresh' && req.method === 'POST') {
     const session = getSession(req)
     if (!session) {
-      res.writeHead(400, { 'Content-Type': 'text/html' })
+      res.writeHead(400, NO_STORE_HTML_HEADERS)
       res.end(page(`<h2>No active session</h2><a href="/">Log in</a>`))
+      return
+    }
+    if (!isTrustedOrigin(req)) {
+      forbidden(res, 'Unexpected Origin header.')
+      return
+    }
+    const body = await readFormBody(req)
+    if (!hasValidCsrf(session, body)) {
+      forbidden(res, 'Invalid or missing CSRF token.')
       return
     }
 
@@ -323,15 +446,16 @@ const server = http.createServer(async (req, res) => {
       }
       session.accessToken = data.access_token
       session.refreshToken = data.refresh_token
-      res.writeHead(200, { 'Content-Type': 'text/html' })
+      session.createdAt = Date.now()
+      res.writeHead(200, NO_STORE_HTML_HEADERS)
       res.end(
-        await renderLoggedInPage(session.accessToken, session.refreshToken, {
+        await renderLoggedInPage(session, {
           expiresIn: data.expires_in,
           notice: 'Refreshed: minted a fresh access_token/refresh_token pair.',
         })
       )
     } catch (e) {
-      res.writeHead(400, { 'Content-Type': 'text/html' })
+      res.writeHead(400, NO_STORE_HTML_HEADERS)
       res.end(
         page(`<h2>Refresh failed</h2><pre>${escapeHtml(String(e.message || e))}</pre><a href="/">Log in again</a>`)
       )
@@ -339,11 +463,52 @@ const server = http.createServer(async (req, res) => {
     return
   }
 
+  if (url.pathname === '/logout' && req.method === 'POST') {
+    const session = getSession(req)
+    if (session) {
+      if (!isTrustedOrigin(req)) {
+        forbidden(res, 'Unexpected Origin header.')
+        return
+      }
+      const body = await readFormBody(req)
+      if (!hasValidCsrf(session, body)) {
+        forbidden(res, 'Invalid or missing CSRF token.')
+        return
+      }
+      sessions.delete(parseCookies(req).sid)
+    }
+    res.setHeader('Set-Cookie', 'sid=; HttpOnly; Path=/; SameSite=Lax; Max-Age=0')
+    res.writeHead(200, NO_STORE_HTML_HEADERS)
+    res.end(page(`<h2>Logged out</h2><a href="/">Log in again</a>`))
+    return
+  }
+
   res.writeHead(404)
   res.end('not found')
+}
+
+const server = http.createServer((req, res) => {
+  handleRequest(req, res).catch((err) => {
+    console.error('Unhandled error handling request:', err)
+    if (!res.headersSent) {
+      res.writeHead(500, { 'Content-Type': 'text/plain' })
+    }
+    res.end('Internal server error')
+  })
 })
 
-server.listen(PORT, () => {
+server.on('error', (err) => {
+  console.error('Server error:', err)
+})
+
+// A malformed HTTP request (not one of our own handler's errors) reaches here instead of crashing.
+server.on('clientError', (err, socket) => {
+  if (socket.writable) {
+    socket.end('HTTP/1.1 400 Bad Request\r\n\r\n')
+  }
+})
+
+server.listen(PORT, '127.0.0.1', () => {
   console.log(`OAuth web demo listening on http://localhost:${PORT}`)
   console.log(`Manifest URL: ${MANIFEST_URL}`)
   console.log(`Using client_id: ${EFFECTIVE_CLIENT_ID}${CLIENT_ID ? '' : ' (the manifest\'s own id - register it and log in, no restart needed)'}`)

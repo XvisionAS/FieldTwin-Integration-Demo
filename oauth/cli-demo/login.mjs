@@ -129,16 +129,19 @@ async function refreshTokens(refreshToken) {
   return data
 }
 
+// The backend restricts an integration-scoped token to seeing and revoking only its own
+// authorization, so this normally returns at most one entry, not every app the user has
+// connected - see the README for how to view the full list.
 async function listAuthorizations(accessToken) {
   const response = await fetch(`${BACKEND_URL}/oauth/authorizations`, {
     headers: { Authorization: `Bearer ${accessToken}` },
   })
   if (!response.ok) {
-    throw new Error(`Failed to list connected apps: HTTP ${response.status}`)
+    throw new Error(`Failed to check this app's authorization: HTTP ${response.status}`)
   }
   const apps = (await response.json()) || []
   if (!apps.length) {
-    console.log('No connected apps for this user.')
+    console.log('No authorization found for this app - it may already have been revoked.')
   } else {
     apps.forEach((app, i) => console.log(`${i + 1}. ${app.clientId} (${app.name || 'unnamed'}) - granted ${app.grantedAt}`))
   }
@@ -168,7 +171,7 @@ async function menu(tokens) {
 
   while (true) {
     console.log(
-      '\nWhat next?\n  1) Test JWT (GET /API/v2.0/accounts/:accountId)\n  2) Refresh tokens\n  3) List connected apps\n  4) Revoke a connected app\n  5) Re-login (e.g. as a different user)\n  q) Quit'
+      "\nWhat next?\n  1) Test JWT (GET /API/v2.0/accounts/:accountId)\n  2) Refresh tokens\n  3) View this app's authorization\n  4) Revoke this app's authorization\n  5) Re-login (e.g. as a different user)\n  q) Quit"
     )
     const answer = (await ask('> ')).trim()
 
@@ -184,11 +187,12 @@ async function menu(tokens) {
       } else if (answer === '4') {
         const apps = await listAuthorizations(tokens.access_token)
         if (apps.length) {
-          const input = (await ask('Revoke which one (number from the list above, or its client_id)? ')).trim()
-          const index = Number(input)
-          const clientId = apps[index - 1] ? apps[index - 1].clientId : input
-          if (clientId) {
-            await revokeAuthorization(tokens.access_token, clientId)
+          const input = (await ask(`Revoke which one (1-${apps.length})? `)).trim()
+          const app = apps[Number(input) - 1]
+          if (app) {
+            await revokeAuthorization(tokens.access_token, app.clientId)
+          } else {
+            console.log('Not a valid selection.')
           }
         }
       } else if (answer === '5') {

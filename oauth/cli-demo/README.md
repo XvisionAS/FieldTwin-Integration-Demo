@@ -10,7 +10,28 @@ real, logged-in FieldTwin user, e.g. a CLI tool or a backend service.
 `login.mjs` opens the FieldTwin login page in the user's browser, listens on
 a loopback port for the redirect, exchanges the returned code for a token
 pair, and then offers a small text menu to exercise the token (test it
-against the API, refresh it, list/revoke connected apps, or log in again).
+against the API, refresh it, view/revoke this app's own authorization, or
+log in again).
+
+This demonstrates **FieldTwin's specific implementation** of the OAuth2
+authorization-code + PKCE flow, not a generic, spec-conformant OAuth client.
+It differs from RFC 6749 in ways that matter if you plug in a generic OAuth
+library instead of following this demo directly:
+
+- Authorization starts through the FieldTwin login frontend, which then
+  drives `/oauth/authorize` itself — a client doesn't call that endpoint
+  directly.
+- `/oauth/authorize` responds with **JSON**, which the login frontend
+  navigates on the client's behalf, not an HTTP redirect with a `Location`
+  header.
+- Token requests (`/oauth/token`) use a **JSON** body, not
+  `application/x-www-form-urlencoded` as RFC 6749 §4.1.3 specifies.
+- The token exchange **omits `client_id`** — the authorization code and PKCE
+  `code_verifier` are what's authenticated, not the client itself.
+
+A generic OAuth client library that assumes standard RFC 6749 wire formats
+will likely need patching (or won't work at all) against this backend;
+treat the requests in `login.mjs` as the source of truth instead.
 
 ## What a "client" is
 
@@ -20,6 +41,24 @@ thing that already powers embedded iframe tabs. Its `id` is the `client_id`
 this demo sends.
 
 PKCE (`code_challenge`/`code_verifier`, S256) is required for every client.
+A registered client's `public` field is currently informational/reserved —
+it does not relax the PKCE requirement.
+
+## Requirements
+
+- **Node 18 or later** — the script uses Node's built-in `fetch`, added in
+  Node 18.
+- **A FieldTwin backend that serves the `/oauth/authorize`, `/oauth/token`
+  and `/oauth/authorizations` routes.** These are newer than the rest of
+  this repo; if you're pointed at an older/deployed FieldTwin instance and
+  login fails immediately, check with the FieldTwin team on whether that
+  instance has been upgraded to include them.
+- The default `LOGIN_URL`/`BACKEND_URL` (`*.lvh.me`) assume a local FieldTwin
+  development stack, where `lvh.me` and subdomains resolve to `127.0.0.1`.
+  Against a deployed instance, set both to that instance's actual frontend
+  and backend URLs (see
+  [Environment variables](#environment-variables)) — e.g.
+  `LOGIN_URL=https://app.example.com/login BACKEND_URL=https://api.example.com`.
 
 ## Installation
 
@@ -56,7 +95,8 @@ Fields relevant to OAuth:
 | Field | Type | Notes |
 | --- | --- | --- |
 | `id` | string | Becomes `client_id`. Defaults to `oauth-demo-client` if you don't override `CLIENT_ID` below — register a tab with that id once and you never need to set `CLIENT_ID`. |
-| `name` | string | Shown to the user on the consent screen. |
+| `name` | string | Shown to the user on the consent screen. **Required** by the v1.9 integration schema. |
+| `url` | string | **Required** by the v1.9 integration schema when registering via the API. Any placeholder URL works for this demo — it isn't otherwise used by the OAuth flow. |
 | `redirectUris` | string[] | `http://127.0.0.1:*/callback` or `http://localhost:*/callback` — only the port is a wildcard. |
 | `projectWideAccess` or `projectAllFromUser` | boolean | **At least one must be `true`**, since this demo logs in with no project context. |
 
@@ -75,8 +115,8 @@ menu:
 What next?
   1) Test JWT (GET /API/v2.0/accounts/:accountId)
   2) Refresh tokens
-  3) List connected apps
-  4) Revoke a connected app
+  3) View this app's authorization
+  4) Revoke this app's authorization
   5) Re-login (e.g. as a different user)
   q) Quit
 ```
@@ -84,9 +124,13 @@ What next?
 - **Test JWT** makes a real API call with the current access token, so it
   also proves whether the token still works after a revoke.
 - **Refresh** exchanges the `refresh_token` for a fresh token pair.
-- **List/revoke connected apps** call `GET /oauth/authorizations` and
-  `POST /oauth/authorizations/:clientId/revoke` — the same self-service
-  endpoints a user has for any client they've approved.
+- **View/revoke this app's authorization** call `GET /oauth/authorizations`
+  and `POST /oauth/authorizations/:clientId/revoke` — the same self-service
+  endpoints a user has for any client they've approved. The backend
+  restricts an integration-scoped token to seeing and revoking only its own
+  authorization, so this normally shows at most one entry, not every app
+  you've connected — the full list is only available through your
+  FieldTwin account's own interactive UI/session.
 
 ### Environment variables
 
