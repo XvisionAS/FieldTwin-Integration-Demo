@@ -25,13 +25,11 @@ function decodeJwt(token) {
 }
 
 function openBrowser(url) {
-  // 'start' is a cmd.exe builtin, not an executable - it only works launched through cmd /c, and
-  // needs an empty title argument or it treats a quoted url as the window title.
   const child =
     process.platform === 'darwin'
       ? spawn('open', [url], { stdio: 'ignore', detached: true })
       : process.platform === 'win32'
-        ? spawn('cmd', ['/c', 'start', '""', url], { stdio: 'ignore', detached: true })
+        ? spawn('explorer.exe', [url], { stdio: 'ignore', detached: true })
         : spawn('xdg-open', [url], { stdio: 'ignore', detached: true })
 
   // spawn() failures (e.g. no GUI browser on this machine) surface as an async 'error' event, not
@@ -40,9 +38,23 @@ function openBrowser(url) {
   child.unref()
 }
 
+const CALLBACK_TIMEOUT_MS = 5 * 60 * 1000
+
 async function waitForCallback(state) {
   return new Promise((resolve, reject) => {
     let redirectUri
+    let settled = false
+    let timer
+
+    // Guards against the timeout and a real callback racing each other, and against the
+    // request handler and the server's own 'error' event both trying to settle.
+    const settle = (fn, value) => {
+      if (settled) return
+      settled = true
+      clearTimeout(timer)
+      fn(value)
+    }
+
     const server = http.createServer((req, res) => {
       const url = new URL(req.url, 'http://127.0.0.1')
       if (url.pathname !== '/callback') {
@@ -67,13 +79,22 @@ async function waitForCallback(state) {
       server.close()
 
       if (error) {
-        reject(new Error(`authorization denied: ${error}`))
+        settle(reject, new Error(`authorization denied: ${error}`))
       } else if (!returnedCode) {
-        reject(new Error('missing code'))
+        settle(reject, new Error('missing code'))
       } else {
-        resolve({ code: returnedCode, redirectUri })
+        settle(resolve, { code: returnedCode, redirectUri })
       }
     })
+
+    server.on('error', (err) => settle(reject, err))
+
+    // Without this, a login that's never completed (tab closed, browser never opened) leaves
+    // the process hanging forever on an open loopback listener.
+    timer = setTimeout(() => {
+      server.close()
+      settle(reject, new Error('Timed out waiting for the login callback.'))
+    }, CALLBACK_TIMEOUT_MS)
 
     server.listen(0, '127.0.0.1', () => {
       const port = server.address().port

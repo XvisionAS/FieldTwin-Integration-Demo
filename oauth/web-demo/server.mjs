@@ -44,7 +44,9 @@ const sessions = new Map()
 const SESSION_TTL_MS = 24 * 60 * 60 * 1000
 const MAX_SESSIONS = 500
 
-const ALLOWED_ORIGINS = new Set([`http://localhost:${PORT}`, `http://127.0.0.1:${PORT}`])
+const ALLOWED_ORIGINS = new Set(
+  [`http://localhost:${PORT}`, `http://127.0.0.1:${PORT}`].map((origin) => new URL(origin).origin)
+)
 
 const NO_STORE_HTML_HEADERS = {
   'Content-Type': 'text/html',
@@ -450,7 +452,9 @@ async function handleRequest(req, res) {
         throw new Error(data.error_description || data.error || `HTTP ${refreshResponse.status}`)
       }
       session.accessToken = data.access_token
-      session.refreshToken = data.refresh_token
+      // RFC 6749 §6 permits a refresh response to omit refresh_token, meaning the existing one
+      // stays valid - overwriting it with undefined would break the next refresh.
+      if (data.refresh_token) session.refreshToken = data.refresh_token
       session.createdAt = Date.now()
       res.writeHead(200, NO_STORE_HTML_HEADERS)
       res.end(
