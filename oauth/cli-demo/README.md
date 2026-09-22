@@ -28,12 +28,20 @@ header.
 
 There is no separate OAuth client registry. A client is a **custom tab /
 integration** entry on a FieldTwin account (`account.customTabs`) — the same
-thing that already powers embedded iframe tabs. Its `id` is the `client_id`
-this demo sends.
+thing that already powers embedded iframe tabs.
 
-PKCE (`code_challenge`/`code_verifier`, S256) is required for every client.
-A registered client's `public` field is currently informational/reserved —
-it does not relax the PKCE requirement.
+The `client_id` this demo sends is **`<accountId>:<id>`** — the id of the
+account the customTab is registered on, then a literal colon, then the
+tab's own `id`. A customTab id is only unique within its own account, not
+across every account on the cluster, so FieldTwin always requires the
+account explicitly rather than guessing it from the id alone. This demo
+asks for the account id interactively before opening the login URL (or
+reads it from `ACCOUNT_ID`, see below).
+
+PKCE (`code_challenge`/`code_verifier`, S256) is required for every client
+— there's no confidential-client/public-client distinction in the
+customTab schema yet, so every client is treated as a public PKCE client
+regardless of how it's registered.
 
 ## Requirements
 
@@ -72,10 +80,9 @@ Before running the demo, register a custom tab as an OAuth client on your
 FieldTwin account. Pick whichever of these is most convenient — all three
 write the same shape into `account.customTabs`:
 
-- **Admin UI**: account → Integrations → create a tab, then set
-  "Public OAuth client" and add a redirect URI of
-  `http://127.0.0.1:*/callback` (the port is a wildcard; scheme, host and
-  path/query must match exactly) in the tab's Information panel.
+- **Admin UI**: account → Integrations → create a tab, then add a redirect
+  URI of `http://127.0.0.1:*/callback` (the port is a wildcard; scheme,
+  host and path/query must match exactly) in the tab's Information panel.
 - **API**: `POST /API/v1.9/:accountId/integrations` with a JSON body — see
   fields below.
 - **Manifest URL**: see the companion [web-demo](../web-demo/), which serves
@@ -85,7 +92,7 @@ Fields relevant to OAuth:
 
 | Field | Type | Notes |
 | --- | --- | --- |
-| `id` | string | Becomes `client_id`. Defaults to `oauth-demo-client` if you don't override `CLIENT_ID` below — register a tab with that id once and you never need to set `CLIENT_ID`. |
+| `id` | string | Combined with the account id (`<accountId>:<id>`) to become `client_id`. Defaults to `oauth-demo-client` if you don't override `CLIENT_ID` below — register a tab with that id once and you never need to set `CLIENT_ID`. |
 | `name` | string | Shown to the user on the consent screen. **Required** by the v1.9 integration schema. |
 | `url` | string | **Required** by the v1.9 integration schema when registering via the API. Any placeholder URL works for this demo — it isn't otherwise used by the OAuth flow. |
 | `redirectUris` | string[] | `http://127.0.0.1:*/callback` or `http://localhost:*/callback` — only the port is a wildcard. |
@@ -97,10 +104,12 @@ Fields relevant to OAuth:
 node login.mjs
 ```
 
-This opens the login URL in your default browser (falls back to printing
-the URL if it can't be opened automatically). Once you approve the consent
-screen, the script prints the decoded JWT header/payload and drops into a
-menu:
+The script first asks for the FieldTwin account id the customTab from
+"Register a client" above was created on (skip the prompt by setting
+`ACCOUNT_ID`, see below). It then opens the login URL in your default
+browser (falls back to printing the URL if it can't be opened
+automatically). Once you approve the consent screen, the script prints the
+decoded JWT header/payload and drops into a menu:
 
 ```
 What next?
@@ -129,7 +138,8 @@ What next?
 | --- | --- | --- |
 | `LOGIN_URL` | `http://futureon-webapp.lvh.me/login` | Where the authorization request is opened. |
 | `BACKEND_URL` | `http://futureon-backend.lvh.me` | Base URL for `/oauth/token` and the resource API calls. |
-| `CLIENT_ID` | `oauth-demo-client` | Override if you registered the custom tab under a different id. |
+| `ACCOUNT_ID` | *(prompted for)* | The account the customTab is registered on. Set this to skip the interactive prompt. |
+| `CLIENT_ID` | `oauth-demo-client` | The customTab's own `id` — override if you registered it under a different id. Combined with `ACCOUNT_ID` to form the actual `client_id` sent to FieldTwin. |
 
 ### Output
 

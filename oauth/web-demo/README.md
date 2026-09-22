@@ -29,12 +29,22 @@ header.
 
 There is no separate OAuth client registry. A client is a **custom tab /
 integration** entry on a FieldTwin account (`account.customTabs`) — the same
-thing that already powers embedded iframe tabs. Its `id` is the `client_id`
-this demo sends.
+thing that already powers embedded iframe tabs.
 
-PKCE (`code_challenge`/`code_verifier`, S256) is required for every client.
-The manifest's `public` field is currently informational/reserved — it does
-not relax the PKCE requirement.
+The `client_id` this demo sends is **`<accountId>:<id>`** — the id of the
+account the customTab is registered on, then a literal colon, then the
+tab's own `id`. A customTab id is only unique within its own account, not
+across every account on the cluster, so FieldTwin always requires the
+account explicitly rather than guessing it from the id alone. This demo
+asks for that account id on its home page (or reads it from `ACCOUNT_ID`,
+see below) — register the manifest on that same account. A **Reset
+account** button lets you clear it and enter a different one at any time,
+no restart needed.
+
+PKCE (`code_challenge`/`code_verifier`, S256) is required for every client
+— there's no confidential-client/public-client distinction in the manifest
+or customTab schema yet, so every client is treated as a public PKCE
+client regardless of how it's registered.
 
 ## Requirements
 
@@ -73,10 +83,14 @@ node server.mjs
 ```
 
 This starts a server on `http://localhost:5555` (configurable, see below)
-and prints the manifest URL it's serving at `/manifest`.
+and prints the manifest URL it's serving at `/manifest`. Unlike the CLI
+demo, everything else happens in the browser, not the terminal.
 
-1. Open `http://localhost:5555/` in a browser.
-2. Register the demo as a client on your FieldTwin account — either:
+1. Open `http://localhost:5555/` in a browser. If `ACCOUNT_ID` wasn't set
+   (see below), the page opens on a form asking for the FieldTwin account
+   id you're going to register this demo's customTab on — enter it and
+   click **Continue**.
+2. Register the demo as a client on that **same account** — either:
    - copy the manifest URL shown on the page into the admin UI's "add
      integration by manifest URL" field. The browser fetches it directly, so
      this always works for a demo running on your own machine; or
@@ -90,10 +104,14 @@ and prints the manifest URL it's serving at `/manifest`.
      deployed/remote backend this will fail; use the Admin UI method above
      instead, or serve the manifest somewhere the backend can reach; or
    - register a custom tab by hand (Admin UI → Integrations → create a tab,
-     set "Public OAuth client", redirect URI `http://localhost:5555/callback`)
-     — see the fields table below.
+     add redirect URI `http://localhost:5555/callback`) — see the fields
+     table below.
 3. Click **Log in**. No restart is needed once the client is registered —
-   the demo picks up the manifest's own `id` as `client_id` automatically.
+   the demo combines the manifest's own `id` with the account id you gave
+   into `client_id` automatically. If you registered it on a *different*
+   account than you entered, click **Reset account** (shown next to the
+   account id on every page) and enter the correct one — no restart needed
+   either way.
 4. After approving the consent screen you land on a logged-in page showing
    the decoded JWT, this app's own authorization (with a revoke button), and
    buttons to test/refresh the token or log out. The raw access token is
@@ -103,7 +121,7 @@ Fields relevant to OAuth, if registering by hand instead of by manifest:
 
 | Field | Type | Notes |
 | --- | --- | --- |
-| `id` | string | Becomes `client_id`. Defaults to the manifest's own id (`oauth-demo-client`) unless you set `CLIENT_ID`/`MANIFEST_ID` below. |
+| `id` | string | Combined with the account id (`<accountId>:<id>`) to become `client_id`. Defaults to the manifest's own id (`oauth-demo-client`) unless you set `CLIENT_ID`/`MANIFEST_ID` below. |
 | `name` | string | Shown to the user on the consent screen. **Required** by the integration schema. |
 | `url` | string | **Required** by the integration schema. Any placeholder URL works for this demo — it's the login/manifest URL that matters for OAuth, not this field. |
 | `redirectUris` | string[] | Must exactly match `http://localhost:<PORT>/callback`. |
@@ -116,6 +134,7 @@ Fields relevant to OAuth, if registering by hand instead of by manifest:
 | `PORT` | `5555` | Port the demo listens on. |
 | `LOGIN_URL` | `http://futureon-webapp.lvh.me/login` | Where the authorization request is opened. |
 | `BACKEND_URL` | `http://futureon-backend.lvh.me` | Base URL for `/oauth/token` and the resource API calls. |
+| `ACCOUNT_ID` | *(asked for on the home page)* | The account the customTab will be registered on. Set this to skip that form (still changeable later via **Reset account**). |
 | `MANIFEST_ID` | `oauth-demo-client` | The `id` advertised in the served manifest. |
 | `CLIENT_ID` | *(manifest's `id`)* | Override if you registered the custom tab under a different id than the manifest advertises. |
 | `UNSAFE_SHOW_TOKENS` | *(unset)* | Set to `1` to render the raw `access_token` on the logged-in page, for debugging. **Unsafe outside a local demo** — see [Security notes](#security-notes). The `refresh_token` is never rendered, regardless of this setting. |
@@ -154,7 +173,10 @@ restarting the server drops everything immediately.
   hidden form field and checked on every `POST`, and the `Origin` header is
   checked against this demo's own origin as defense in depth. `SameSite=Lax`
   alone isn't enough, since cookies aren't isolated by port and another
-  localhost application can still count as "same-site".
+  localhost application can still count as "same-site". `POST /account` and
+  a pre-login `POST /account/reset` have no session yet to carry a CSRF
+  token, so they rely on the `Origin` check alone — setting/clearing which
+  account id this demo uses isn't itself a sensitive action.
 - **The server only binds to `127.0.0.1`**, matching the loopback-client
   model (RFC 8252 §7.3) — it isn't reachable from other devices on the
   network.

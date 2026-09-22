@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 // Minimal OAuth2 authorization-code + PKCE web client against FieldTwin's login system.
-// Usage: node server.mjs, then register the printed manifest URL - CLIENT_ID is only needed to
-// override which customTab id to use (e.g. one created some other way).
+// Usage: node server.mjs, then open http://localhost:5555/, enter the account id to register
+// this demo's customTab on, and register the printed manifest URL against that same account -
+// CLIENT_ID overrides which customTab id to use; ACCOUNT_ID pre-fills the account id and skips
+// the browser prompt.
 import http from 'node:http'
 import crypto from 'node:crypto'
 
@@ -24,12 +26,22 @@ const MANIFEST = {
   url: `http://localhost:${PORT}/`,
   projectWideAccess: true,
   redirectUris: [REDIRECT_URI, 'http://127.0.0.1:*/callback'],
-  public: true,
 }
 
 // Defaults to the manifest's own id, so login works the moment it's registered, no restart
 // needed; CLIENT_ID overrides it for a tab created some other way.
-const EFFECTIVE_CLIENT_ID = CLIENT_ID || MANIFEST.id
+const TAB_ID = CLIENT_ID || MANIFEST.id
+
+// FieldTwin's OAuth client_id is the compound `<accountId>:<id>` - a customTab id is only unique
+// within its own account, never across the whole graph, so the account has to be explicit.
+// ACCOUNT_ID pre-fills it; otherwise the "/" page collects it through an HTML form (POST
+// /account) before it'll offer a "Log in" button, and "Reset account" (POST /account/reset)
+// clears it again to switch accounts without restarting the process.
+let currentAccountId = process.env.ACCOUNT_ID || null
+
+function getClientId() {
+  return currentAccountId ? `${currentAccountId}:${TAB_ID}` : null
+}
 
 // One flow in flight per state - fine for a demo, keyed so a stray callback can't be confused
 // with the request actually waiting on it. Entries carry a creation time so they can expire.
@@ -91,13 +103,14 @@ function parseCookies(req) {
   return cookies
 }
 
-function createSession(res, accessToken, refreshToken) {
+function createSession(res, accessToken, refreshToken, clientId = getClientId()) {
   pruneExpired(sessions, SESSION_TTL_MS)
   capSize(sessions, MAX_SESSIONS - 1)
   const sessionId = crypto.randomBytes(24).toString('hex')
   const session = {
     accessToken,
     refreshToken,
+    clientId,
     csrfToken: crypto.randomBytes(24).toString('hex'),
     createdAt: Date.now(),
   }
@@ -149,6 +162,34 @@ const manifestCopyBox = `
       style="width: 80%; font-family: monospace; padding: 0.4em;" onclick="this.select()" />
     <button onclick="navigator.clipboard.writeText(document.getElementById('manifestUrl').value).then(() => { this.textContent = 'Copied!'; setTimeout(() => this.textContent = 'Copy', 1500) })">Copy</button>
   </div>`
+
+// Shown at the top of every page. Before an account id is set, it's the only way in - a form
+// posting to /account. Once set, it's a one-line status with a "Reset account" button (POST
+// /account/reset) that clears it again, so switching accounts never needs a restart. `csrfField`
+// is only available once a session exists (the logged-in page), matching every other state-
+// changing form in this file - see isTrustedOrigin/hasValidCsrf below.
+function accountStatus(csrfField = '') {
+  if (!currentAccountId) {
+    return `
+      <div style="margin: 1em 0; padding: 1em; border: 1px solid #ccc;">
+        <p>Enter the FieldTwin account id to register this demo's customTab on:</p>
+        <form method="POST" action="/account">
+          <input type="text" name="accountId" placeholder="account id" autofocus required
+            style="width: 60%; font-family: monospace; padding: 0.4em;" />
+          <button type="submit">Continue</button>
+        </form>
+      </div>`
+  }
+  return `
+    <p>
+      Account: <code>${escapeHtml(currentAccountId)}</code>
+      (client_id: <code>${escapeHtml(getClientId())}</code>)
+      <form method="POST" action="/account/reset" style="display:inline">
+        ${csrfField}
+        <button type="submit">Reset account</button>
+      </form>
+    </p>`
+}
 
 function decodeJwt(token) {
   const [headerB64, payloadB64] = token.split('.')
@@ -214,6 +255,7 @@ async function renderLoggedInPage(session, { expiresIn, notice } = {}) {
   const csrfField = `<input type="hidden" name="csrf" value="${escapeHtml(session.csrfToken)}" />`
   return page(`
     <h2>Logged in</h2>
+    ${accountStatus(csrfField)}
     ${notice ? `<p><strong>${escapeHtml(notice)}</strong></p>` : ''}
     ${expiresIn !== undefined ? `<p>expires_in: ${expiresIn}s</p>` : ''}
     <h3>This app's authorization</h3>
@@ -269,30 +311,79 @@ async function handleRequest(req, res) {
   }
 
   if (url.pathname === '/') {
-    pruneExpired(pending, PENDING_TTL_MS)
-    capSize(pending, MAX_PENDING - 1)
+    let loginButton = ''
+    if (currentAccountId) {
+      pruneExpired(pending, PENDING_TTL_MS)
+      capSize(pending, MAX_PENDING - 1)
 
-    const state = crypto.randomBytes(16).toString('hex')
-    const codeVerifier = crypto.randomBytes(32).toString('base64url')
-    const codeChallenge = crypto.createHash('sha256').update(codeVerifier).digest('base64url')
-    pending.set(state, { codeVerifier, createdAt: Date.now() })
+      const state = crypto.randomBytes(16).toString('hex')
+      const codeVerifier = crypto.randomBytes(32).toString('base64url')
+      const codeChallenge = crypto.createHash('sha256').update(codeVerifier).digest('base64url')
+      // Pinned to the client_id in effect right now, not re-read at /callback time - a Reset
+      // account/re-Continue in another tab mid-flow must not change which client this code redeems as.
+      pending.set(state, { codeVerifier, clientId: getClientId(), createdAt: Date.now() })
 
-    const authorizeUrl = new URL(LOGIN_URL)
-    authorizeUrl.searchParams.set('client_id', EFFECTIVE_CLIENT_ID)
-    authorizeUrl.searchParams.set('redirect_uri', REDIRECT_URI)
-    authorizeUrl.searchParams.set('code_challenge', codeChallenge)
-    authorizeUrl.searchParams.set('code_challenge_method', 'S256')
-    authorizeUrl.searchParams.set('state', state)
+      const authorizeUrl = new URL(LOGIN_URL)
+      authorizeUrl.searchParams.set('client_id', getClientId())
+      authorizeUrl.searchParams.set('redirect_uri', REDIRECT_URI)
+      authorizeUrl.searchParams.set('code_challenge', codeChallenge)
+      authorizeUrl.searchParams.set('code_challenge_method', 'S256')
+      authorizeUrl.searchParams.set('state', state)
 
-    // If this id isn't registered yet, "Log in" below demos the invalid_client failure instead.
-    const notice = `<p>Using client_id: <code>${EFFECTIVE_CLIENT_ID}</code></p>`
+      // If this id isn't registered yet, "Log in" below demos the invalid_client failure instead.
+      loginButton = `<a href="${authorizeUrl.toString()}"><button style="font-size:1.2em;padding:0.5em 1em;">Log in</button></a>`
+    }
+
+    const session = getSession(req)
+    const csrfField = session && session.csrfToken
+      ? `<input type="hidden" name="csrf" value="${escapeHtml(session.csrfToken)}" />`
+      : ''
 
     res.writeHead(200, { 'Content-Type': 'text/html' })
-    res.end(
-      page(
-        `<h2>OAuth web demo</h2>${notice}<a href="${authorizeUrl.toString()}"><button style="font-size:1.2em;padding:0.5em 1em;">Log in</button></a>${manifestCopyBox}`
+    res.end(page(`<h2>OAuth web demo</h2>${accountStatus(csrfField)}${manifestCopyBox}${loginButton}`))
+    return
+  }
+
+  if (url.pathname === '/account' && req.method === 'POST') {
+    if (!isTrustedOrigin(req)) {
+      forbidden(res, 'Unexpected Origin header.')
+      return
+    }
+    const body = await readFormBody(req)
+    const accountId = (body.get('accountId') || '').trim()
+    if (!accountId) {
+      res.writeHead(400, { 'Content-Type': 'text/html' })
+      res.end(
+        page(`<h2>OAuth web demo</h2><p style="color:#900">An account id is required.</p>${accountStatus()}`)
       )
-    )
+      return
+    }
+    currentAccountId = accountId
+    res.writeHead(303, { Location: '/' })
+    res.end()
+    return
+  }
+
+  if (url.pathname === '/account/reset' && req.method === 'POST') {
+    if (!isTrustedOrigin(req)) {
+      forbidden(res, 'Unexpected Origin header.')
+      return
+    }
+    // Only checked when a session actually exists (the reset button also lives on the pre-login
+    // page, which has no csrfToken to check yet) - mirrors every other form below.
+    const session = getSession(req)
+    if (session) {
+      const body = await readFormBody(req)
+      if (!hasValidCsrf(session, body)) {
+        forbidden(res, 'Invalid or missing CSRF token.')
+        return
+      }
+      sessions.delete(parseCookies(req).sid)
+    }
+    currentAccountId = null
+    res.setHeader('Set-Cookie', 'sid=; HttpOnly; Path=/; SameSite=Lax; Max-Age=0')
+    res.writeHead(303, { Location: '/' })
+    res.end()
     return
   }
 
@@ -302,14 +393,18 @@ async function handleRequest(req, res) {
     const error = url.searchParams.get('error')
     const entry = pending.get(state)
     pending.delete(state)
-    const codeVerifier = entry && Date.now() - entry.createdAt <= PENDING_TTL_MS ? entry.codeVerifier : undefined
+    const valid = entry && Date.now() - entry.createdAt <= PENDING_TTL_MS ? entry : undefined
+    const codeVerifier = valid?.codeVerifier
+    // The client_id this /callback redeems as - pinned at /authorize time (see "/" above), not
+    // re-read from currentAccountId now, in case the account was reset in between.
+    const clientId = valid?.clientId
 
     if (error) {
       res.writeHead(200, { 'Content-Type': 'text/html' })
       res.end(page(`<h2>Login declined</h2><p>error=${escapeHtml(error)}</p><a href="/">Try again</a>`))
       return
     }
-    if (!code || !codeVerifier) {
+    if (!code || !codeVerifier || !clientId) {
       res.writeHead(400, { 'Content-Type': 'text/html' })
       res.end(page(`<h2>Invalid callback</h2><p>Missing, unrecognized, or expired state.</p><a href="/">Try again</a>`))
       return
@@ -321,7 +416,7 @@ async function handleRequest(req, res) {
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: new URLSearchParams({
           grant_type: 'authorization_code',
-          client_id: EFFECTIVE_CLIENT_ID,
+          client_id: clientId,
           code,
           redirect_uri: REDIRECT_URI,
           code_verifier: codeVerifier,
@@ -332,7 +427,7 @@ async function handleRequest(req, res) {
         throw new Error(data.error_description || data.error || `HTTP ${tokenResponse.status}`)
       }
 
-      const session = createSession(res, data.access_token, data.refresh_token)
+      const session = createSession(res, data.access_token, data.refresh_token, clientId)
       res.writeHead(200, NO_STORE_HTML_HEADERS)
       res.end(await renderLoggedInPage(session, { expiresIn: data.expires_in }))
     } catch (e) {
@@ -438,12 +533,15 @@ async function handleRequest(req, res) {
     }
 
     try {
+      const clientId = session.clientId || getClientId() || ''
       const refreshResponse = await fetch(`${BACKEND_URL}/oauth/token`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: new URLSearchParams({
           grant_type: 'refresh_token',
-          client_id: EFFECTIVE_CLIENT_ID,
+          // Not actually checked by /oauth/token for a refresh (it trusts the refresh_token's own
+          // claims), sent only for parity with the authorization_code request above.
+          client_id: clientId,
           refresh_token: session.refreshToken,
         }).toString(),
       })
@@ -520,5 +618,9 @@ server.on('clientError', (err, socket) => {
 server.listen(PORT, '127.0.0.1', () => {
   console.log(`OAuth web demo listening on http://localhost:${PORT}`)
   console.log(`Manifest URL: ${MANIFEST_URL}`)
-  console.log(`Using client_id: ${EFFECTIVE_CLIENT_ID}${CLIENT_ID ? '' : ' (the manifest\'s own id - register it and log in, no restart needed)'}`)
+  console.log(
+    currentAccountId
+      ? `Using client_id: ${getClientId()}`
+      : `Open http://localhost:${PORT}/ and enter the FieldTwin account id to continue (or set ACCOUNT_ID).`
+  )
 })

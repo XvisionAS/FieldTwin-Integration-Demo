@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Minimal OAuth2 authorization-code + PKCE CLI client against FieldTwin's login system.
-// Usage: node login.mjs (CLIENT_ID=<customTab id> to override the default)
+// Usage: node login.mjs (ACCOUNT_ID=<account id> and/or CLIENT_ID=<customTab id> to skip the prompt/override the default)
 import http from 'node:http'
 import crypto from 'node:crypto'
 import readline from 'node:readline'
@@ -12,11 +12,27 @@ const BACKEND_URL = process.env.BACKEND_URL || 'http://futureon-backend.lvh.me'
 // Defaults to a fixed id, matching the web demo's own MANIFEST.id fallback - register a customTab
 // with this id once (redirectUris: ["http://127.0.0.1:*/callback"]) and CLIENT_ID never needs
 // setting; CLIENT_ID overrides it for a tab created some other way.
-const CLIENT_ID = process.env.CLIENT_ID || 'oauth-demo-client'
+const TAB_ID = process.env.CLIENT_ID || 'oauth-demo-client'
 
-console.log(
-  `Using client_id: ${CLIENT_ID}${process.env.CLIENT_ID ? '' : ' (default - register a customTab with this id, or override with CLIENT_ID=<id>)'}`
-)
+function ask(question) {
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout })
+  return new Promise((resolve) => rl.question(question, (answer) => resolve(answer))).finally(() => rl.close())
+}
+
+// FieldTwin's OAuth client_id is the compound `<accountId>:<id>` - a customTab id is only unique
+// within its own account, never across the whole graph, so the account has to be explicit. Read
+// from ACCOUNT_ID if set, otherwise ask for it once before starting the login flow.
+async function resolveClientId() {
+  const accountId = (process.env.ACCOUNT_ID || (await ask('FieldTwin account id for this customTab: '))).trim()
+  if (!accountId) {
+    throw new Error('an account id is required to build client_id (<accountId>:<id>)')
+  }
+  return `${accountId}:${TAB_ID}`
+}
+
+// Set once by main() before login() ever runs - referenced here as a `let` so every function
+// below (waitForCallback, login, refreshTokens, revokeAuthorization's caller) sees the resolved value.
+let CLIENT_ID
 
 function decodeJwt(token) {
   const [headerB64, payloadB64] = token.split('.')
@@ -260,6 +276,9 @@ async function login() {
 }
 
 async function main() {
+  CLIENT_ID = await resolveClientId()
+  console.log(`Using client_id: ${CLIENT_ID}`)
+
   const tokens = await login()
   printTokens(tokens)
   await menu(tokens)
