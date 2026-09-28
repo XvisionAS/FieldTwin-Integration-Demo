@@ -130,9 +130,11 @@ async function waitForCallback(state) {
   })
 }
 
-function printTokens({ access_token, expires_in }) {
+function printTokens({ access_token, refresh_token, expires_in }) {
   const { header, payload } = decodeJwt(access_token)
   console.log('expires_in:', expires_in)
+  // The refresh_token is never renewed, so its expiry is when this login ends for good.
+  console.log('login valid until:', new Date(decodeJwt(refresh_token).payload.exp * 1000).toISOString())
   console.log('\nJWT header:', JSON.stringify(header, null, 2))
   console.log('\nJWT payload:', JSON.stringify(payload, null, 2))
 }
@@ -163,11 +165,15 @@ async function refreshTokens(refreshToken) {
   })
   const data = await response.json()
   if (!response.ok) {
-    throw new Error(data.error_description || data.error || `HTTP ${response.status}`)
+    const reason = data.error_description || data.error || `HTTP ${response.status}`
+    // An expired or revoked refresh_token can't be renewed - only a new login gets a new one.
+    throw new Error(data.error === 'invalid_grant' ? `${reason} - log in again (option 5)` : reason)
   }
-  console.log('Refreshed: minted a fresh access_token/refresh_token pair.')
-  printTokens(data)
-  return data
+  // FieldTwin never issues a new refresh_token on refresh, so keep using the one from the login.
+  const tokens = { ...data, refresh_token: data.refresh_token || refreshToken }
+  console.log('Refreshed: minted a fresh access_token (the refresh_token is reused).')
+  printTokens(tokens)
+  return tokens
 }
 
 // The backend restricts an integration-scoped token to seeing and revoking only its own
@@ -204,15 +210,15 @@ async function revokeAuthorization(accessToken, clientId) {
   console.log(`Failed to revoke ${clientId}: ${data.error_description || data.error || `HTTP ${response.status}`}`)
 }
 
-// Same actions the web demo offers as buttons, as a text menu - loops so a refresh's new token
-// pair can immediately be used by the next action too.
+// Same actions the web demo offers as buttons, as a text menu - loops so a refresh's new access
+// token can immediately be used by the next action too.
 async function menu(tokens) {
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout })
   const ask = (question) => new Promise((resolve) => rl.question(question, resolve))
 
   while (true) {
     console.log(
-      "\nWhat next?\n  1) Test JWT (GET /API/v2.0/accounts/:accountId)\n  2) Refresh tokens\n  3) View this app's authorization\n  4) Revoke this app's authorization\n  5) Re-login (e.g. as a different user)\n  q) Quit"
+      "\nWhat next?\n  1) Test JWT (GET /API/v2.0/accounts/:accountId)\n  2) Refresh access token\n  3) View this app's authorization\n  4) Revoke this app's authorization\n  5) Re-login (e.g. as a different user)\n  q) Quit"
     )
     const answer = (await ask('> ')).trim()
 

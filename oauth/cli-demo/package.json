@@ -1,0 +1,16 @@
+{
+  "name": "oauth-cli-demo",
+  "version": "1.0.0",
+  "description": "FieldTwin OAuth2 authorization-code + PKCE CLI login demo",
+  "private": true,
+  "type": "module",
+  "main": "login.mjs",
+  "scripts": {
+    "start": "node login.mjs"
+  },
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  }
+}

@@ -43,6 +43,11 @@ PKCE (`code_challenge`/`code_verifier`, S256) is required for every client
 customTab schema yet, so every client is treated as a public PKCE client
 regardless of how it's registered.
 
+Per RFC 7636 the `code_verifier` must be 43-128 characters from
+`A-Z a-z 0-9 - . _ ~`, and the `code_challenge` its unpadded base64url SHA-256
+(exactly 43 characters); FieldTwin rejects anything else. This demo uses 32
+random bytes as base64url for the verifier, which meets both rules.
+
 ## Requirements
 
 - **Node 18 or later** — the script uses Node's built-in `fetch`, added in
@@ -51,7 +56,9 @@ regardless of how it's registered.
   and `/oauth/authorizations` routes.** These are newer than the rest of
   this repo; if you're pointed at an older/deployed FieldTwin instance and
   login fails immediately, check with the FieldTwin team on whether that
-  instance has been upgraded to include them.
+  instance has been upgraded to include them. Older versions of these
+  routes also issued a new `refresh_token` on every refresh; the demo works
+  with either behaviour.
 - The default `LOGIN_URL`/`BACKEND_URL` (`*.lvh.me`) assume a local FieldTwin
   development stack, where `lvh.me` and subdomains resolve to `127.0.0.1`.
   Against a deployed instance, set both to that instance's actual frontend
@@ -109,12 +116,13 @@ The script first asks for the FieldTwin account id the customTab from
 `ACCOUNT_ID`, see below). It then opens the login URL in your default
 browser (falls back to printing the URL if it can't be opened
 automatically). Once you approve the consent screen, the script prints the
-decoded JWT header/payload and drops into a menu:
+decoded JWT header/payload and when the login ends ("login valid until",
+the `refresh_token`'s expiry), and drops into a menu:
 
 ```
 What next?
   1) Test JWT (GET /API/v2.0/accounts/:accountId)
-  2) Refresh tokens
+  2) Refresh access token
   3) View this app's authorization
   4) Revoke this app's authorization
   5) Re-login (e.g. as a different user)
@@ -123,7 +131,9 @@ What next?
 
 - **Test JWT** makes a real API call with the current access token, so it
   also proves whether the token still works after a revoke.
-- **Refresh** exchanges the `refresh_token` for a fresh token pair.
+- **Refresh** exchanges the `refresh_token` for a fresh `access_token`; the
+  same `refresh_token` keeps being reused (see
+  [Token lifetimes](#token-lifetimes)).
 - **View/revoke this app's authorization** call `GET /oauth/authorizations`
   and `POST /oauth/authorizations/:clientId/revoke` — the same self-service
   endpoints a user has for any client they've approved. The backend
@@ -146,3 +156,22 @@ What next?
 Nothing is written to disk — the JWT header/payload and each menu action's
 result are printed to the console only. Token pairs are held in memory for
 the life of the process.
+
+## Token lifetimes
+
+- **`access_token`: 1 hour.** Renew it with `POST /oauth/token`
+  (`grant_type=refresh_token`). The response carries a new `access_token`
+  only — never a new `refresh_token` — so keep reusing the one from the
+  login.
+- **`refresh_token`: 7 days from when the user approved**, and never
+  renewed. Refreshing more often doesn't extend it; once it expires,
+  `/oauth/token` answers `invalid_grant` and the user has to log in (and
+  approve) again. The demo shows this as "login valid until". Both
+  lifetimes are FieldTwin server defaults and may be configured
+  differently on your instance.
+- **`/oauth/token` is the only way to renew OAuth access.** FieldTwin's own
+  `GET /token/refresh` and `POST /token/generate` refuse an OAuth token, so
+  it can't be swapped for a longer-lived or unscoped one.
+- **An OAuth token is not a login session.** It can't register a passkey or
+  change the user's TOTP second factor — those need the user's own
+  interactive login.

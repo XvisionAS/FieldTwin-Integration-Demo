@@ -51,7 +51,8 @@ const MAX_PENDING = 500
 
 // Token pairs live server-side, keyed by an opaque session id in an HttpOnly cookie - never in a
 // URL, where they'd end up in browser history, a Referer header, or any access log. Demo-only TTL;
-// a real deployment should size this to its actual refresh-token/session policy.
+// a real deployment should size this to its actual session policy - the refresh token itself ends
+// 7 days after the user approved (FieldTwin's default) and is never renewed.
 const sessions = new Map()
 const SESSION_TTL_MS = 24 * 60 * 60 * 1000
 const MAX_SESSIONS = 500
@@ -197,6 +198,11 @@ function decodeJwt(token) {
   return { header: decode(headerB64), payload: decode(payloadB64) }
 }
 
+// The refresh_token's expiry: FieldTwin never issues a new one on refresh, so this is when the login ends.
+function loginValidUntil(session) {
+  return new Date(decodeJwt(session.refreshToken).payload.exp * 1000).toISOString()
+}
+
 function escapeHtml(value) {
   return String(value)
     .replace(/&/g, '&amp;')
@@ -258,6 +264,7 @@ async function renderLoggedInPage(session, { expiresIn, notice } = {}) {
     ${accountStatus(csrfField)}
     ${notice ? `<p><strong>${escapeHtml(notice)}</strong></p>` : ''}
     ${expiresIn !== undefined ? `<p>expires_in: ${expiresIn}s</p>` : ''}
+    <p>Login valid until: ${escapeHtml(loginValidUntil(session))} (the refresh token is never renewed - log in again after that)</p>
     <h3>This app's authorization</h3>
     <p style="font-size:0.85em;color:#555">
       FieldTwin restricts an integration-scoped token to seeing and revoking only its own
@@ -558,7 +565,7 @@ async function handleRequest(req, res) {
       res.end(
         await renderLoggedInPage(session, {
           expiresIn: data.expires_in,
-          notice: 'Refreshed: minted a fresh access_token/refresh_token pair.',
+          notice: 'Refreshed: minted a fresh access_token (the refresh_token is reused).',
         })
       )
     } catch (e) {

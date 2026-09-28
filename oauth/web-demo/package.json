@@ -1,0 +1,16 @@
+{
+  "name": "oauth-web-demo",
+  "version": "1.0.0",
+  "description": "FieldTwin OAuth2 authorization-code + PKCE web login demo",
+  "private": true,
+  "type": "module",
+  "main": "server.mjs",
+  "scripts": {
+    "start": "node server.mjs"
+  },
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  }
+}

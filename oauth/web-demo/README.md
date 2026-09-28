@@ -46,6 +46,11 @@ PKCE (`code_challenge`/`code_verifier`, S256) is required for every client
 or customTab schema yet, so every client is treated as a public PKCE
 client regardless of how it's registered.
 
+Per RFC 7636 the `code_verifier` must be 43-128 characters from
+`A-Z a-z 0-9 - . _ ~`, and the `code_challenge` its unpadded base64url SHA-256
+(exactly 43 characters); FieldTwin rejects anything else. This demo uses 32
+random bytes as base64url for the verifier, which meets both rules.
+
 ## Requirements
 
 - **Node 18 or later** — the scripts use Node's built-in `fetch`, added in
@@ -54,7 +59,9 @@ client regardless of how it's registered.
   and `/oauth/authorizations` routes.** These are newer than the rest of
   this repo; if you're pointed at an older/deployed FieldTwin instance and
   login fails immediately, check with the FieldTwin team on whether that
-  instance has been upgraded to include them.
+  instance has been upgraded to include them. Older versions of these
+  routes also issued a new `refresh_token` on every refresh; the demo works
+  with either behaviour.
 - The default `LOGIN_URL`/`BACKEND_URL` (`*.lvh.me`) assume a local FieldTwin
   development stack, where `lvh.me` and subdomains resolve to `127.0.0.1`.
   Against a deployed instance, set both to that instance's actual frontend
@@ -113,8 +120,11 @@ demo, everything else happens in the browser, not the terminal.
    account id on every page) and enter the correct one — no restart needed
    either way.
 4. After approving the consent screen you land on a logged-in page showing
-   the decoded JWT, this app's own authorization (with a revoke button), and
-   buttons to test/refresh the token or log out. The raw access token is
+   the decoded JWT, when the login ends ("Login valid until", the
+   `refresh_token`'s expiry), this app's own authorization (with a revoke
+   button), and buttons to test/refresh the token or log out. **Refresh**
+   gets a new `access_token` only and keeps reusing the same
+   `refresh_token` — see [Token lifetimes](#token-lifetimes). The raw access token is
    **not** shown by default — see [Security notes](#security-notes).
 
 Fields relevant to OAuth, if registering by hand instead of by manifest:
@@ -146,6 +156,25 @@ keyed by an opaque, `HttpOnly` session cookie. Sessions and in-flight login
 attempts expire on their own (see [Security notes](#security-notes)), and
 restarting the server drops everything immediately.
 
+## Token lifetimes
+
+- **`access_token`: 1 hour.** Renew it with `POST /oauth/token`
+  (`grant_type=refresh_token`). The response carries a new `access_token`
+  only — never a new `refresh_token` — so keep reusing the one from the
+  login.
+- **`refresh_token`: 7 days from when the user approved**, and never
+  renewed. Refreshing more often doesn't extend it; once it expires,
+  `/oauth/token` answers `invalid_grant` and the user has to log in (and
+  approve) again. The demo shows this as "login valid until". Both
+  lifetimes are FieldTwin server defaults and may be configured
+  differently on your instance.
+- **`/oauth/token` is the only way to renew OAuth access.** FieldTwin's own
+  `GET /token/refresh` and `POST /token/generate` refuse an OAuth token, so
+  it can't be swapped for a longer-lived or unscoped one.
+- **An OAuth token is not a login session.** It can't register a passkey or
+  change the user's TOTP second factor — those need the user's own
+  interactive login.
+
 ## Security notes
 
 - **PKCE is mandatory, for everyone.** Without the matching
@@ -168,7 +197,8 @@ restarting the server drops everything immediately.
   count and pruned on a timer, and `Log out` deletes a session immediately
   rather than waiting for it to expire or for the server to restart. This is
   demo-only bookkeeping — size a real deployment's session lifetime to its
-  actual refresh-token/session policy.
+  actual session policy. A session can't usefully outlive its
+  `refresh_token`, which ends 7 days after the user approved.
 - **State-changing requests carry a per-session CSRF token**, embedded as a
   hidden form field and checked on every `POST`, and the `Origin` header is
   checked against this demo's own origin as defense in depth. `SameSite=Lax`
@@ -182,7 +212,8 @@ restarting the server drops everything immediately.
   network.
 - **Revocation is immediate.** Deleting the custom tab, or the user revoking
   their own grant via `POST /oauth/authorizations/:clientId/revoke`, is
-  checked on every resource call and every refresh — click **Test JWT**
+  checked on every call to any FieldTwin backend or API route and on every
+  refresh — click **Test JWT**
   after revoking from another tab to see it take effect immediately, even
   on an otherwise-unexpired token.
 - **"This app's authorization"** reflects only what this integration-scoped
