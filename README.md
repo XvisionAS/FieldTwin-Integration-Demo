@@ -28,6 +28,8 @@ You will find the following resources helpful:
 | [power-bi](./power-bi/) | Instructions for how to embed a Power BI report inside FieldTwin | Integration | Power BI
 | [python-notebook](./python-notebook/) | Jupyter notebooks for plotting the seabed profile of a connection, sorting connections into length order, and getting and setting metadata values | API | Python, API token
 | [python-tab](./python-tab/) | An integration that calls a serverless Python function to plot the seabed profile of a connection | Integration | HTML, Python, Serverless, JWT
+| [oauth/cli-demo](./oauth/cli-demo/) | A loopback CLI client that logs a user in via FieldTwin's OAuth2 authorization-code + PKCE flow and obtains a JWT | API | Javascript, Node.js, OAuth2, JWT
+| [oauth/web-demo](./oauth/web-demo/) | A server-side web client that logs a user in via FieldTwin's OAuth2 authorization-code + PKCE flow, with self-registration via a manifest URL | API | Javascript, Node.js, OAuth2, JWT
 | [scripts/javascript/create-layout](./scripts/javascript/create-layout) | Scripts to export a project layout and recreate it in an empty project | API | Javascript, Node.js, API token
 | [scripts/javascript/warning-zone](./scripts/javascript/warning-zone) | Script to tag staged assets that fall within a circular zone | API | Javascript, Node.js, API token
 | [scripts/python](./scripts/python/) | Scripts for reading project data and updating metadata values using Python | API | Python, API token
