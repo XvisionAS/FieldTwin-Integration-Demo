@@ -8,8 +8,13 @@ review and replace the variable placeholders with actual values).
 Command line setup for curl commands:
 
 ```
-export TOKEN=<api token>
+# FieldTwin <= 8.2
 export BACKEND_HOST=backend.<your company>.fieldtwin.com
+
+# FieldTwin >= 9.0
+export BACKEND_HOST=<your company>.fieldtwin.com
+
+export TOKEN=<api token>
 export PROJECT=<project id>
 export SUBPROJECT=<subproject id>
 export STREAM=<stream id>
