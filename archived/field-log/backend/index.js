@@ -28,7 +28,12 @@ app.use( bodyParser.urlencoded({     // to support URL-encoded bodies
 }))
 
 app.post('/tab', (request, response) => {
-  var decodedToken = jwt.decode(request.body.token, {complete: true});
+  var decodedToken;
+  try {
+    decodedToken = jwt.verify(request.body.token, process.env.JWT_SECRET, {complete: true});
+  } catch (err) {
+    return response.status(401).send('Invalid token');
+  }
   console.log('decodedToken', decodedToken);
   const payload = {
     userEmail: decodedToken.payload.userEmail,
