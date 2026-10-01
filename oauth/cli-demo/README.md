@@ -103,7 +103,7 @@ Fields relevant to OAuth:
 | `name` | string | Shown to the user on the consent screen. **Required** by the v1.9 integration schema. |
 | `url` | string | **Required** by the v1.9 integration schema when registering via the API. Any placeholder URL works for this demo — it isn't otherwise used by the OAuth flow. |
 | `redirectUris` | string[] | `http://127.0.0.1:*/callback` or `http://localhost:*/callback` — only the port is a wildcard. |
-| `projectWideAccess` or `projectAllFromUser` | boolean | **At least one must be `true`**, since this demo logs in with no project context. |
+| `projectAllFromUser` | boolean | **Set it to `true`.** This demo logs in with no project context, so the token is account-only, and only `projectAllFromUser` gives it the user's projects. `projectWideAccess` alone is accepted at registration, but the resulting token reaches no project. |
 
 ## Usage
 

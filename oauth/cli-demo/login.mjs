@@ -10,8 +10,8 @@ const LOGIN_URL = process.env.LOGIN_URL || 'http://futureon-webapp.lvh.me/login'
 const BACKEND_URL = process.env.BACKEND_URL || 'http://futureon-backend.lvh.me'
 
 // Defaults to a fixed id, matching the web demo's own MANIFEST.id fallback - register a customTab
-// with this id once (redirectUris: ["http://127.0.0.1:*/callback"]) and CLIENT_ID never needs
-// setting; CLIENT_ID overrides it for a tab created some other way.
+// with this id once (redirectUris: ["http://127.0.0.1:*/callback"], projectAllFromUser: true) and
+// CLIENT_ID never needs setting; CLIENT_ID overrides it for a tab created some other way.
 const TAB_ID = process.env.CLIENT_ID || 'oauth-demo-client'
 
 function ask(question) {

@@ -135,7 +135,7 @@ Fields relevant to OAuth, if registering by hand instead of by manifest:
 | `name` | string | Shown to the user on the consent screen. **Required** by the integration schema. |
 | `url` | string | **Required** by the integration schema. Any placeholder URL works for this demo — it's the login/manifest URL that matters for OAuth, not this field. |
 | `redirectUris` | string[] | Must exactly match `http://localhost:<PORT>/callback`. |
-| `projectWideAccess` | boolean | Set on the demo's manifest so login works with no project context, since this is an account-level client with no FieldTwin project of its own. |
+| `projectAllFromUser` | boolean | Set on the demo's manifest. This is an account-level client with no FieldTwin project of its own, so login mints an account-only token, and only `projectAllFromUser` gives that token the user's projects. `projectWideAccess` alone also passes registration, but the token then reaches no project and `GET /API/v2.0/users/whoami` lists none. |
 
 ## Environment variables
 

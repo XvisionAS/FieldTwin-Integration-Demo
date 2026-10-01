@@ -24,7 +24,9 @@ const MANIFEST = {
   id: process.env.MANIFEST_ID || 'oauth-demo-client',
   name: 'OAuth web demo',
   url: `http://localhost:${PORT}/`,
-  projectWideAccess: true,
+  // Logging in with no project context mints an account-only token. Only projectAllFromUser
+  // gives that token the user's projects; projectWideAccess alone leaves it with none.
+  projectAllFromUser: true,
   redirectUris: [REDIRECT_URI, 'http://127.0.0.1:*/callback'],
 }
 
