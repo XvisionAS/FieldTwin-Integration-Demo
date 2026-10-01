@@ -18,6 +18,7 @@ testem.log
 env.*.bat
 .envrc
 .envrc.*
+!archived/field-log/backend/.envrc
 .divshot-cache
 .DS_Store
 .nvmrc

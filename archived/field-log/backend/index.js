@@ -7,6 +7,21 @@ const jwt = require('jsonwebtoken')
 const morgan = require('morgan')
 
 const PORT = 3000
+const BACKEND_URL = process.env.BACKEND_URL
+
+if (!BACKEND_URL) {
+  throw new Error('BACKEND_URL must be set')
+}
+
+const backendUrl = new URL(BACKEND_URL)
+if (!['http:', 'https:'].includes(backendUrl.protocol)) {
+  throw new Error('BACKEND_URL must use HTTP or HTTPS')
+}
+backendUrl.search = ''
+backendUrl.hash = ''
+backendUrl.pathname = `${backendUrl.pathname.replace(/\/+$/, '')}/`
+const publicKeyUrl = new URL('token/publicKey', backendUrl)
+
 const app = express()
 
 // app.use(cors)
@@ -28,17 +43,36 @@ app.use( bodyParser.urlencoded({     // to support URL-encoded bodies
 }))
 
 app.post('/tab', (request, response) => {
-  var decodedToken = jwt.decode(request.body.token, {complete: true});
-  console.log('decodedToken', decodedToken);
-  const payload = {
-    userEmail: decodedToken.payload.userEmail,
-    project: request.body.project,
-    subProject: request.body.subProject
-  }
-  console.log('Payload:', payload)
-  response.render('index.hbs', {
-    body: payload}
-  )
+  // Fetch the public key from the configured FieldTwin backend
+  fetch(publicKeyUrl)
+    .then(async res => {
+      if (!res.ok) {
+        throw new Error(`Unable to fetch public key: HTTP ${res.status}`)
+      }
+      const { publicKey, algorithm } = await res.json()
+      if (typeof publicKey !== 'string' || algorithm !== 'RS256') {
+        throw new Error('Unsupported public key response')
+      }
+      return publicKey
+    })
+    .then(publicKey => {
+      // Verify the JWT token using the public key
+      var decodedToken = jwt.verify(request.body.token, publicKey, { algorithms: ['RS256'], complete: true });
+      // console.log('decodedToken', decodedToken);
+      const payload = {
+        userEmail: decodedToken.payload.userEmail,
+        project: request.body.project,
+        subProject: request.body.subProject
+      }
+      console.log('Payload:', payload)
+      response.render('index.hbs', {
+        body: payload}
+      )
+    })
+    .catch(err => {
+      console.error('Error verifying token:', err);
+      response.status(500).send('Error verifying token');
+    });
 })
 
 
