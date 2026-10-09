@@ -1,0 +1,2 @@
+# Real PDS3 labels with their original CRLF line endings; the parser must cope with them
+tests/fixtures/*.lbl -text

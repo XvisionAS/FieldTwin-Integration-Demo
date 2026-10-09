@@ -1,0 +1,134 @@
+PDS_VERSION_ID            = "PDS3"
+
+/*** This label describes a compressed image file, its corresponding XML    */
+/*** file, and map projection information.                                  */
+/*** The files described have the same name as this label but different     */
+/*** extensions. They are:                                                  */
+/***    .JP2 - A compressed image file corresponding to the uncompressed IMG*/
+/***           file, stored with JPEG2000 compression                       */
+/***    .XML - An auxiliary text file in XML, provided to aid display of    */
+/***           the JPEG2000 image with certain image processing software    */
+/*** The map projection information includes parameters that are specific   */
+/*** to this image. They are intended to be used with the general map       */
+/*** projection descriptions in the file indicated by the keyword           */
+/*** ^DATA_SET_MAP_PROJECTION. That file is found in the CATALOG directory  */
+/*** of this archive.                                                       */
+
+/*** GENERAL DATA DESCRIPTION PARAMETERS ***/
+
+PRODUCT_VERSION_ID        = "V2.0"
+DATA_SET_ID               = "LRO-L-LOLA-4-GDR-V1.0"
+PRODUCT_ID                = "LDSM_85S_40M"
+INSTRUMENT_HOST_NAME      = "LUNAR RECONNAISSANCE ORBITER"
+INSTRUMENT_NAME           = "LUNAR ORBITER LASER ALTIMETER"
+INSTRUMENT_ID             = "LOLA"
+MISSION_PHASE_NAME        = {"COMMISSIONING","NOMINAL MISSION","SCIENCE
+                              MISSION"}
+TARGET_NAME               = MOON
+START_TIME                = 2009-07-13T17:33:17.246
+STOP_TIME                 = 2011-12-11T13:33:12.807
+PRODUCT_CREATION_TIME     = 2012-06-15T00:00:00
+PRODUCER_ID               = LRO_LOLA_TEAM
+PRODUCER_FULL_NAME        = "DAVID E. SMITH"
+PRODUCER_INSTITUTION_NAME = "GODDARD SPACE FLIGHT CENTER"
+DESCRIPTION               = "This data product is a map of the surface
+   slope of the Moon at a resolution of 40m/pix by 40m/pix,
+   true at the pole in polar stereographic (spherical) projection, 
+   based on altimetry data acquired by the LOLA instrument [ZUBERETAL2012].
+   The LOLA Laser 1 and 2 data through mission phase LRO_SM_17 are 
+   the source for this data set.  The bi-directional slope was calculated 
+   from a plane fit to three successive laser shots requiring n=5 to 
+   15 profile returns. Depending on orbital velocity, probability
+   of detection, and spacecraft altitude, the slope baseline may vary
+   from 30 to 120 meters.
+
+   This label describes two objects.  The first is a JP2 file of
+   the corresponding uncompressed .IMG file.  A jpeg 2000 compression
+   is used to render the image.  The second is an auxiliary xml file
+   that contains extensible markup language that is interpreted by
+   GDAL readers (www.gdal.org)."
+
+OBJECT                    = COMPRESSED_FILE
+FILE_NAME                 = "LDSM_85S_40M.JP2"
+RECORD_TYPE               = UNDEFINED
+FILE_RECORDS              = UNK
+ENCODING_TYPE             = "JP2"
+  INTERCHANGE_FORMAT      = BINARY
+  UNIT                    = DEGREE
+  SCALING_FACTOR          = 0.0015
+  OFFSET                  = 45.
+  MISSING_CONSTANT        = -32768
+  UNCOMPRESSED_FILE_NAME  = "LDSM_85S_40M.IMG"
+  REQUIRED_STORAGE_BYTES  = "115034112"
+  ^DESCRIPTION            = "JP2INFO.TXT"
+END_OBJECT                = COMPRESSED_FILE
+
+OBJECT                    = UNCOMPRESSED_FILE
+FILE_NAME                 = "LDSM_85S_40M.IMG"
+RECORD_TYPE               = FIXED_LENGTH
+FILE_RECORDS              = 7584
+RECORD_BYTES              = 15168
+^IMAGE                    = "LDSM_85S_40M.IMG"
+
+
+  OBJECT                  = IMAGE
+    NAME                  = BIDIRECTIONAL_SLOPE
+    DESCRIPTION           = "Each sample represents the surface slope at a 
+    baseline of 40 meters. A scaling was applied to make better use of the
+    16-bit integer range: a flat surface corresponds to a numerical value of
+    -30,000, and a surface tilted by 45 degrees corresponds to a numerical 
+    value of 0."
+    LINES                 = 7584
+    LINE_SAMPLES          = 7584
+    DERIVED_MINIMUM       = -29999
+    DERIVED_MAXIMUM       = 4187
+    SAMPLE_TYPE           = LSB_INTEGER
+    SAMPLE_BITS           = 16
+    UNIT                  = DEGREE
+    SCALING_FACTOR        = 0.0015
+    OFFSET                = 45.
+
+  END_OBJECT              = IMAGE
+END_OBJECT                = UNCOMPRESSED_FILE
+
+OBJECT                    = AUX_FILE
+  FILE_NAME               = "LDSM_85S_40M_AUX.XML"
+  RECORD_TYPE             = STREAM
+  FILE_RECORDS            = UNK
+  DESCRIPTION             = "This is an auxiliary file accompanying
+     the JPEG2000 file. It contains metadata in XML format that
+     is useful for displaying the image using a GDAL supported tool."
+END_OBJECT                = AUX_FILE
+
+OBJECT                    = IMAGE_MAP_PROJECTION
+ ^DATA_SET_MAP_PROJECTION     = "DSMAP_POLAR.CAT"
+ MAP_PROJECTION_TYPE          = "POLAR STEREOGRAPHIC"
+ KEYWORD_LATITUDE_TYPE        = "PLANETOCENTRIC"
+ MAP_RESOLUTION               = 758.084 <pix/deg>
+ A_AXIS_RADIUS                = 1737.4 <km>
+ B_AXIS_RADIUS                = 1737.4 <km>
+ C_AXIS_RADIUS                = 1737.4 <km>
+ FIRST_STANDARD_PARALLEL      = 'N/A'
+ SECOND_STANDARD_PARALLEL     = 'N/A'
+ POSITIVE_LONGITUDE_DIRECTION = "EAST"
+ CENTER_LATITUDE              = -90 <deg>
+ CENTER_LONGITUDE             = 0 <deg>
+ REFERENCE_LATITUDE           = 'N/A'
+ REFERENCE_LONGITUDE          = 'N/A'
+ LINE_FIRST_PIXEL             = 1
+ LINE_LAST_PIXEL              = 7584
+ SAMPLE_FIRST_PIXEL           = 1
+ SAMPLE_LAST_PIXEL            = 7584
+ MAP_PROJECTION_ROTATION      = 0.0
+ MAP_SCALE                    = 40 <m/pix>
+ MAXIMUM_LATITUDE             = -85 <deg>
+ MINIMUM_LATITUDE             = -90 <deg>
+ WESTERNMOST_LONGITUDE        = 'N/A'
+ EASTERNMOST_LONGITUDE        = 'N/A'
+ LINE_PROJECTION_OFFSET       = 3791.5 <pix>
+ SAMPLE_PROJECTION_OFFSET     = 3791.5 <pix>
+ COORDINATE_SYSTEM_TYPE       = "BODY-FIXED ROTATING"
+ COORDINATE_SYSTEM_NAME       = "MEAN EARTH/POLAR AXIS OF DE421"
+END_OBJECT                    = IMAGE_MAP_PROJECTION
+
+END

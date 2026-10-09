@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Fake FieldTwin host</title>
+    <link rel="icon" href="data:," />
+    <style>
+      body {
+        margin: 0;
+        display: flex;
+        height: 100vh;
+        font-family: sans-serif;
+      }
+      /* About the size of a Module Panel docked beside the 3D view */
+      iframe {
+        width: 900px;
+        height: 100%;
+        border: 0;
+        border-right: 1px solid #ccc;
+      }
+      pre {
+        flex: 1;
+        margin: 0;
+        padding: 8px;
+        overflow: auto;
+        font-size: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <iframe id="integration" src="/"></iframe>
+    <pre id="log"></pre>
+    <script type="module">
+      // Stands in for FieldTwin while developing (`npm run dev`, then open /dev/host.html). It answers the
+      // integration's messages for a lunar project. Query parameters:
+      //   crs=IAU_2015:30135            project CRS
+      //   view=x1,y1,x2,y2              view box in that CRS (default: 20 km around Shackleton crater)
+      //   projector=<url>               projector service (default: a local container on port 18080)
+      //   canEdit=false                 simulate a read-only role
+      //   css=<url>&theme=<url>         FieldTwin stylesheet and theme, if one is reachable
+      const params = new URLSearchParams(location.search)
+      const crs = params.get('crs') || 'IAU_2015:30135'
+      const [x1, y1, x2, y2] = (params.get('view') || '-2312,-16405,17688,3595').split(',').map(Number)
+      const loaded = {
+        event: 'loaded',
+        token: 'dev-token',
+        backendUrl: 'http://localhost:3000',
+        projectorUrl: params.get('projector') || 'http://localhost:18080/projector',
+        project: 'dev-project',
+        subProject: 'dev-subproject',
+        canEdit: params.get('canEdit') !== 'false',
+        cssUrl: params.get('css') || undefined,
+        cssThemeUrl: params.get('theme') || undefined,
+      }
+      const replies = {
+        getProjectData: { event: 'projectData', data: { project: { CRS: crs } } },
+        getViewBox: { event: 'viewBox', isFrameActive: true, data: { viewBox: { x1, y1, x2, y2, z1: 0, z2: 0 } } },
+      }
+
+      const frame = document.getElementById('integration')
+      const log = (text) => {
+        document.getElementById('log').textContent += text + '\n'
+      }
+      frame.addEventListener('load', () => {
+        frame.contentWindow.postMessage(loaded, location.origin)
+        log('→ loaded')
+      })
+      window.addEventListener('message', (event) => {
+        if (event.source !== frame.contentWindow) {
+          return
+        }
+        log(`← ${event.data.event}`)
+        const reply = replies[event.data.event]
+        if (reply) {
+          event.source.postMessage(reply, event.origin)
+          log(`→ ${reply.event}`)
+        }
+      })
+    </script>
+  </body>
+</html>
