@@ -50,8 +50,7 @@ random bytes as base64url for the verifier, which meets both rules.
 
 ## Requirements
 
-- **Node 18 or later** — the script uses Node's built-in `fetch`, added in
-  Node 18.
+- **Node 26** — use Node 26.13.0 as pinned in the repository's `.node-version`.
 - **A FieldTwin backend that serves the `/oauth/authorize`, `/oauth/token`
   and `/oauth/authorizations` routes.** These are newer than the rest of
   this repo; if you're pointed at an older/deployed FieldTwin instance and
