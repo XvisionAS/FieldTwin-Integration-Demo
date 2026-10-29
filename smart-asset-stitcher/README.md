@@ -23,7 +23,7 @@ npm install -g smart-asset-stitcher
 npx smart-asset-stitcher ./descriptor.json
 ```
 
-Requires Node.js >= 20 and a FieldTwin backend >= **version 8.3**.
+Requires Node.js 26 (26.13.0 recommended) and a FieldTwin backend >= **version 8.3**.
 
 ## Usage (CLI)
 

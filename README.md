@@ -3,6 +3,11 @@
 Welcome to the FieldTwin code samples repository. Here you can find examples of how to
 create a FieldTwin integration or call the FieldTwin API.
 
+## Node.js samples
+
+The maintained Node.js samples use Node.js 26.13.0 (see `.node-version`).
+The `archived/` samples are no longer maintained and are excluded from this upgrade.
+
 ## Resources
 
 You will find the following resources helpful:
